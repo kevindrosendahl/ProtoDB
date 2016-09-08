@@ -1,0 +1,227 @@
+#! /usr/bin/python
+
+from collections import defaultdict, namedtuple
+import errno
+import os
+import subprocess
+import tempfile
+
+protos_path = os.path.abspath("../protos")
+server_protos_path = protos_path + "/server/"
+test_protos_path = protos_path + "/test/"
+
+src_path = os.path.abspath("../src")
+
+src_server_path = src_path + "/server/"
+src_server_protos_path = src_server_path + "protos/"
+src_server_collection_protos_path = src_server_protos_path + "collection/"
+src_server_database_protos_path = src_server_protos_path + "database/"
+src_server_test_protos_path = src_server_protos_path + "test/"
+
+move_proto = namedtuple("MoveProto",
+                        ["original_path",
+                         "original_name",
+                         "module_path",
+                         "new_name",
+                         "module_name",
+                         "parent_module_path"])
+
+server_proto_moves = [
+    move_proto(server_protos_path,
+               "collection_create.rs",
+               src_server_collection_protos_path,
+               "create.rs",
+               "collection",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "collection_define.rs",
+               src_server_collection_protos_path,
+               "define.rs",
+               "collection",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "collection_delete.rs",
+               src_server_collection_protos_path,
+               "delete.rs",
+               "collection",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "collection_list.rs",
+               src_server_collection_protos_path,
+               "list.rs",
+               "collection",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "collection.rs",
+               src_server_collection_protos_path,
+               "mod.rs",
+               "collection",
+               src_server_protos_path),
+
+    move_proto(server_protos_path,
+               "database_create.rs",
+               src_server_database_protos_path,
+               "create.rs",
+               "database",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "database_define.rs",
+               src_server_database_protos_path,
+               "define.rs",
+               "database",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "database_delete.rs",
+               src_server_database_protos_path,
+               "delete.rs",
+               "database",
+               src_server_protos_path),
+    move_proto(server_protos_path,
+               "database_list.rs",
+               src_server_database_protos_path,
+               "list.rs",
+               "database",
+               src_server_protos_path),
+
+    move_proto(server_protos_path,
+               "find.rs",
+               src_server_protos_path,
+               "find.rs",
+               None,
+               None),
+    move_proto(server_protos_path,
+               "insert.rs",
+               src_server_protos_path,
+               "insert.rs",
+               None,
+               None),
+
+    move_proto(test_protos_path,
+               "test.rs",
+               src_server_test_protos_path,
+               "mod.rs",
+               "test",
+               src_server_protos_path),
+]
+
+
+def ensure_empty_paths():
+    ensure_empty_path(src_server_protos_path)
+    ensure_empty_path(src_server_collection_protos_path)
+    ensure_empty_path(src_server_database_protos_path)
+    ensure_empty_path(src_server_test_protos_path)
+
+
+def ensure_empty_path(folder_path):
+    try:
+        os.makedirs(folder_path)
+    except OSError, ose:
+        if not ose.errno == errno.EEXIST:
+            raise
+
+    def clear_folder(path):
+        for f in os.listdir(path):
+            file_path = os.path.join(path, f)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                clear_folder(file_path)
+                os.rmdir(file_path)
+
+    clear_folder(folder_path)
+
+
+def compile_server_protos():
+    compile_server_protos_cmd = ("protoc -I %s --rust_out=%s "
+                                 "%s/*.proto" %
+                                 (protos_path, server_protos_path, server_protos_path))
+
+    run_shell_proccess(compile_server_protos_cmd)
+
+    compile_test_protos_cmd = ("protoc -I %s --rust_out=%s "
+                               "%s/*.proto" %
+                               (protos_path, test_protos_path, test_protos_path))
+
+    run_shell_proccess(compile_test_protos_cmd)
+
+    make_moves(server_proto_moves)
+
+
+def run_shell_proccess(cmd, quiet=True, raise_on_stderr=True):
+    p = subprocess.Popen(cmd,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE)
+    stdout, stderr = p.communicate()
+
+    if stdout and not quiet:
+        print "%s stdout: %s" % (cmd, stdout)
+
+    if stderr:
+        print "%s stderr: %s" % (cmd, stderr)
+
+        if raise_on_stderr:
+            raise Exception(stderr)
+
+    return stdout
+
+
+def make_moves(moves):
+    modules = defaultdict(set)
+
+    for move in moves:
+        modules[move.module_path].add(move.new_name.split('.')[0])
+        if move.parent_module_path is not None:
+            modules[move.parent_module_path].add(move.module_name)
+
+        move_cmd = ("mv %s%s %s%s" % move[:4])
+        run_shell_proccess(move_cmd)
+
+    for module_path, submodules in modules.iteritems():
+        mod_file_path = "%smod.rs" % module_path
+
+        # Everyone in these files expects protobuf to be imported.
+        mod_file_content = "extern crate protobuf;\\n"
+        if (module_path == src_server_collection_protos_path or
+                module_path == src_server_protos_path):
+            # Pretty damn hacky.
+            # The collection protos use google/protobuf/descriptor.proto
+            # and use it as super::descriptor. This is used in both
+            # src/server/protos/collection/mod.rs and
+            # src/server/protos/collection/create.rs.
+            # mod.rs' view of super is server::protos, so we need to
+            # pub use protobuf::descriptor there.
+            # create.rs' view of super is server::protos::collection,
+            # so we need to `pub use protobuf::descriptor` there as well.
+            mod_file_content += "pub use protobuf::descriptor;\\n"
+
+        for submodule in sorted(submodules):
+            if submodule != "mod":
+                # Export all of the generated protobufs as public
+                # so they can be used by other pieces of code.
+                mod_file_content += "pub mod %s;\\n" % submodule
+
+        if os.path.isfile(mod_file_path):
+            # We're using one of our proto files as a mod.rs file.
+            # We still need to add in some imports and use's for the rest
+            # of the module, but can't do so before an inner attribute
+            # e.g. #![allow(dead_code)]
+            # So instead we'll search for the first place the file says
+            # "use " and we'll just stick our stuff right before that.
+            # http://stackoverflow.com/questions/20026370/using-bash-script-to-find-line-number-of-string-in-file
+            get_first_use_line_number = ("awk '/use /{print NR; exit }' %s" %
+                                         mod_file_path)
+            line_number = int(run_shell_proccess(get_first_use_line_number))
+
+            # http://stackoverflow.com/questions/20026370/using-bash-script-to-find-line-number-of-string-in-file
+            insert_mod_content = ("sed -i '%si\%s' %s" %
+                                  (line_number, mod_file_content, mod_file_path))
+            run_shell_proccess(insert_mod_content)
+        else:
+            mod_file_content = mod_file_content.replace("\\n", "\n")
+            with open(mod_file_path, "w+") as mod_file:
+                mod_file.write(mod_file_content)
+
+if __name__ == "__main__":
+    ensure_empty_paths()
+    compile_server_protos()

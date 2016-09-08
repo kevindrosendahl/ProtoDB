@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protodb.server;
+
+message Insert {
+  string database = 1;
+  string collection = 2;
+  repeated bytes datum = 3;
+}
+
+message InsertResponse {
+  repeated string database = 1;
+}

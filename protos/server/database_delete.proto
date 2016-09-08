@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protodb.server;
+
+message DeleteDatabase {
+  string name = 1;
+}
+
+message DeleteDatabaseResponse {
+}

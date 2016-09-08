@@ -1,0 +1,18 @@
+[package]
+name = "protodb"
+version = "0.0.1"
+authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
+
+[lib]
+name = "libprotodb"
+path = "src/lib.rs"
+
+[[bin]]
+name = "protod"
+path = "src/main.rs"
+
+[dependencies]
+lazy_static = "0.1"
+libc = "0.2"
+lmdb-rs = "0.7.2"
+protobuf = "1.0.24"

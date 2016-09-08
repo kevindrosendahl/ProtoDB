@@ -1,0 +1,98 @@
+syntax = "proto3";
+
+package protodb.server;
+
+// Use when supported
+// import "google/protobuf/field_mask.proto";
+
+message Find {
+  string database = 1;
+  string collection = 2;
+
+  Query query = 3;
+  Projection projection = 4;
+  Cascade cascade = 5;
+}
+
+message Query {
+  message QueryFieldOptions {
+    string field = 1;
+
+    enum Operator {
+      option allow_alias = true;
+      EQUAL = 0;
+      EQ = 0;
+
+      NOT_EQUAL = 1;
+      NE = 1;
+
+      LESS_THAN = 2;
+      LT = 2;
+
+      LESS_THAN_OR_EQUAL = 3;
+      LTE = 3;
+
+      GREATER_THAN = 4;
+      GT = 4;
+
+      GREATER_THAN_OR_EQUAL = 5;
+      GTE = 5;
+    }
+
+    Operator operator = 2;
+
+    oneof value {
+      float float_value = 3;
+      double double_value = 4;
+
+      int32 int32_value = 5;
+      int64 int64_value = 6;
+
+      uint32 uint32_value = 7;
+      uint64 uint64_value = 8;
+
+      sint32 sint32_value = 9;
+      sint64 sint64_value = 10;
+
+      fixed32 fixed32_value = 11;
+      fixed64 fixed64_value = 12;
+
+      sfixed32 sfixed32_value = 13;
+      sfixed64 sfixed64_value = 14;
+
+      bool bool_value = 15;
+
+      string string_value = 16;
+      bytes bytes_value = 17;
+    }
+  }
+
+  repeated QueryFieldOptions query_field_options = 18;
+}
+
+message Projection {
+  // Use when supported
+  // google.protobuf.FieldMask field = 1;
+  FieldMask fields = 1;
+}
+
+message Cascade {
+  enum CascadeMode {
+    NONE = 0;
+    FULL = 1;
+    ALL_BUT = 2;
+    ONLY = 3;
+  }
+
+  CascadeMode cascade_mode = 1;
+  FieldMask cascade_paths = 2;
+}
+
+// // Replace with "google/protobuf/descriptor.proto" when supported.
+message FieldMask {
+  repeated string paths = 1;
+}
+
+message FindResponse {
+  repeated string database = 1;
+}
