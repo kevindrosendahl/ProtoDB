@@ -75,7 +75,6 @@ impl Database {
 
         // Create Collection proto message.
         let mut collection_message = collection_proto::Collection::new();
-        collection_message.set__id(0u64);
         collection_message.set_name(collection_name.clone());
         collection_message.set_schema(schema.clone());
 
