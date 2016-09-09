@@ -2,10 +2,12 @@
 name = "protodb"
 version = "0.0.1"
 dependencies = [
+ "futures 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "futures-cpupool 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "grpc 0.0.2 (git+https://github.com/stepancheg/grpc-rust)",
  "lazy_static 0.1.16 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
  "lmdb-rs 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "protobuf 1.0.24 (registry+https://github.com/rust-lang/crates.io-index)",
+ "protobuf 1.0.24 (git+http://github.com/stepancheg/rust-protobuf)",
 ]
 
 [[package]]
@@ -18,13 +20,66 @@ dependencies = [
 
 [[package]]
 name = "bitflags"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "bitflags"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "cfg-if"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "crossbeam"
+version = "0.2.10"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "futures"
+version = "0.1.0"
+source = "git+https://github.com/alexcrichton/futures-rs#d5b6ff696c9912c0bf56b54715b3ee0bffba59fc"
+dependencies = [
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "futures-cpupool"
+version = "0.1.0"
+source = "git+https://github.com/alexcrichton/futures-rs#d5b6ff696c9912c0bf56b54715b3ee0bffba59fc"
+dependencies = [
+ "crossbeam 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "num_cpus 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "gcc"
 version = "0.3.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "grpc"
+version = "0.0.2"
+source = "git+https://github.com/stepancheg/grpc-rust#c6a559f969c1ebfb20dc4c14975ddffc93b08962"
+dependencies = [
+ "futures 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "futures-cpupool 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "protobuf 1.0.24 (git+http://github.com/stepancheg/rust-protobuf)",
+ "solicit 0.4.4 (git+http://github.com/mlalic/solicit.git)",
+ "tokio-core 0.1.0 (git+https://github.com/tokio-rs/tokio-core)",
+]
+
+[[package]]
+name = "hpack"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "kernel32-sys"
@@ -38,6 +93,11 @@ dependencies = [
 [[package]]
 name = "lazy_static"
 version = "0.1.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "lazycell"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -80,9 +140,69 @@ dependencies = [
 ]
 
 [[package]]
+name = "mio"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lazycell 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "miow 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "net2 0.2.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nix 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slab 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "miow"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "net2 0.2.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ws2_32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "net2"
+version = "0.2.26"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "cfg-if 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "kernel32-sys 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ws2_32-sys 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "nix"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "bitflags 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "cfg-if 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc_version 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "semver 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
+ "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "protobuf"
 version = "1.0.24"
-source = "registry+https://github.com/rust-lang/crates.io-index"
+source = "git+http://github.com/stepancheg/rust-protobuf#5b0c85d1fbfddf90815d93d3724451eecebc0870"
 
 [[package]]
 name = "regex"
@@ -102,6 +222,38 @@ version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "rustc_version"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "semver 0.1.20 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "scoped-tls"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "semver"
+version = "0.1.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "slab"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "solicit"
+version = "0.4.4"
+source = "git+http://github.com/mlalic/solicit.git#544faee3ffb2e4b46684c0a0ed5a21a4af0c7c54"
+dependencies = [
+ "hpack 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "thread-id"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -119,8 +271,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-core"
+version = "0.1.0"
+source = "git+https://github.com/tokio-rs/tokio-core#03ac1ea460c425d1f652afc0e917d746015cc202"
+dependencies = [
+ "futures 0.1.0 (git+https://github.com/alexcrichton/futures-rs)",
+ "log 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mio 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "scoped-tls 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "slab 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "utf8-ranges"
 version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "void"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -132,6 +301,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "winapi-build"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "ws2_32-sys"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "winapi 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "winapi-build 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [metadata]
 "checksum libc 0.2.15 (registry+https://github.com/rust-lang/crates.io-index)" = "23e3757828fa702a20072c37ff47938e9dd331b92fac6e223d26d4b7a55f7ee2"

@@ -1,15 +1,14 @@
 extern crate libprotodb;
+use libprotodb::server::grpc::sync::SyncServer;
+use libprotodb::server::protos::server_grpc::ProtoDBServer;
 
-use libprotodb::server::schema::Schema;
-use libprotodb::server::util;
-use libprotodb::server::protos::collection;
+use std::thread;
 
 fn main() {
-    let descriptor =
-        util::protobuf::descriptor_from_file_descriptor(collection::file_descriptor_proto(),
-                                                        "Collection")
-            .unwrap();
-    let schema = Schema::new(descriptor);
-    println!("Hello, world!");
-    println!("Schema: {:?}", schema);
+    println!("starting");
+    let _server = ProtoDBServer::new(8888, SyncServer);
+    println!("started");
+    loop {
+        thread::park();
+    }
 }

@@ -17,8 +17,6 @@
 #![allow(unused_imports)]
 #![allow(unused_results)]
 
-extern crate protobuf;
-
 use protobuf::Message as Message_imported_for_functions;
 use protobuf::ProtobufEnum as ProtobufEnum_imported_for_functions;
 

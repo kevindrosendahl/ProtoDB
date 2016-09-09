@@ -12,7 +12,9 @@ name = "protod"
 path = "src/main.rs"
 
 [dependencies]
+futures = { git = "https://github.com/alexcrichton/futures-rs" }
+futures-cpupool = { git = "https://github.com/alexcrichton/futures-rs" }
+grpc = { git  = "https://github.com/stepancheg/grpc-rust" }
 lazy_static = "0.1"
-libc = "0.2"
 lmdb-rs = "0.7.2"
-protobuf = "1.0.24"
+protobuf = { git = "http://github.com/stepancheg/rust-protobuf" }
