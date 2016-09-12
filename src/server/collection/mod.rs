@@ -13,6 +13,7 @@ use super::util::encoding::{MAX_UVARINT_LEN, encode_uvarint_into, decode_uvarint
 
 use protobuf::descriptor;
 
+use std::ops::Range;
 use std::sync;
 
 pub struct Collection {
@@ -25,7 +26,11 @@ pub struct Collection {
 }
 
 impl Collection {
-    pub fn new(id: u64, name: String, db_id: u64, descriptor: descriptor::DescriptorProto) -> Result<Collection> {
+    pub fn new(id: u64,
+               name: String,
+               db_id: u64,
+               descriptor: descriptor::DescriptorProto)
+               -> Result<Collection> {
         let mut buf = [0u8; 18];
         let mut key_len = try!(encode_uvarint_into(db_id, &mut buf));
         key_len += try!(encode_uvarint_into(id, &mut buf[key_len..]));
@@ -63,7 +68,7 @@ impl Collection {
         })
     }
 
-    fn key_range(&self, start_obj_id: u64, end_obj_id: u64) -> Result<(Vec<u8>, Vec<u8>)> {
+    fn key_range(&self, range: &Range<u64>) -> Result<(Vec<u8>, Vec<u8>)> {
         let max_key_len = (3 * MAX_UVARINT_LEN) as usize;
         let mut start_key = Vec::with_capacity(max_key_len);
         let mut end_key = Vec::with_capacity(max_key_len);
@@ -81,8 +86,8 @@ impl Collection {
                 Ok(key_prefix_len + key_suffix_len)
             };
 
-            try!(append_obj_key_to_buf(start_obj_id, &mut start_key));
-            try!(append_obj_key_to_buf(end_obj_id, &mut end_key));
+            try!(append_obj_key_to_buf(range.start, &mut start_key));
+            try!(append_obj_key_to_buf(range.end, &mut end_key));
         }
 
         Ok((start_key, end_key))

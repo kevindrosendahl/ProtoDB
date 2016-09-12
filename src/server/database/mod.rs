@@ -38,7 +38,7 @@ pub struct Database {
 
 impl Database {
     pub fn new(name: String, id: u64, lmdb_database: &LmdbDatabase) -> Result<Database> {
-        let mut collections: HashMap<String, Collection> = HashMap::new();
+        let collections: HashMap<String, Collection> = HashMap::new();
 
         let mut db = Database {
             id: id,
@@ -57,13 +57,17 @@ impl Database {
     }
 
     pub fn create_collection(&mut self,
-                             collection_id: u64,
+                             mut collection_id: u64,
                              collection_name: String,
                              schema: descriptor::DescriptorProto,
                              lmdb_database: &LmdbDatabase)
                              -> Result<()> {
         if self.collections.contains_key(&collection_name) {
             return Err(DatabaseError::CollectionAlreadyExists);
+        }
+
+        if collection_id == 0 {
+            collection_id = self.next_collection_id();
         }
 
         // Add to database's collection map.
@@ -104,6 +108,20 @@ impl Database {
         }
 
         insert_result
+    }
+
+    fn next_collection_id(&self) -> u64 {
+        let collection_id: u64;
+
+        let mut collection_id_counter = self.collection_id_counter
+            .write()
+            .expect(format!("lock for database {} collection_id_counter poisoned",
+                            self.name)
+                .as_str());
+        collection_id = *collection_id_counter;
+        *collection_id_counter += 1;
+
+        collection_id
     }
 
     pub fn get_collection(&self, name: String) -> Option<&Collection> {
