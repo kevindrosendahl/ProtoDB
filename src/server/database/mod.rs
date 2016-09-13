@@ -15,7 +15,7 @@ extern crate lmdb_rs as lmdb;
 use self::lmdb::Database as LmdbDatabase;
 
 use std::collections::HashMap;
-use std::sync::RwLock;
+use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub const COLLECTION_METADATA_COLLECTION: &'static str = "__collections";
 
@@ -32,24 +32,24 @@ lazy_static! {
 pub struct Database {
     id: u64,
     name: String,
-    collections: HashMap<String, Collection>,
+    collections: RwLock<HashMap<String, Collection>>,
     collection_id_counter: RwLock<u64>,
 }
 
 impl Database {
-    pub fn new(name: String, id: u64, lmdb_database: &LmdbDatabase) -> Result<Database> {
+    pub fn new(name: &str, id: u64, lmdb_database: &LmdbDatabase) -> Result<Database> {
         let collections: HashMap<String, Collection> = HashMap::new();
 
         let mut db = Database {
             id: id,
-            name: name,
-            collections: collections,
+            name: String::from(name),
+            collections: RwLock::new(collections),
             collection_id_counter: RwLock::new(32), // reserve first 32 for internal usage.
         };
 
         // Create the database's collection metadata collection.
         try!(db.create_collection(0,
-                                  String::from(COLLECTION_METADATA_COLLECTION),
+                                  COLLECTION_METADATA_COLLECTION,
                                   (*COLLECTION_DESCRIPTOR).clone(),
                                   lmdb_database));
 
@@ -58,11 +58,11 @@ impl Database {
 
     pub fn create_collection(&mut self,
                              mut collection_id: u64,
-                             collection_name: String,
+                             collection_name: &str,
                              schema: descriptor::DescriptorProto,
                              lmdb_database: &LmdbDatabase)
                              -> Result<()> {
-        if self.collections.contains_key(&collection_name) {
+        if self.get_collections().contains_key(collection_name) {
             return Err(DatabaseError::CollectionAlreadyExists);
         }
 
@@ -72,14 +72,14 @@ impl Database {
 
         // Add to database's collection map.
         let collection = try!(Collection::new(collection_id,
-                                              collection_name.clone(),
+                                              String::from(collection_name),
                                               self.id,
                                               schema.clone()));
-        self.collections.insert(collection_name.clone(), collection);
+        self.get_mut_collections().insert(String::from(collection_name), collection);
 
         // Create Collection proto message.
         let mut collection_message = collection_proto::Collection::new();
-        collection_message.set_name(collection_name.clone());
+        collection_message.set_name(String::from(collection_name));
         collection_message.set_schema(schema.clone());
 
         // Get serialized version of Collection proto message.
@@ -91,11 +91,11 @@ impl Database {
         {
             // get_collection will borrow self until the end of its
             // scope, so need to do this in its own block.
-            let collection_metadata_collection =
-                self.get_collection(String::from(COLLECTION_METADATA_COLLECTION))
-                    .expect(format!("{} collection cannot be found",
-                                    COLLECTION_METADATA_COLLECTION)
-                        .as_str());
+            let collections = self.get_collections();
+            let collection_metadata_collection = collections.get(COLLECTION_METADATA_COLLECTION)
+                .expect(format!("{} collection cannot be found",
+                                COLLECTION_METADATA_COLLECTION)
+                    .as_str());
 
             let collection_data = &mut &collection_message_buf[..];
             insert_result = collection_metadata_collection.insert(collection_data, lmdb_database)
@@ -104,7 +104,7 @@ impl Database {
 
         // Clean up if insert failed.
         if insert_result.is_err() {
-            self.collections.remove(&collection_name);
+            self.get_mut_collections().remove(collection_name);
         }
 
         insert_result
@@ -124,8 +124,16 @@ impl Database {
         collection_id
     }
 
-    pub fn get_collection(&self, name: String) -> Option<&Collection> {
-        self.collections.get(&name)
+    pub fn get_collections(&self) -> RwLockReadGuard<HashMap<String, Collection>> {
+        self.collections
+            .read()
+            .expect(format!("lock for database {} collections poisoned", self.name).as_str())
+    }
+
+    pub fn get_mut_collections(&self) -> RwLockWriteGuard<HashMap<String, Collection>> {
+        self.collections
+            .write()
+            .expect(format!("lock for database {} collections poisoned", self.name).as_str())
     }
 }
 
@@ -157,7 +165,7 @@ mod tests {
         {
             let db = txn.bind(&db_handle);
 
-            database = Database::new(String::from("test_db"), 0, &db)
+            database = Database::new("test_db", 0, &db)
                 .expect("Database::new failed");
         }
 
@@ -166,11 +174,11 @@ mod tests {
         let reader = env.get_reader().unwrap();
         let db = reader.bind(&db_handle);
 
-        let collections_collection =
-            database.get_collection(String::from(COLLECTION_METADATA_COLLECTION))
-                .expect(format!("{} collection cannot be found",
-                                COLLECTION_METADATA_COLLECTION)
-                    .as_str());
+        let collections = database.get_collections();
+        let collections_collection = collections.get(COLLECTION_METADATA_COLLECTION)
+            .expect(format!("{} collection cannot be found",
+                            COLLECTION_METADATA_COLLECTION)
+                .as_str());
 
         let collection_data = collections_collection.find(1, &db)
             .expect("collections database obj_id 1 find failed")
