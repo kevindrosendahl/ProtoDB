@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protodb.server;
+
+message Database {
+  uint64 _id = 1;
+  string name = 2;
+}
