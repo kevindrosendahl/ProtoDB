@@ -25,6 +25,7 @@ use self::lmdb::{Database as LmdbDatabase, DbFlags as LmdbDbFlags, EnvBuilder as
                  Environment as LmdbEnvironment};
 
 use std::collections::HashMap;
+use std::option::Option;
 use std::path::Path;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
@@ -40,21 +41,23 @@ lazy_static! {
     };
 }
 
-struct ProtoDBServer {
+pub struct Server {
     databases: RwLock<HashMap<String, Database>>,
+    database_id_counter: RwLock<u64>,
     lmdb_environment: LmdbEnvironment,
 }
 
-impl ProtoDBServer {
-    pub fn new(db_path: &Path) -> ProtoDBServer {
+impl Server {
+    pub fn new(db_path: &Path) -> Server {
         let databases: HashMap<String, Database> = HashMap::new();
 
         let lmdb_environment = LmdbEnvBuilder::new()
             .open(db_path, 0o777)
             .expect(format!("unable to open LMDB database at {:?}", db_path).as_str());
 
-        let protodb_server = ProtoDBServer {
+        let protodb_server = Server {
             databases: RwLock::new(databases),
+            database_id_counter: RwLock::new(32), // reserve first 32 for internal usage.
             lmdb_environment: lmdb_environment,
         };
 
@@ -72,50 +75,28 @@ impl ProtoDBServer {
 
         {
             let lmdb_db = txn.bind(&lmdb_db_handle);
-            {
-                if let Some(db) = self.get_mut_databases().get_mut(METADATA_DATABASE) {
-                    if let Some(collection) = db.get_collections()
-                        .get(DATABASE_METADATA_COLLECTION) {
-                        self.process_database_metadata_collection(collection, &lmdb_db);
-                    }
-
-                    self.populate_database_metadata_collection(db, &lmdb_db);
-                }
-
-                self.populate_metadata_database(&lmdb_db);
-            }
+            self.populate_metadata_database(&lmdb_db);
+            self.process_database_metadata_collection(&lmdb_db);
         }
 
         txn.commit().expect("unable to commit create_database");
     }
 
     fn populate_metadata_database(&self, lmdb_db: &LmdbDatabase) {
-        let mut metadata_database =
-            self.create_database_with_txn(METADATA_DATABASE, METADATA_DATABASE_DB_ID, lmdb_db)
-                .unwrap();
-
-        self.populate_database_metadata_collection(&mut metadata_database, lmdb_db);
+        self.create_database_with_txn(METADATA_DATABASE, METADATA_DATABASE_DB_ID, lmdb_db)
+            .expect(format!("failed to create {} database", METADATA_DATABASE).as_str());
+        self.populate_database_metadata_collection(lmdb_db);
     }
 
-    fn process_database_metadata_collection(&self,
-                                            collection: &Collection,
-                                            lmdb_db: &LmdbDatabase) {
-        if let Some(databases) = collection.find_all(&lmdb_db)
-            .expect("failed to read metadata collection") {
-            for database_data in databases {
-                let mut database_data_buf = CodedInputStream::from_bytes(database_data.as_slice());
+    fn populate_database_metadata_collection(&self, lmdb_db: &LmdbDatabase) {
+        let mut databases = self.get_mut_databases();
+        let mut metadata_database = databases.get_mut(METADATA_DATABASE)
+            .expect(format!("could not retrieve {} while trying to populate {}",
+                            METADATA_DATABASE,
+                            DATABASE_METADATA_COLLECTION)
+                .as_str());
 
-                let mut database_message = database_proto::Database::new();
-                database_message.merge_from(&mut database_data_buf);
-                self.create_database(database_message.get_name(), database_message.get__id());
-            }
-        }
-    }
-
-    fn populate_database_metadata_collection(&self,
-                                             metadata_database: &mut Database,
-                                             lmdb_db: &LmdbDatabase) {
-        match metadata_database.create_collection(METADATA_DATABASE_DB_ID,
+        match metadata_database.create_collection(0,
                                                   DATABASE_METADATA_COLLECTION,
                                                   (*DATABASE_DESCRIPTOR).clone(),
                                                   lmdb_db) {
@@ -142,18 +123,65 @@ impl ProtoDBServer {
             .unwrap();
     }
 
+    fn process_database_metadata_collection(&self, lmdb_db: &LmdbDatabase) {
+        let databases_data_option: Option<Vec<Vec<u8>>>;
+        {
+            let databases = self.get_databases();
+            let metadata_database = databases.get(METADATA_DATABASE)
+                .expect(format!("Unable to find {} database while attempting to process \
+                                 database metadata collection",
+                                METADATA_DATABASE)
+                    .as_str());
+
+            let collections = metadata_database.get_collections();
+            let database_metadata_collection = collections.get(DATABASE_METADATA_COLLECTION)
+                .expect(format!("Unable to find {} collection while attempting to process \
+                                 database metadata collection",
+                                DATABASE_METADATA_COLLECTION)
+                    .as_str());
+
+            databases_data_option = database_metadata_collection.find_all(&lmdb_db)
+                .expect("failed to read metadata collection");
+        }
+
+        if let Some(databases_data) = databases_data_option {
+            for database_data in databases_data {
+                let mut database_data_buf = CodedInputStream::from_bytes(database_data.as_slice());
+
+                let mut database_message = database_proto::Database::new();
+                database_message.merge_from(&mut database_data_buf)
+                    .expect("Unable to create database object from proto while attempting to \
+                             process database metadata collection");
+
+                match self.create_database_with_txn(database_message.get_name(),
+                                                    database_message.get__id(),
+                                                    lmdb_db) {
+                    Ok(()) => {}
+                    Err(err) => {
+                        match err {
+                            ServerError::DatabaseAlreadyExists => {}
+                            _ => panic!(err.to_string()),
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     pub fn create_database(&self, name: &str, db_id: u64) -> Result<()> {
+        if self.get_databases().contains_key(name) {
+            return Err(ServerError::DatabaseAlreadyExists);
+        }
+
         let lmdb_db_handle = self.lmdb_environment
             .get_default_db(LmdbDbFlags::empty())
             .expect("unable to get default LMDB db");
 
         let txn = self.lmdb_environment.new_transaction().expect("unable to get lmdb transaction");
 
-        let database: Database;
         {
             let lmdb_db = txn.bind(&lmdb_db_handle);
-
-            database = try!(self.create_database_with_txn(name, db_id, &lmdb_db));
+            try!(self.create_database_with_txn(name, db_id, &lmdb_db));
         }
 
         txn.commit().expect("unable to commit create_database");
@@ -164,8 +192,14 @@ impl ProtoDBServer {
                                 name: &str,
                                 db_id: u64,
                                 lmdb_db: &LmdbDatabase)
-                                -> Result<Database> {
-        Ok(try!(Database::new(name, db_id, lmdb_db)))
+                                -> Result<()> {
+        if self.get_databases().contains_key(name) {
+            return Err(ServerError::DatabaseAlreadyExists);
+        }
+
+        let database = try!(Database::new(name, db_id, lmdb_db));
+        self.get_mut_databases().insert(String::from(name), database);
+        Ok(())
     }
 
     pub fn get_databases(&self) -> RwLockReadGuard<HashMap<String, Database>> {
@@ -174,5 +208,66 @@ impl ProtoDBServer {
 
     pub fn get_mut_databases(&self) -> RwLockWriteGuard<HashMap<String, Database>> {
         self.databases.write().expect("lock for databases poisoned")
+    }
+
+    fn next_database_id(&self) -> u64 {
+        let database_id: u64;
+
+        let mut collection_id_counter = self.database_id_counter
+            .write()
+            .expect("lock for database_id_counter poisoned");
+        database_id = *collection_id_counter;
+        *collection_id_counter += 1;
+
+        database_id
+    }
+
+    pub fn insert(&self,
+                  database_name: &str,
+                  collection_name: &str,
+                  data: &mut Vec<u8>)
+                  -> Result<()> {
+        let lmdb_db_handle = self.lmdb_environment
+            .get_default_db(LmdbDbFlags::empty())
+            .expect("unable to get default LMDB db");
+
+        let txn = self.lmdb_environment.new_transaction().expect("unable to get lmdb transaction");
+
+        let databases = self.get_databases();
+        let database = try!(databases.get(database_name).ok_or(ServerError::DatabaseDoesNotExist));
+
+        let collections = database.get_collections();
+        let collection = try!(collections.get(collection_name)
+            .ok_or(ServerError::CollectionDoesNotExist));
+
+        {
+            let lmdb_db = txn.bind(&lmdb_db_handle);
+            try!(collection.insert(&mut data.as_slice(), &lmdb_db));
+        }
+
+        txn.commit().expect("unable to commit create_database");
+        Ok(())
+    }
+
+    pub fn find(&self,
+                database_name: &str,
+                collection_name: &str,
+                obj_id: u64)
+                -> Result<Option<Vec<u8>>> {
+        let lmdb_db_handle = self.lmdb_environment
+            .get_default_db(LmdbDbFlags::empty())
+            .expect("unable to get default LMDB db");
+
+        let read_txn = self.lmdb_environment.get_reader().expect("unable to get lmdb reader");
+
+        let databases = self.get_databases();
+        let database = try!(databases.get(database_name).ok_or(ServerError::DatabaseDoesNotExist));
+
+        let collections = database.get_collections();
+        let collection = try!(collections.get(collection_name)
+            .ok_or(ServerError::CollectionDoesNotExist));
+
+        let lmdb_db = read_txn.bind(&lmdb_db_handle);
+        Ok(try!(collection.find(obj_id, &lmdb_db)))
     }
 }

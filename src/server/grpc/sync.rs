@@ -1,19 +1,33 @@
+use ::server::{Server, ServerError};
+
 use ::server::protos::server_grpc::*;
+use ::server::protos::database_create::{CreateDatabaseResponse, CreateDatabaseResponse_FailureCode};
 
 use ::grpc::result::GrpcResult;
+use ::grpc::error::GrpcError;
 
-pub struct SyncServer;
+use std::error::Error;
 
-impl ProtoDB for SyncServer {
+impl ProtoDB for Server {
     fn CreateDatabase
         (&self,
          p: ::server::protos::database_create::CreateDatabase)
          -> ::grpc::result::GrpcResult<::server::protos::database_create::CreateDatabaseResponse> {
-        println!("Got request to create database: {}", p.get_name());
-        let mut r = ::server::protos::database_create::CreateDatabaseResponse::new();
-        r.set_success(false);
-        r.set_failure_code(::server::protos::database_create::CreateDatabaseResponse_FailureCode::INVALID_DATABASE_NAME);
-        Ok(r)
+
+        let mut response = CreateDatabaseResponse::new();
+        if let Err(err) = self.create_database(p.get_name(), self.next_database_id()) {
+            match err {
+                ServerError::DatabaseAlreadyExists => {
+                    response.set_success(false);
+                    response.set_failure_code(CreateDatabaseResponse_FailureCode::DATABASE_ALREADY_EXISTS);
+                }
+                _ => return Err(GrpcError::Panic(String::from(err.description())))
+            }
+        } else {
+            response.set_success(true)
+        }
+
+        Ok(response)
     }
 
     fn DeleteDatabase

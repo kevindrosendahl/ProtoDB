@@ -10,11 +10,13 @@ use super::util::protobuf::descriptor_from_file_descriptor;
 
 use ::protobuf::descriptor;
 use ::protobuf::Message;
+use ::protobuf::stream::CodedInputStream;
 
 extern crate lmdb_rs as lmdb;
 use self::lmdb::Database as LmdbDatabase;
 
 use std::collections::HashMap;
+use std::option::Option;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub const COLLECTION_METADATA_COLLECTION: &'static str = "__collections";
@@ -37,7 +39,7 @@ pub struct Database {
 }
 
 impl Database {
-    pub fn new(name: &str, id: u64, lmdb_database: &LmdbDatabase) -> Result<Database> {
+    pub fn new(name: &str, id: u64, lmdb_db: &LmdbDatabase) -> Result<Database> {
         let collections: HashMap<String, Collection> = HashMap::new();
 
         let mut db = Database {
@@ -48,10 +50,12 @@ impl Database {
         };
 
         // Create the database's collection metadata collection.
-        try!(db.create_collection(0,
+        try!(db.create_collection(1,
                                   COLLECTION_METADATA_COLLECTION,
                                   (*COLLECTION_DESCRIPTOR).clone(),
-                                  lmdb_database));
+                                  lmdb_db));
+
+        try!(db.process_collection_metadata_collection(lmdb_db));
 
         Ok(db)
     }
@@ -60,7 +64,7 @@ impl Database {
                              mut collection_id: u64,
                              collection_name: &str,
                              schema: descriptor::DescriptorProto,
-                             lmdb_database: &LmdbDatabase)
+                             lmdb_db: &LmdbDatabase)
                              -> Result<()> {
         if self.get_collections().contains_key(collection_name) {
             return Err(DatabaseError::CollectionAlreadyExists);
@@ -71,6 +75,8 @@ impl Database {
         }
 
         // Add to database's collection map.
+        // This has to go before inserting the collection into the
+        // COLLECTION_METADATA_COLLECTION so we can boostrap that collection.
         let collection = try!(Collection::new(collection_id,
                                               String::from(collection_name),
                                               self.id,
@@ -98,7 +104,7 @@ impl Database {
                     .as_str());
 
             let collection_data = &mut &collection_message_buf[..];
-            insert_result = collection_metadata_collection.insert(collection_data, lmdb_database)
+            insert_result = collection_metadata_collection.insert(collection_data, lmdb_db)
                 .map_err(|err| DatabaseError::CollectionError(err));
         }
 
@@ -122,6 +128,47 @@ impl Database {
         *collection_id_counter += 1;
 
         collection_id
+    }
+
+    fn process_collection_metadata_collection(&mut self, lmdb_db: &LmdbDatabase) -> Result<()> {
+        let collections_data_option: Option<Vec<Vec<u8>>>;
+        {
+            let collections = self.get_collections();
+            let collection_metadata_collection = collections.get(COLLECTION_METADATA_COLLECTION)
+                .expect(format!("{} collection cannot be found",
+                                COLLECTION_METADATA_COLLECTION)
+                    .as_str());
+
+            collections_data_option = collection_metadata_collection.find_all(lmdb_db)
+                .expect(format!("failed to read {} database {} collection",
+                                self.name,
+                                COLLECTION_METADATA_COLLECTION)
+                    .as_str());
+        }
+
+        if let Some(collections_data) = collections_data_option {
+            for collection_data in collections_data {
+                let mut collection_data_buf =
+                    CodedInputStream::from_bytes(collection_data.as_slice());
+
+                let mut collection_message = collection_proto::Collection::new();
+                collection_message.merge_from(&mut collection_data_buf);
+                match self.create_collection(collection_message.get__id(),
+                                             collection_message.get_name(),
+                                             collection_message.get_schema().clone(),
+                                             lmdb_db) {
+                    Ok(()) => {}
+                    Err(err) => {
+                        match err {
+                            DatabaseError::CollectionAlreadyExists => {}
+                            _ => return Err(err),
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     pub fn get_collections(&self) -> RwLockReadGuard<HashMap<String, Collection>> {
@@ -165,8 +212,7 @@ mod tests {
         {
             let db = txn.bind(&db_handle);
 
-            database = Database::new("test_db", 0, &db)
-                .expect("Database::new failed");
+            database = Database::new("test_db", 0, &db).expect("Database::new failed");
         }
 
         txn.commit().expect("commit failed");

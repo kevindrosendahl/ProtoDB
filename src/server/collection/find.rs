@@ -28,7 +28,7 @@ impl Find for Collection {
 
         // For each key found, if it is the marker key then encode the obj_id and its
         // tag, otherwise encode the tag and column value .
-        for result in try!(lmdb_database.keyrange_from_to(&range.start, &range.end)) {
+        for result in try!(lmdb_database.keyrange_from_to(&start_key, &end_key)) {
             encode_buf.clear();
 
             let decoded_key = try!(self.decode_key(result.get_key()));
