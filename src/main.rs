@@ -1,6 +1,5 @@
 extern crate libprotodb;
 use libprotodb::server::Server;
-// use libprotodb::server::grpc::sync::*;
 use libprotodb::server::protos::server_grpc::ProtoDBServer;
 
 use std::path::Path;

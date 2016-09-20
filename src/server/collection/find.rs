@@ -62,7 +62,7 @@ impl Find for Collection {
                 if decoded_key.obj_id != current_obj_id {
                     if obj_data.len() > 0 {
                         data.push(obj_data.clone());
-                        data.clear();
+                        obj_data.clear();
                     }
                     current_obj_id = decoded_key.obj_id;
                 }

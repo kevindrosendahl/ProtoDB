@@ -156,7 +156,7 @@ mod tests {
 
             let collection = Collection::new(2, String::from("testcoll"), 1, descriptor).unwrap();
             let mut data: &[u8] = &[8, 0, 112, 1];
-            collection.insert(&mut data, &db).expect("insert failed");
+            collection.insert(&mut data, false, &db).expect("insert failed");
         }
 
         txn.commit().expect("commit failed");
@@ -188,7 +188,7 @@ mod tests {
         {
             let db = txn.bind(&db_handle);
             let mut data: &[u8] = &[8, 0, 112, 1];
-            collection.insert(&mut data, &db).expect("insert failed");
+            collection.insert(&mut data, false, &db).expect("insert failed");
         }
 
         txn.commit().expect("commit failed");

@@ -20,6 +20,7 @@ use std::option::Option;
 use std::sync::{RwLock, RwLockReadGuard, RwLockWriteGuard};
 
 pub const COLLECTION_METADATA_COLLECTION: &'static str = "__collections";
+pub const NUM_METADATA_COLLECTIONS: u64 = 32;
 
 lazy_static! {
     // Going to need the DescriptorProto of the Collection proto
@@ -33,7 +34,7 @@ lazy_static! {
 
 pub struct Database {
     id: u64,
-    name: String,
+    pub name: String,
     collections: RwLock<HashMap<String, Collection>>,
     collection_id_counter: RwLock<u64>,
 }
@@ -46,13 +47,14 @@ impl Database {
             id: id,
             name: String::from(name),
             collections: RwLock::new(collections),
-            collection_id_counter: RwLock::new(32), // reserve first 32 for internal usage.
+            collection_id_counter: RwLock::new(NUM_METADATA_COLLECTIONS + 1),
         };
 
         // Create the database's collection metadata collection.
         try!(db.create_collection(1,
                                   COLLECTION_METADATA_COLLECTION,
                                   (*COLLECTION_DESCRIPTOR).clone(),
+                                  true,
                                   lmdb_db));
 
         try!(db.process_collection_metadata_collection(lmdb_db));
@@ -64,15 +66,25 @@ impl Database {
                              mut collection_id: u64,
                              collection_name: &str,
                              schema: descriptor::DescriptorProto,
+                             insert_into_lmdb: bool,
                              lmdb_db: &LmdbDatabase)
-                             -> Result<()> {
+                             -> Result<u64> {
         if self.get_collections().contains_key(collection_name) {
             return Err(DatabaseError::CollectionAlreadyExists);
         }
 
         if collection_id == 0 {
+            if !insert_into_lmdb {
+                panic!("collection_id 0 passed to db.create_collection but insert_into_lmdb not \
+                        set");
+            }
             collection_id = self.next_collection_id();
-        }
+        } else {
+            if insert_into_lmdb && collection_id > NUM_METADATA_COLLECTIONS {
+                panic!("collection_id {} passed to db.create_collection but insert_into_lmdb set",
+                       collection_id);
+            }
+        };
 
         // Add to database's collection map.
         // This has to go before inserting the collection into the
@@ -83,8 +95,13 @@ impl Database {
                                               schema.clone()));
         self.get_mut_collections().insert(String::from(collection_name), collection);
 
+        if !insert_into_lmdb {
+            return Ok(collection_id);
+        }
+
         // Create Collection proto message.
         let mut collection_message = collection_proto::Collection::new();
+        collection_message.set__id(collection_id);
         collection_message.set_name(String::from(collection_name));
         collection_message.set_schema(schema.clone());
 
@@ -93,7 +110,7 @@ impl Database {
 
         // Attempt to insert Collection proto message into
         // collection metadata collection.
-        let insert_result: Result<()>;
+        let insert_result: Result<u64>;
         {
             // get_collection will borrow self until the end of its
             // scope, so need to do this in its own block.
@@ -104,8 +121,9 @@ impl Database {
                     .as_str());
 
             let collection_data = &mut &collection_message_buf[..];
-            insert_result = collection_metadata_collection.insert(collection_data, lmdb_db)
-                .map_err(|err| DatabaseError::CollectionError(err));
+            insert_result =
+                collection_metadata_collection.insert(collection_data, true, lmdb_db)
+                    .map_err(|err| DatabaseError::CollectionError(err));
         }
 
         // Clean up if insert failed.
@@ -156,8 +174,9 @@ impl Database {
                 match self.create_collection(collection_message.get__id(),
                                              collection_message.get_name(),
                                              collection_message.get_schema().clone(),
+                                             false,
                                              lmdb_db) {
-                    Ok(()) => {}
+                    Ok(_) => {}
                     Err(err) => {
                         match err {
                             DatabaseError::CollectionAlreadyExists => {}

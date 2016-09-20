@@ -9,14 +9,25 @@ extern crate lmdb_rs as lmdb;
 use self::lmdb::Database as LmdbDatabase;
 
 pub trait Insert {
-    fn insert<'a>(&'a self, &'a mut &'a [u8], &LmdbDatabase) -> Result<()>;
+    fn insert<'a>(&'a self, &'a mut &'a [u8], bool, &LmdbDatabase) -> Result<u64>;
 }
 
-impl Insert for Collection {
-    fn insert<'a>(&'a self, data: &'a mut &'a [u8], database: &LmdbDatabase) -> Result<()> {
-        let inserts = try!(self.get_inserts(data));
 
-        let obj_id = self.next_obj_id();
+// TODO: refactor into insert, and insert_with_id that both bottom out to this insert
+//       so you don't always have to pass an allow_set_obj_id val when calling insert.
+impl Insert for Collection {
+    fn insert<'a>(&'a self,
+                  data: &'a mut &'a [u8],
+                  allow_set_obj_id: bool,
+                  database: &LmdbDatabase)
+                  -> Result<u64> {
+        let (inserts, obj_id_option) = try!(self.get_inserts(data, allow_set_obj_id));
+
+        let obj_id = if allow_set_obj_id {
+            obj_id_option.expect("allow_set_obj_id set but no obj_id included")
+        } else {
+            self.next_obj_id()
+        };
         let mut buf = [0u8; (2 * MAX_UVARINT_LEN) as usize];
         let obj_id_len = try!(encode_uvarint_into(obj_id, &mut buf));
 
@@ -32,17 +43,24 @@ impl Insert for Collection {
             try!(database.set(&key, &insert.data));
         }
 
-        Ok(())
+        Ok(obj_id)
     }
 }
 
 trait GetInserts {
-    fn get_inserts<'a>(&'a self, data: &'a mut &'a [u8]) -> Result<Vec<InsertKVPair>>;
+    fn get_inserts<'a>(&'a self,
+                       &'a mut &'a [u8],
+                       bool)
+                       -> Result<(Vec<InsertKVPair>, Option<u64>)>;
 }
 
 impl GetInserts for Collection {
-    fn get_inserts<'a>(&'a self, data: &'a mut &'a [u8]) -> Result<Vec<InsertKVPair>> {
+    fn get_inserts<'a>(&'a self,
+                       data: &'a mut &'a [u8],
+                       allow_set_obj_id: bool)
+                       -> Result<(Vec<InsertKVPair>, Option<u64>)> {
         let mut inserts: Vec<InsertKVPair> = Vec::with_capacity(self.schema.num_fields);
+        let mut obj_id_option = None;
 
         for result in self.schema.decode_object(data) {
             match result {
@@ -54,7 +72,11 @@ impl GetInserts for Collection {
                                 &mut ::protobuf::CodedInputStream::new(&mut &field_data[..])));
 
                         if id_field_val != 0 {
-                            return Err(CollectionError::IdFieldSetOnInsert);
+                            if allow_set_obj_id {
+                                obj_id_option = Some(id_field_val)
+                            } else {
+                                return Err(CollectionError::IdFieldSetOnInsert);
+                            }
                         }
 
                         continue;
@@ -69,7 +91,7 @@ impl GetInserts for Collection {
             } // end match
         } // end for
 
-        Ok(inserts)
+        Ok((inserts, obj_id_option))
     }
 }
 
