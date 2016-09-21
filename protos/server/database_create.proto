@@ -9,8 +9,8 @@ message CreateDatabase {
 message CreateDatabaseResponse {
   bool success = 1;
   enum FailureCode {
-    INVALID_DATABASE_NAME = 0;
-    DATABASE_ALREADY_EXISTS = 1;
+    INVALID_DB = 0;
+    DB_EXISTS = 1;
   }
   FailureCode failure_code = 2;
 }

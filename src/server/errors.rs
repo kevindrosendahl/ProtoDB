@@ -11,6 +11,7 @@ pub enum ServerError {
     DatabaseDoesNotExist,
     DatabaseAlreadyExists,
     CollectionDoesNotExist,
+    CollectionAlreadyExists,
 }
 
 impl fmt::Display for ServerError {
@@ -27,6 +28,7 @@ impl error::Error for ServerError {
             &ServerError::DatabaseDoesNotExist => "database does not exist",
             &ServerError::DatabaseAlreadyExists => "database already exists",
             &ServerError::CollectionDoesNotExist => "collection does not exist",
+            &ServerError::CollectionAlreadyExists => "collection already exists",
         }
     }
 
@@ -37,13 +39,17 @@ impl error::Error for ServerError {
             &ServerError::DatabaseDoesNotExist => None,
             &ServerError::DatabaseAlreadyExists => None,
             &ServerError::CollectionDoesNotExist => None,
+            &ServerError::CollectionAlreadyExists => None,
         }
     }
 }
 
 impl From<DatabaseError> for ServerError {
     fn from(err: DatabaseError) -> ServerError {
-        ServerError::DatabaseError(err)
+        match err {
+            DatabaseError::CollectionAlreadyExists => ServerError::CollectionAlreadyExists,
+            _ => ServerError::DatabaseError(err),
+        }
     }
 }
 

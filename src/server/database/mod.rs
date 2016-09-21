@@ -201,6 +201,14 @@ impl Database {
             .write()
             .expect(format!("lock for database {} collections poisoned", self.name).as_str())
     }
+
+    pub fn get_collection_names(&self) -> Vec<String> {
+        self.get_collections().values().map(|collection| collection.name.clone()).collect()
+    }
+
+    pub fn collection_exists(&self, name: &str) -> bool {
+        self.get_collections().contains_key(name)
+    }
 }
 
 #[cfg(test)]

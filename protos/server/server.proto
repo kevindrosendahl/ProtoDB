@@ -12,6 +12,9 @@ import "server/collection_delete.proto";
 import "server/collection_list.proto";
 import "server/collection_define.proto";
 
+import "server/find.proto";
+import "server/insert.proto";
+
 service ProtoDB {
   // Database commands
   rpc CreateDatabase (protodb.server.CreateDatabase) returns (protodb.server.CreateDatabaseResponse);
@@ -23,5 +26,8 @@ service ProtoDB {
   rpc CreateCollection (protodb.server.CreateCollection) returns (protodb.server.CreateCollectionResponse);
   rpc DeleteCollection (protodb.server.DeleteCollection) returns (protodb.server.DeleteCollectionResponse);
   rpc ListCollections (protodb.server.ListCollections) returns (protodb.server.ListCollectionsResponse);
-  rpc DefineCollection(protodb.server.DefineCollection) returns (protodb.server.DefineCollectionResponse);
+  rpc DefineCollection (protodb.server.DefineCollection) returns (protodb.server.DefineCollectionResponse);
+
+  rpc Find (protodb.server.Find) returns (protodb.server.FindResponse);
+  rpc Insert (protodb.server.Insert) returns (protodb.server.InsertResponse);
 }

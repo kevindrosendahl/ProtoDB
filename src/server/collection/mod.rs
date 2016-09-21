@@ -18,7 +18,7 @@ use std::sync;
 
 pub struct Collection {
     id: u64,
-    name: String,
+    pub name: String,
     db_id: u64,
     key_prefix: Vec<u8>,
     schema: Schema,

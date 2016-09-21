@@ -10,7 +10,7 @@ message DeleteCollection {
 message DeleteCollectionResponse {
   bool success = 1;
   enum FailureCode {
-    INVALID_DATABASE_NAME = 0;
+    INVALID_DB = 0;
   }
   FailureCode failure_code = 2;
 }

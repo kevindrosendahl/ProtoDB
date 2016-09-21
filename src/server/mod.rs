@@ -92,6 +92,7 @@ impl Server {
     }
 
     fn populate_database_metadata_collection(&self, lmdb_db: &LmdbDatabase) {
+        // Create databases collection in __system db.
         let mut databases = self.get_mut_databases();
         let mut metadata_database = databases.get_mut(METADATA_DATABASE)
             .expect(format!("could not retrieve {} while trying to populate {}",
@@ -113,6 +114,7 @@ impl Server {
             }
         }
 
+        // Add __system database to databases metadata collection.
         let mut metadata_database_message = database_proto::Database::new();
         metadata_database_message.set_name(String::from(METADATA_DATABASE));
 
@@ -239,7 +241,7 @@ impl Server {
                                 mut db_id: u64,
                                 lmdb_db: &LmdbDatabase)
                                 -> Result<()> {
-        if self.get_databases().contains_key(name) {
+        if self.database_exists(name) {
             return Err(ServerError::DatabaseAlreadyExists);
         }
 
@@ -275,31 +277,56 @@ impl Server {
         self.get_databases().values().map(|db| db.name.clone()).collect()
     }
 
-    pub fn insert(&self,
-                  database_name: &str,
-                  collection_name: &str,
-                  data: &mut Vec<u8>)
-                  -> Result<()> {
+    pub fn database_exists(&self, name: &str) -> bool {
+        self.get_databases().contains_key(name)
+    }
+
+    pub fn create_collection(&self,
+                             db_name: &str,
+                             collection_name: &str,
+                             schema: descriptor::DescriptorProto)
+                             -> Result<()> {
         let lmdb_db_handle = self.lmdb_environment
             .get_default_db(LmdbDbFlags::empty())
             .expect("unable to get default LMDB db");
 
         let txn = self.lmdb_environment.new_transaction().expect("unable to get lmdb transaction");
 
-        let databases = self.get_databases();
-        let database = try!(databases.get(database_name).ok_or(ServerError::DatabaseDoesNotExist));
-
-        let collections = database.get_collections();
-        let collection = try!(collections.get(collection_name)
-            .ok_or(ServerError::CollectionDoesNotExist));
-
         {
             let lmdb_db = txn.bind(&lmdb_db_handle);
-            try!(collection.insert(&mut data.as_slice(), false, &lmdb_db));
+            try!(self.create_collection_with_txn(db_name, collection_name, schema, &lmdb_db));
         }
 
-        txn.commit().expect("unable to commit create_database");
+        txn.commit().expect("unable to commit create_collection");
+
+        println!("double returning okay");
         Ok(())
+    }
+
+    fn create_collection_with_txn(&self,
+                                  db_name: &str,
+                                  collection_name: &str,
+                                  schema: descriptor::DescriptorProto,
+                                  lmdb_db: &LmdbDatabase)
+                                  -> Result<()> {
+        let mut databases = self.get_mut_databases();
+        println!("getting db with name {}", db_name);
+        for key in databases.keys() {
+            println!("key: {}", key);
+        }
+        println!("db: {:?}",
+                 databases.get_mut(db_name).map(|db| db.name.clone()));
+        let mut db = try!(databases.get_mut(db_name)
+            .ok_or(ServerError::DatabaseDoesNotExist));
+        try!(db.create_collection(0, collection_name, schema, true, lmdb_db));
+        println!("returning okay");
+        Ok(())
+    }
+
+    pub fn get_collection_names(&self, db_name: &str) -> Result<Vec<String>> {
+        let databases = self.get_databases();
+        let db = try!(databases.get(db_name).ok_or(ServerError::DatabaseDoesNotExist));
+        Ok(db.get_collection_names())
     }
 
     pub fn find(&self,
@@ -322,5 +349,54 @@ impl Server {
 
         let lmdb_db = read_txn.bind(&lmdb_db_handle);
         Ok(try!(collection.find(obj_id, &lmdb_db)))
+    }
+
+    pub fn find_all(&self,
+                    database_name: &str,
+                    collection_name: &str)
+                    -> Result<Option<Vec<Vec<u8>>>> {
+        let lmdb_db_handle = self.lmdb_environment
+            .get_default_db(LmdbDbFlags::empty())
+            .expect("unable to get default LMDB db");
+
+        let read_txn = self.lmdb_environment.get_reader().expect("unable to get lmdb reader");
+
+        let databases = self.get_databases();
+        let database = try!(databases.get(database_name).ok_or(ServerError::DatabaseDoesNotExist));
+
+        let collections = database.get_collections();
+        let collection = try!(collections.get(collection_name)
+            .ok_or(ServerError::CollectionDoesNotExist));
+
+        let lmdb_db = read_txn.bind(&lmdb_db_handle);
+        Ok(try!(collection.find_all(&lmdb_db)))
+    }
+
+    pub fn insert(&self,
+                  database_name: &str,
+                  collection_name: &str,
+                  data: &mut Vec<u8>)
+                  -> Result<u64> {
+        let lmdb_db_handle = self.lmdb_environment
+            .get_default_db(LmdbDbFlags::empty())
+            .expect("unable to get default LMDB db");
+
+        let txn = self.lmdb_environment.new_transaction().expect("unable to get lmdb transaction");
+
+        let databases = self.get_databases();
+        let database = try!(databases.get(database_name).ok_or(ServerError::DatabaseDoesNotExist));
+
+        let collections = database.get_collections();
+        let collection = try!(collections.get(collection_name)
+            .ok_or(ServerError::CollectionDoesNotExist));
+
+        let _id: u64;
+        {
+            let lmdb_db = txn.bind(&lmdb_db_handle);
+            _id = try!(collection.insert(&mut data.as_slice(), false, &lmdb_db));
+        }
+
+        txn.commit().expect("unable to commit create_database");
+        Ok(_id)
     }
 }

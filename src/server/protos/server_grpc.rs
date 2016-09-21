@@ -36,6 +36,10 @@ pub trait ProtoDB {
     fn ListCollections(&self, p: super::collection_list::ListCollections) -> ::grpc::result::GrpcResult<super::collection_list::ListCollectionsResponse>;
 
     fn DefineCollection(&self, p: super::collection_define::DefineCollection) -> ::grpc::result::GrpcResult<super::collection_define::DefineCollectionResponse>;
+
+    fn Find(&self, p: super::find::Find) -> ::grpc::result::GrpcResult<super::find::FindResponse>;
+
+    fn Insert(&self, p: super::insert::Insert) -> ::grpc::result::GrpcResult<super::insert::InsertResponse>;
 }
 
 pub trait ProtoDBAsync {
@@ -54,6 +58,10 @@ pub trait ProtoDBAsync {
     fn ListCollections(&self, p: super::collection_list::ListCollections) -> ::grpc::futures_grpc::GrpcFuture<super::collection_list::ListCollectionsResponse>;
 
     fn DefineCollection(&self, p: super::collection_define::DefineCollection) -> ::grpc::futures_grpc::GrpcFuture<super::collection_define::DefineCollectionResponse>;
+
+    fn Find(&self, p: super::find::Find) -> ::grpc::futures_grpc::GrpcFuture<super::find::FindResponse>;
+
+    fn Insert(&self, p: super::insert::Insert) -> ::grpc::futures_grpc::GrpcFuture<super::insert::InsertResponse>;
 }
 
 // sync client
@@ -104,6 +112,14 @@ impl ProtoDB for ProtoDBClient {
     fn DefineCollection(&self, p: super::collection_define::DefineCollection) -> ::grpc::result::GrpcResult<super::collection_define::DefineCollectionResponse> {
         ::futures::Future::wait(self.async_client.DefineCollection(p))
     }
+
+    fn Find(&self, p: super::find::Find) -> ::grpc::result::GrpcResult<super::find::FindResponse> {
+        ::futures::Future::wait(self.async_client.Find(p))
+    }
+
+    fn Insert(&self, p: super::insert::Insert) -> ::grpc::result::GrpcResult<super::insert::InsertResponse> {
+        ::futures::Future::wait(self.async_client.Insert(p))
+    }
 }
 
 // async client
@@ -118,6 +134,8 @@ pub struct ProtoDBAsyncClient {
     method_DeleteCollection: ::std::sync::Arc<::grpc::method::MethodDescriptor<super::collection_delete::DeleteCollection, super::collection_delete::DeleteCollectionResponse>>,
     method_ListCollections: ::std::sync::Arc<::grpc::method::MethodDescriptor<super::collection_list::ListCollections, super::collection_list::ListCollectionsResponse>>,
     method_DefineCollection: ::std::sync::Arc<::grpc::method::MethodDescriptor<super::collection_define::DefineCollection, super::collection_define::DefineCollectionResponse>>,
+    method_Find: ::std::sync::Arc<::grpc::method::MethodDescriptor<super::find::Find, super::find::FindResponse>>,
+    method_Insert: ::std::sync::Arc<::grpc::method::MethodDescriptor<super::insert::Insert, super::insert::InsertResponse>>,
 }
 
 impl ProtoDBAsyncClient {
@@ -173,6 +191,18 @@ impl ProtoDBAsyncClient {
                     req_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
                     resp_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
                 }),
+                method_Find: ::std::sync::Arc::new(::grpc::method::MethodDescriptor {
+                    name: "/protodb.server.ProtoDB/Find".to_string(),
+                    streaming: ::grpc::method::GrpcStreaming::Unary,
+                    req_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                    resp_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                }),
+                method_Insert: ::std::sync::Arc::new(::grpc::method::MethodDescriptor {
+                    name: "/protodb.server.ProtoDB/Insert".to_string(),
+                    streaming: ::grpc::method::GrpcStreaming::Unary,
+                    req_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                    resp_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                }),
             }
         })
     }
@@ -209,6 +239,14 @@ impl ProtoDBAsync for ProtoDBAsyncClient {
 
     fn DefineCollection(&self, p: super::collection_define::DefineCollection) -> ::grpc::futures_grpc::GrpcFuture<super::collection_define::DefineCollectionResponse> {
         self.grpc_client.call_unary(p, self.method_DefineCollection.clone())
+    }
+
+    fn Find(&self, p: super::find::Find) -> ::grpc::futures_grpc::GrpcFuture<super::find::FindResponse> {
+        self.grpc_client.call_unary(p, self.method_Find.clone())
+    }
+
+    fn Insert(&self, p: super::insert::Insert) -> ::grpc::futures_grpc::GrpcFuture<super::insert::InsertResponse> {
+        self.grpc_client.call_unary(p, self.method_Insert.clone())
     }
 }
 
@@ -277,6 +315,20 @@ impl ProtoDBAsync for ProtoDBServerHandlerToAsync {
         let h = self.handler.clone();
         ::grpc::rt::sync_to_async_unary(&self.cpupool, p, move |p| {
             h.DefineCollection(p)
+        })
+    }
+
+    fn Find(&self, p: super::find::Find) -> ::grpc::futures_grpc::GrpcFuture<super::find::FindResponse> {
+        let h = self.handler.clone();
+        ::grpc::rt::sync_to_async_unary(&self.cpupool, p, move |p| {
+            h.Find(p)
+        })
+    }
+
+    fn Insert(&self, p: super::insert::Insert) -> ::grpc::futures_grpc::GrpcFuture<super::insert::InsertResponse> {
+        let h = self.handler.clone();
+        ::grpc::rt::sync_to_async_unary(&self.cpupool, p, move |p| {
+            h.Insert(p)
         })
     }
 }
@@ -398,6 +450,30 @@ impl ProtoDBAsyncServer {
                     {
                         let handler_copy = handler_arc.clone();
                         ::grpc::server::MethodHandlerUnary::new(move |p| handler_copy.DefineCollection(p))
+                    },
+                ),
+                ::grpc::server::ServerMethod::new(
+                    ::std::sync::Arc::new(::grpc::method::MethodDescriptor {
+                        name: "/protodb.server.ProtoDB/Find".to_string(),
+                        streaming: ::grpc::method::GrpcStreaming::Unary,
+                        req_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                        resp_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                    }),
+                    {
+                        let handler_copy = handler_arc.clone();
+                        ::grpc::server::MethodHandlerUnary::new(move |p| handler_copy.Find(p))
+                    },
+                ),
+                ::grpc::server::ServerMethod::new(
+                    ::std::sync::Arc::new(::grpc::method::MethodDescriptor {
+                        name: "/protodb.server.ProtoDB/Insert".to_string(),
+                        streaming: ::grpc::method::GrpcStreaming::Unary,
+                        req_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                        resp_marshaller: Box::new(::grpc::grpc_protobuf::MarshallerProtobuf),
+                    }),
+                    {
+                        let handler_copy = handler_arc.clone();
+                        ::grpc::server::MethodHandlerUnary::new(move |p| handler_copy.Insert(p))
                     },
                 ),
             ],

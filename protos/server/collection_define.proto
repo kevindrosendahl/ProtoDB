@@ -12,8 +12,8 @@ message DefineCollection {
 message DefineCollectionResponse {
   bool success = 1;
   enum FailureCode {
-    INVALID_DATABASE_NAME = 0;
-    INVALID_COLLECTION_NAME = 1;
+    INVALID_DB = 0;
+    INVALID_COLLECTION = 1;
   }
   FailureCode failure_code = 2;
 

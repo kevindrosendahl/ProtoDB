@@ -9,5 +9,12 @@ message Insert {
 }
 
 message InsertResponse {
-  repeated string database = 1;
+  bool success = 1;
+  uint64 _id = 2;
+
+  enum FailureCode {
+    INVALID_DB = 0;
+    INVALID_COLLECTION = 1;
+  }
+  FailureCode failure_code = 3;
 }

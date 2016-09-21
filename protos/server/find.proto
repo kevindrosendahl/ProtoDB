@@ -94,5 +94,14 @@ message FieldMask {
 }
 
 message FindResponse {
-  repeated string database = 1;
+  bool success = 1;
+  repeated bytes data = 2;
+  uint64 num_found = 3;
+
+  enum FailureCode {
+    INVALID_DB = 0;
+    INVALID_COLLECTION = 1;
+    INVALID_QUERY = 2;
+  }
+  FailureCode failure_code = 4;
 }
