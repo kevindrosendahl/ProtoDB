@@ -10,24 +10,12 @@ example_protos = ["user.proto"]
 protodb_protos_path = os.path.abspath("../../protos/")
 protodb_server_protos_path = protodb_protos_path + "/server"
 
-# subprocess.call(["protoc", "-I", ".", "--python_out=src"] + example_protos)
+subprocess.call(["protoc", "-I", ".", "--python_out=src"] + example_protos)
 
-# protoc.main(
-#     (
-#         '',
-#         '-I %s' % protodb_protos_path,
-#         '--python_out=src',
-#         '--grpc_python_out=src',
-#         '%s/*.proto' % protodb_server_protos_path
-#     )
-# )
-# #
 grpc_cmd = ("python -m grpc.tools.protoc -I %s --python_out=src --grpc_python_out=src %s/*.proto" %
             (protodb_protos_path,
              protodb_server_protos_path))
-# grpc_cmd = ("protoc -I %s --python_out=src --grpc_python_out=src %s/*.proto" %
-#             (protodb_protos_path,
-#              protodb_server_protos_path))
+
 p = subprocess.Popen(grpc_cmd,
                      shell=True,
                      stdout=subprocess.PIPE,
