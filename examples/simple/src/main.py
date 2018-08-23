@@ -1,9 +1,9 @@
 import grpc
 
-from protod import protod_pb2_grpc
+from protodb import protodb_pb2_grpc
 
-from protod.database_create_pb2 import CreateDatabaseRequest, CreateDatabaseResponse
-from protod.database_create_pb2 import _CREATEDATABASERESPONSE_FAILURECODE
+from protodb.database_create_pb2 import CreateDatabaseRequest, CreateDatabaseResponse
+from protodb.database_create_pb2 import _CREATEDATABASERESPONSE_FAILURECODE
 
 
 def create_database(stub, db_name):
@@ -26,6 +26,6 @@ def create_database(stub, db_name):
 
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:10000') as channel:
-        stub = protod_pb2_grpc.ProtoDStub(channel)
+        stub = protodb_pb2_grpc.ProtoDBStub(channel)
         create_database(stub, 'foo')
 

@@ -13,7 +13,7 @@ extern crate log;
 
 
 pub mod protod {
-    include!(concat!(env!("OUT_DIR"), "/protodb.protod.rs"));
+    include!(concat!(env!("OUT_DIR"), "/protodb.rs"));
 }
 use protod::{server, CreateDatabaseRequest, CreateDatabaseResponse};
 
@@ -24,10 +24,10 @@ use tower_h2::Server;
 use tower_grpc::{Request, Response};
 
 #[derive(Debug, Clone)]
-struct ProtoD {
+struct ProtoDB {
 }
 
-impl protod::server::ProtoD for ProtoD {
+impl protod::server::ProtoDb for ProtoDB {
     type CreateDatabaseFuture = future::FutureResult<Response<CreateDatabaseResponse>, tower_grpc::Error>;
 
     /// returns the feature at the given point.
@@ -49,9 +49,9 @@ pub fn main() {
     let mut core = Core::new().unwrap();
     let reactor = core.handle();
 
-    let handler = ProtoD{};
+    let handler = ProtoDB{};
 
-    let new_service = server::ProtoDServer::new(handler);
+    let new_service = server::ProtoDbServer::new(handler);
 
     let h2 = Server::new(new_service, Default::default(), reactor.clone());
 

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protodb.protod;
+package protodb;
 
 message CreateDatabaseRequest {
     string name = 1;

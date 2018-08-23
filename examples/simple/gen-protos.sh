@@ -6,7 +6,7 @@ python -m grpc_tools.protoc \
     -I ../../proto \
     --python_out=src \
     --grpc_python_out=src \
-    ../../proto/protod/*.proto
+    ../../proto/protodb/*.proto
 
-touch src/protod/__init__.py
+touch src/protodb/__init__.py
 

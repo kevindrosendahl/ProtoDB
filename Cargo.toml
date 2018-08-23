@@ -1,5 +1,5 @@
 [package]
-name = "proto_db"
+name = "protodb"
 version = "0.1.0"
 authors = ["kevin"]
 
@@ -8,7 +8,7 @@ name = "libprotodb"
 path = "src/lib.rs"
 
 [[bin]]
-name = "protod"
+name = "protodb"
 path = "src/main.rs"
 
 [dependencies]

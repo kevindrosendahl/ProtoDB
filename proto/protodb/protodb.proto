@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package protodb;
+
+import "protodb/database_create.proto";
+
+service ProtoDB {
+    rpc CreateDatabase (protodb.CreateDatabaseRequest) returns (protodb.CreateDatabaseResponse);
+}
