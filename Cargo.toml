@@ -1,7 +1,7 @@
 [package]
-name = "protodb"
-version = "0.0.1"
-authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
+name = "proto_db"
+version = "0.1.0"
+authors = ["kevin"]
 
 [lib]
 name = "libprotodb"
@@ -12,9 +12,26 @@ name = "protod"
 path = "src/main.rs"
 
 [dependencies]
-futures = { git = "https://github.com/alexcrichton/futures-rs" }
-futures-cpupool = { git = "https://github.com/alexcrichton/futures-rs" }
-grpc = { git  = "https://github.com/stepancheg/grpc-rust" }
-lazy_static = "0.1"
-lmdb-rs = "0.7.2"
-protobuf = { git = "http://github.com/stepancheg/rust-protobuf" }
+futures = "0.1"
+bytes = "0.4"
+env_logger = { version = "0.5", default-features = false }
+log = "0.4"
+http = "0.1"
+prost = "0.4"
+prost-derive = "0.4"
+tokio-core = "0.1"
+tower-h2 = { git = "https://github.com/tower-rs/tower-h2" }
+tower-http = { git = "https://github.com/tower-rs/tower-http" }
+tower-grpc = { git = "https://github.com/tower-rs/tower-grpc" }
+tower-service = { git = "https://github.com/tower-rs/tower" }
+
+# For the routeguide example
+serde = "1.0"
+serde_json = "1.0"
+serde_derive = "1.0"
+
+[build-dependencies]
+tower-grpc-build = { git = "https://github.com/tower-rs/tower-grpc" }
+
+[patch.crates-io]
+http = { git = "http://github.com/hyperium/http", rev = "5f362a32278891672f428d570d46387fe6896a5d" }
