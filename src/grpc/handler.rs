@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use ::storage::storage_engine::StorageEngine;
+use storage::storage_engine::StorageEngine;
 
 use super::generated;
 use super::generated::{request, response};
 
-use futures::{future};
+use futures::future;
 use tower_grpc;
 use tower_grpc::{Request, Response};
 
@@ -23,7 +23,6 @@ impl Handler {
 impl generated::server::ProtoDb for Handler {
     type CreateDatabaseFuture = future::FutureResult<Response<response::CreateDatabase>, tower_grpc::Error>;
 
-    /// returns the feature at the given point.
     fn create_database(&mut self, request: Request<request::CreateDatabase>) -> Self::CreateDatabaseFuture {
         println!("got request to create {}", request.get_ref().name);
 
@@ -42,7 +41,7 @@ impl generated::server::ProtoDb for Handler {
     /// returns the feature at the given point.
     fn list_databases(&mut self, _request: Request<request::ListDatabases>) -> Self::ListDatabasesFuture {
         println!("got request to list databases");
-        // Otherwise, return some other feature?
+
         let response = Response::new(response::ListDatabases {
             database: self.storage_engine.clone().list_databases(),
         });

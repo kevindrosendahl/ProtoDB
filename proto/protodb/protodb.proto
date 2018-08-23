@@ -8,4 +8,5 @@ import "protodb/database_list.proto";
 service ProtoDB {
     rpc CreateDatabase (protodb.CreateDatabaseRequest) returns (protodb.CreateDatabaseResponse);
     rpc ListDatabases (protodb.ListDatabasesRequest) returns (protodb.ListDatabasesResponse);
+
 }

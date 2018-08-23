@@ -36,6 +36,6 @@ def list_databases(stub):
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:10000') as channel:
         stub = protodb_pb2_grpc.ProtoDBStub(channel)
-        create_database(stub, 'foo')
+        create_database(stub, 'foo2')
         list_databases(stub)
 

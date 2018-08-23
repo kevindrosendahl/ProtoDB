@@ -1,38 +1,43 @@
-use std::collections::HashSet;
+use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
 
-use super::storage_engine::StorageEngine;
-use super::super::database;
+use storage::kv::KVStorageEngine;
+use database;
 
 pub struct InMemoryStorageEngine {
-    databases: Arc<RwLock<HashSet<String>>>
+    cache: Arc<RwLock<BTreeMap<String, String>>>
 }
 
 impl InMemoryStorageEngine {
     pub fn new() -> InMemoryStorageEngine {
-        InMemoryStorageEngine { databases: Arc::new(RwLock::new(HashSet::new())) }
+        InMemoryStorageEngine { cache: Arc::new(RwLock::new(BTreeMap::new())) }
     }
 }
 
-impl StorageEngine for InMemoryStorageEngine {
-    fn list_databases(&self) -> Vec<String> {
-        let databases = self.databases.clone();
-        let databases = databases.read().unwrap();
-        databases.iter().map(|s| s.clone()).collect()
+impl KVStorageEngine for InMemoryStorageEngine {
+    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+        let cache = self.cache.clone();
+        let cache = cache.read().unwrap();
+        cache.get(&String::from_utf8(key.to_vec()).unwrap()).map(|b| b.clone().into_bytes())
     }
 
-    fn create_database(&self, name: &str) {
-        let databases = self.databases.clone();
-        databases.write().unwrap().insert(String::from(name));
+    fn get_range(&self, lower: &[u8], upper: &[u8]) -> Option<Vec<Vec<u8>>> {
+        let lower = String::from_utf8(lower.to_vec()).unwrap();
+        let upper = String::from_utf8(upper.to_vec()).unwrap();
+
+        let cache = self.cache.clone();
+        let cache = cache.read().unwrap();
+        Some(cache.iter().filter_map(|(k, v)| {
+            if k.lt(&lower) || k.gt(&upper) {
+                return None;
+            }
+            Some(v.as_bytes().to_vec())
+        }).collect())
     }
 
-    fn get_database(&self, name: &str) -> Option<Box<database::Database>> {
-        let databases = self.databases.clone();
-        if !databases.read().unwrap().contains(name) {
-            return None
-        }
-
-        Some(Box::new(Database { name: name.to_string() }))
+    fn put(&self, key: &[u8], value: &[u8]) {
+        let cache = self.cache.clone();
+        cache.write().unwrap().insert(String::from_utf8(key.to_vec()).unwrap(), String::from_utf8(value.to_vec()).unwrap());
     }
 }
 
