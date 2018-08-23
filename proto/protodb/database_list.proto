@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+package protodb;
+
+message ListDatabasesRequest {
+}
+
+message ListDatabasesResponse {
+    repeated string database = 1;
+}

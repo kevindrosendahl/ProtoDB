@@ -14,15 +14,16 @@ _sym_db = _symbol_database.Default()
 
 
 from protodb import database_create_pb2 as protodb_dot_database__create__pb2
+from protodb import database_list_pb2 as protodb_dot_database__list__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/protodb.proto',
   package='protodb',
   syntax='proto3',
-  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1dprotodb/database_create.proto2\\\n\x07ProtoDB\x12Q\n\x0e\x43reateDatabase\x12\x1e.protodb.CreateDatabaseRequest\x1a\x1f.protodb.CreateDatabaseResponseb\x06proto3')
+  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1dprotodb/database_create.proto\x1a\x1bprotodb/database_list.proto2\xac\x01\n\x07ProtoDB\x12Q\n\x0e\x43reateDatabase\x12\x1e.protodb.CreateDatabaseRequest\x1a\x1f.protodb.CreateDatabaseResponse\x12N\n\rListDatabases\x12\x1d.protodb.ListDatabasesRequest\x1a\x1e.protodb.ListDatabasesResponseb\x06proto3')
   ,
-  dependencies=[protodb_dot_database__create__pb2.DESCRIPTOR,])
+  dependencies=[protodb_dot_database__create__pb2.DESCRIPTOR,protodb_dot_database__list__pb2.DESCRIPTOR,])
 
 
 
@@ -36,8 +37,8 @@ _PROTODB = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=65,
-  serialized_end=157,
+  serialized_start=95,
+  serialized_end=267,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateDatabase',
@@ -46,6 +47,15 @@ _PROTODB = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=protodb_dot_database__create__pb2._CREATEDATABASEREQUEST,
     output_type=protodb_dot_database__create__pb2._CREATEDATABASERESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ListDatabases',
+    full_name='protodb.ProtoDB.ListDatabases',
+    index=1,
+    containing_service=None,
+    input_type=protodb_dot_database__list__pb2._LISTDATABASESREQUEST,
+    output_type=protodb_dot_database__list__pb2._LISTDATABASESRESPONSE,
     options=None,
   ),
 ])

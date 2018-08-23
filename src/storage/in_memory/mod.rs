@@ -21,7 +21,7 @@ impl StorageEngine for InMemoryStorageEngine {
         databases.iter().map(|s| s.clone()).collect()
     }
 
-    fn create_database(&mut self, name: &str) {
+    fn create_database(&self, name: &str) {
         let databases = self.databases.clone();
         databases.write().unwrap().insert(String::from(name));
     }
