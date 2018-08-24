@@ -2,15 +2,16 @@ use std::sync::Mutex;
 use std::thread;
 use std::thread::Thread;
 
-#[derive(Debug, Clone, Copy)]
-pub enum Granularity {
-    IntentionShared,
-    IntentionExclusive,
-    Shared,
-    SharedAndIntentionExclusive,
-    Exclusive,
-}
-
+/// A multi granular lock supporting both blocking and non-blocking
+/// lock acquisition. Respects the following compatibility:
+///       IS  IX  S  SIX  X
+///     ---------------------
+///  IS | Y | Y | Y | Y | N |
+///  IX | Y | Y | N | N | N |
+///  S  | Y | N | Y | N | N |
+/// SIX | Y | N | N | N | N |
+///  X  | N | N | N | N | N |
+///     ---------------------
 #[derive(Debug)]
 pub struct MultiGranularLock {
     lock: Mutex<()>,
@@ -24,6 +25,22 @@ pub struct MultiGranularLock {
     exclusive: Mutex<bool>,
 }
 
+/// The different granularities that can be requested
+/// to acquire the lock with.
+#[derive(Debug, Clone, Copy)]
+pub enum Granularity {
+    IntentionShared,
+    IntentionExclusive,
+    Shared,
+    SharedAndIntentionExclusive,
+    Exclusive,
+}
+
+/// The value returned by a successful acquisition of the lock.
+/// When the guard goes out of scope, it will clean up the necessary
+/// bookkeeping about the granularity it had been acquired with,
+/// and attempt to wake up any threads that can try again to acquire
+/// the lock under the new semantics.
 #[derive(Debug)]
 pub struct MultiGranularLockGuard<'a> {
     lock: &'a MultiGranularLock,
@@ -44,19 +61,30 @@ impl<'a> Drop for MultiGranularLockGuard<'a> {
             Granularity::Exclusive => *self.lock.exclusive.lock().unwrap() = false,
         }
 
-        let idx = self.lock
-            .waiting
-            .lock()
-            .unwrap()
-            .iter()
-            .enumerate()
-            .find(|(i, (t, g))| self.lock.can_acquire(g.clone()))
-            .map(|(i, _)| i);
+        // While still holding the mutex, find all threads that can possibly acquire the lock
+        // with its desired granularity now that this guard has been dropped, and remove
+        // the threads from the list of waiting threads.
+        //
+        // This will essentially end up leading to a race where the first thread
+        // to acquire the mutex will determine the new semantics for the lock.
+        // This could potentially lead to starvation. An alternative could be finding
+        // the most exclusive granularity thread that's attempting to acquire the lock
+        // and unpark it or something similar. However, that thread would still
+        // potentially be racing against any new thread that are attempting to acquire
+        // the lock. A different approach also could involve having this guard choose
+        // a winning thread or threads from the waiting threads and do their bookkeeping
+        // for them, and unpark them after. Here, unparking would mean "you've acquired
+        // the lock," not "when you were unparked, you could acquire the lock, that
+        // may or may not still be true." Seems like the best way forward is the simplest
+        // for now though.
+        self.lock.waiting.lock().unwrap().retain(|(t, g)| {
+            if !self.lock.can_acquire(g.clone()) {
+                return true;
+            }
 
-        if let Some(i) = idx {
-            let (t, _) = self.lock.waiting.lock().unwrap().remove(i);
             t.unpark();
-        }
+            false
+        });
     }
 }
 
@@ -75,7 +103,11 @@ impl MultiGranularLock {
         }
     }
 
+    /// Blocks until the lock can be acquired with the specified granularity.
     pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard {
+        // Acquire the mutex and attempt to lock with the specified granularity.
+        // If it does not succeed, park the thread and wait to be unparked by
+        // a guard that sees that the granularity is acquirable.
         loop {
             {
                 let _l = self.lock.lock().unwrap();
@@ -94,6 +126,7 @@ impl MultiGranularLock {
         }
     }
 
+    // Attempts to acquire the lock at the specified granularity without blocking.
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
         let _l = self.lock.lock().unwrap();
         self.try_acquire_locked(granularity)
