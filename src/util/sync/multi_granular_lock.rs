@@ -126,7 +126,7 @@ impl MultiGranularLock {
         }
     }
 
-    // Attempts to acquire the lock at the specified granularity without blocking.
+    /// Attempts to acquire the lock at the specified granularity without blocking.
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
         let _l = self.lock.lock().unwrap();
         self.try_acquire_locked(granularity)
@@ -249,7 +249,6 @@ mod tests {
         assert!(l.try_acquire(Granularity::Shared).is_none());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
     }
 
     #[test]
@@ -266,7 +265,6 @@ mod tests {
         assert!(l.try_acquire(Granularity::Shared).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
     }
 
     #[test]
@@ -282,8 +280,6 @@ mod tests {
         );
         assert!(l.try_acquire(Granularity::Shared).is_none());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-        assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
     }
 
@@ -300,8 +296,6 @@ mod tests {
         );
         assert!(l.try_acquire(Granularity::Shared).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-        assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
     }
 
