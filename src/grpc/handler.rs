@@ -11,11 +11,11 @@ use tower_grpc::{Request, Response};
 
 #[derive(Clone)]
 pub struct Handler {
-    storage_engine: Arc<Box<StorageEngine>>
+    storage_engine: Arc<Box<dyn StorageEngine>>
 }
 
 impl Handler {
-    pub fn new(storage_engine: Box<StorageEngine>) -> Handler {
+    pub fn new(storage_engine: Box<dyn StorageEngine>) -> Handler {
         Handler { storage_engine: Arc::new(storage_engine) }
     }
 }
@@ -38,7 +38,6 @@ impl generated::server::ProtoDb for Handler {
 
     type ListDatabasesFuture = future::FutureResult<Response<response::ListDatabases>, tower_grpc::Error>;
 
-    /// returns the feature at the given point.
     fn list_databases(&mut self, _request: Request<request::ListDatabases>) -> Self::ListDatabasesFuture {
         println!("got request to list databases");
 
