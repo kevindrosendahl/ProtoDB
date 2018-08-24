@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 #[derive(Debug)]
 pub enum Granularity {
