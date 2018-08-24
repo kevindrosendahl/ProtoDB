@@ -33,7 +33,7 @@ pub struct MultiGranularLockGuard<'a> {
 impl<'a> Drop for MultiGranularLockGuard<'a> {
     #[inline]
     fn drop(&mut self) {
-        let _lg = self.lock.lock.lock().unwrap();
+        let _l = self.lock.lock.lock().unwrap();
         match self.granularity {
             Granularity::IntentionShared => *self.lock.intention_shared.lock().unwrap() -= 1,
             Granularity::IntentionExclusive => *self.lock.intention_exclusive.lock().unwrap() -= 1,
@@ -76,25 +76,26 @@ impl MultiGranularLock {
     }
 
     pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard {
-        {
-            let _lg = self.lock.lock().unwrap();
-            let g = self.try_acquire_locked(granularity);
-            if g.is_some() {
-                return g.unwrap();
+        loop {
+            {
+                let _l = self.lock.lock().unwrap();
+                match self.try_acquire_locked(granularity) {
+                    Some(g) => return g,
+                    None => {
+                        self.waiting
+                            .lock()
+                            .unwrap()
+                            .push((thread::current(), granularity));
+                    }
+                };
             }
 
-            self.waiting
-                .lock()
-                .unwrap()
-                .push((thread::current(), granularity));
+            thread::park();
         }
-
-        thread::park();
-        self.acquire(granularity)
     }
 
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
-        let _lg = self.lock.lock().unwrap();
+        let _l = self.lock.lock().unwrap();
         self.try_acquire_locked(granularity)
     }
 
