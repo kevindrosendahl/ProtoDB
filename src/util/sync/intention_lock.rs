@@ -1,4 +1,6 @@
 use std::sync::Mutex;
+use std::thread;
+use std::thread::{Thread};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Granularity {
@@ -12,6 +14,8 @@ pub enum Granularity {
 #[derive(Debug)]
 pub struct MultiGranularLock {
     lock: Mutex<()>,
+
+    waiting: Mutex<Vec<(Thread, Granularity)>>,
 
     intention_shared: Mutex<usize>,
     intention_exclusive: Mutex<usize>,
@@ -29,13 +33,26 @@ pub struct MultiGranularLockGuard<'a> {
 impl<'a> Drop for MultiGranularLockGuard<'a> {
     #[inline]
     fn drop(&mut self) {
-        let _ = self.lock.lock.lock().unwrap();
+        let _lg = self.lock.lock.lock().unwrap();
         match self.granularity {
             Granularity::IntentionShared => *self.lock.intention_shared.lock().unwrap() -= 1,
             Granularity::IntentionExclusive => *self.lock.intention_exclusive.lock().unwrap() -= 1,
             Granularity::Shared => *self.lock.shared.lock().unwrap() -= 1,
             Granularity::SharedAndIntentionExclusive => *self.lock.shared_and_intention_exclusive.lock().unwrap() -= 1,
             Granularity::Exclusive => *self.lock.exclusive.lock().unwrap() = false,
+        }
+
+        let idx = self.lock.waiting.lock().unwrap()
+            .iter()
+            .enumerate()
+            .find(|(i, (t, g))| {
+                self.lock.can_acquire(g.clone())
+            })
+            .map(|(i, _)| i);
+
+        if let Some(i) = idx {
+            let (t, _) = self.lock.waiting.lock().unwrap().remove(i);
+            t.unpark();
         }
     }
 }
@@ -45,6 +62,8 @@ impl MultiGranularLock {
         MultiGranularLock {
             lock: Mutex::new(()),
 
+            waiting: Mutex::new(Vec::new()),
+
             intention_shared: Mutex::new(0),
             intention_exclusive: Mutex::new(0),
             shared: Mutex::new(0),
@@ -53,9 +72,28 @@ impl MultiGranularLock {
         }
     }
 
+    pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard {
+        {
+            let _lg = self.lock.lock().unwrap();
+            let g = self.try_acquire_locked(granularity);
+            if g.is_some() {
+                return g.unwrap();
+            }
+
+            self.waiting.lock().unwrap().push((thread::current(), granularity));
+        }
+
+        thread::park();
+        self.acquire(granularity)
+    }
+
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
-        let _ = self.lock.lock().unwrap();
-        if !self.can_acquire(granularity) {
+        let _lg = self.lock.lock().unwrap();
+        self.try_acquire_locked(granularity)
+    }
+
+    fn try_acquire_locked(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
+       if !self.can_acquire(granularity) {
             return None;
         }
 
@@ -105,6 +143,9 @@ impl MultiGranularLock {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex, Condvar};
+    use std::thread;
+
     use super::{MultiGranularLock, Granularity};
 
     #[test]
@@ -205,5 +246,43 @@ mod tests {
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
+    }
+
+    #[test]
+    fn acquire() {
+        let l = Arc::new(MultiGranularLock::new());
+
+        let h;
+        {
+            let pair = Arc::new((Mutex::new(false), Condvar::new()));
+            let pair2 = pair.clone();
+
+            let l1 = l.clone();
+            let g = l1.try_acquire(Granularity::Exclusive);
+            assert!(g.is_some());
+
+            let l2 = l.clone();
+            h = thread::spawn(move || {
+                assert!(l2.try_acquire(Granularity::Exclusive).is_none());
+
+                {
+                    let &(ref lock, ref cvar) = &*pair2;
+                    let mut tried = lock.lock().unwrap();
+                    *tried = true;
+                    cvar.notify_one();
+                }
+
+                l2.acquire(Granularity::Exclusive);
+            });
+
+            let &(ref lock, ref cvar) = &*pair;
+            let mut tried = lock.lock().unwrap();
+            while !*tried {
+                tried = cvar.wait(tried).unwrap();
+            }
+        }
+
+
+        h.join().unwrap();
     }
 }
