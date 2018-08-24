@@ -6,14 +6,12 @@ pub use self::generated::*;
 
 pub mod request {
     pub use super::generated::{
-        CreateDatabaseRequest as CreateDatabase,
-        ListDatabasesRequest as ListDatabases,
+        CreateDatabaseRequest as CreateDatabase, ListDatabasesRequest as ListDatabases,
     };
 }
 
 pub mod response {
     pub use super::generated::{
-        CreateDatabaseResponse as CreateDatabase,
-        ListDatabasesResponse as ListDatabases,
+        CreateDatabaseResponse as CreateDatabase, ListDatabasesResponse as ListDatabases,
     };
 }

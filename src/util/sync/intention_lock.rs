@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 use std::thread;
-use std::thread::{Thread};
+use std::thread::Thread;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Granularity {
@@ -21,7 +21,7 @@ pub struct MultiGranularLock {
     intention_exclusive: Mutex<usize>,
     shared: Mutex<usize>,
     shared_and_intention_exclusive: Mutex<usize>,
-    exclusive:  Mutex<bool>,
+    exclusive: Mutex<bool>,
 }
 
 #[derive(Debug)]
@@ -38,16 +38,19 @@ impl<'a> Drop for MultiGranularLockGuard<'a> {
             Granularity::IntentionShared => *self.lock.intention_shared.lock().unwrap() -= 1,
             Granularity::IntentionExclusive => *self.lock.intention_exclusive.lock().unwrap() -= 1,
             Granularity::Shared => *self.lock.shared.lock().unwrap() -= 1,
-            Granularity::SharedAndIntentionExclusive => *self.lock.shared_and_intention_exclusive.lock().unwrap() -= 1,
+            Granularity::SharedAndIntentionExclusive => {
+                *self.lock.shared_and_intention_exclusive.lock().unwrap() -= 1
+            }
             Granularity::Exclusive => *self.lock.exclusive.lock().unwrap() = false,
         }
 
-        let idx = self.lock.waiting.lock().unwrap()
+        let idx = self.lock
+            .waiting
+            .lock()
+            .unwrap()
             .iter()
             .enumerate()
-            .find(|(i, (t, g))| {
-                self.lock.can_acquire(g.clone())
-            })
+            .find(|(i, (t, g))| self.lock.can_acquire(g.clone()))
             .map(|(i, _)| i);
 
         if let Some(i) = idx {
@@ -80,7 +83,10 @@ impl MultiGranularLock {
                 return g.unwrap();
             }
 
-            self.waiting.lock().unwrap().push((thread::current(), granularity));
+            self.waiting
+                .lock()
+                .unwrap()
+                .push((thread::current(), granularity));
         }
 
         thread::park();
@@ -93,7 +99,7 @@ impl MultiGranularLock {
     }
 
     fn try_acquire_locked(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
-       if !self.can_acquire(granularity) {
+        if !self.can_acquire(granularity) {
             return None;
         }
 
@@ -101,11 +107,13 @@ impl MultiGranularLock {
             Granularity::IntentionShared => *self.intention_shared.lock().unwrap() += 1,
             Granularity::IntentionExclusive => *self.intention_exclusive.lock().unwrap() += 1,
             Granularity::Shared => *self.shared.lock().unwrap() += 1,
-            Granularity::SharedAndIntentionExclusive => *self.shared_and_intention_exclusive.lock().unwrap() += 1,
+            Granularity::SharedAndIntentionExclusive => {
+                *self.shared_and_intention_exclusive.lock().unwrap() += 1
+            }
             Granularity::Exclusive => *self.exclusive.lock().unwrap() = true,
         }
 
-        Some(MultiGranularLockGuard{
+        Some(MultiGranularLockGuard {
             lock: &self,
             granularity,
         })
@@ -115,27 +123,27 @@ impl MultiGranularLock {
         match granularity {
             Granularity::IntentionShared => !*self.exclusive.lock().unwrap(),
             Granularity::IntentionExclusive => {
-               !(*self.exclusive.lock().unwrap() ||
-                   *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                   *self.shared.lock().unwrap() > 0)
+                !(*self.exclusive.lock().unwrap()
+                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
+                    || *self.shared.lock().unwrap() > 0)
             }
             Granularity::Shared => {
-                !(*self.exclusive.lock().unwrap() ||
-                    *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                    *self.intention_exclusive.lock().unwrap() > 0)
+                !(*self.exclusive.lock().unwrap()
+                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
+                    || *self.intention_exclusive.lock().unwrap() > 0)
             }
             Granularity::SharedAndIntentionExclusive => {
-                !(*self.exclusive.lock().unwrap() ||
-                    *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                    *self.shared.lock().unwrap() > 0 ||
-                    *self.intention_exclusive.lock().unwrap() > 0)
+                !(*self.exclusive.lock().unwrap()
+                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
+                    || *self.shared.lock().unwrap() > 0
+                    || *self.intention_exclusive.lock().unwrap() > 0)
             }
             Granularity::Exclusive => {
-                !(*self.exclusive.lock().unwrap() ||
-                    *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                    *self.shared.lock().unwrap() > 0 ||
-                    *self.intention_exclusive.lock().unwrap() > 0 ||
-                    *self.intention_shared.lock().unwrap() > 0)
+                !(*self.exclusive.lock().unwrap()
+                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
+                    || *self.shared.lock().unwrap() > 0
+                    || *self.intention_exclusive.lock().unwrap() > 0
+                    || *self.intention_shared.lock().unwrap() > 0)
             }
         }
     }
@@ -143,10 +151,10 @@ impl MultiGranularLock {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex, Condvar};
+    use std::sync::{Arc, Condvar, Mutex};
     use std::thread;
 
-    use super::{MultiGranularLock, Granularity};
+    use super::{Granularity, MultiGranularLock};
 
     #[test]
     fn drop() {
@@ -184,7 +192,10 @@ mod tests {
         assert!(g.is_some());
 
         assert!(l.try_acquire(Granularity::Exclusive).is_none());
-        assert!(l.try_acquire(Granularity::SharedAndIntentionExclusive).is_none());
+        assert!(
+            l.try_acquire(Granularity::SharedAndIntentionExclusive)
+                .is_none()
+        );
         assert!(l.try_acquire(Granularity::Shared).is_none());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
         assert!(l.try_acquire(Granularity::IntentionShared).is_none());
@@ -197,7 +208,10 @@ mod tests {
         assert!(g.is_some());
 
         assert!(l.try_acquire(Granularity::Exclusive).is_none());
-        assert!(l.try_acquire(Granularity::SharedAndIntentionExclusive).is_none());
+        assert!(
+            l.try_acquire(Granularity::SharedAndIntentionExclusive)
+                .is_none()
+        );
         assert!(l.try_acquire(Granularity::Shared).is_none());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
@@ -211,7 +225,10 @@ mod tests {
         assert!(g.is_some());
 
         assert!(l.try_acquire(Granularity::Exclusive).is_none());
-        assert!(l.try_acquire(Granularity::SharedAndIntentionExclusive).is_none());
+        assert!(
+            l.try_acquire(Granularity::SharedAndIntentionExclusive)
+                .is_none()
+        );
         assert!(l.try_acquire(Granularity::Shared).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
         assert!(l.try_acquire(Granularity::IntentionShared).is_some());
@@ -225,7 +242,10 @@ mod tests {
         assert!(g.is_some());
 
         assert!(l.try_acquire(Granularity::Exclusive).is_none());
-        assert!(l.try_acquire(Granularity::SharedAndIntentionExclusive).is_none());
+        assert!(
+            l.try_acquire(Granularity::SharedAndIntentionExclusive)
+                .is_none()
+        );
         assert!(l.try_acquire(Granularity::Shared).is_none());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
@@ -240,7 +260,10 @@ mod tests {
         assert!(g.is_some());
 
         assert!(l.try_acquire(Granularity::Exclusive).is_none());
-        assert!(l.try_acquire(Granularity::SharedAndIntentionExclusive).is_some());
+        assert!(
+            l.try_acquire(Granularity::SharedAndIntentionExclusive)
+                .is_some()
+        );
         assert!(l.try_acquire(Granularity::Shared).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
         assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
@@ -281,7 +304,6 @@ mod tests {
                 tried = cvar.wait(tried).unwrap();
             }
         }
-
 
         h.join().unwrap();
     }

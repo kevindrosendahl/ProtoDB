@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
-use super::handler::Handler;
 use super::generated::server;
+use super::handler::Handler;
 
 use futures::{Future, Stream};
 use tokio_core::net::TcpListener;

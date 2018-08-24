@@ -37,9 +37,13 @@ impl InMemoryStorageEngine {
         let cache = self.cache.clone();
         let cache = cache.read().unwrap();
         Some(
-            cache.range((Bound::Included(lower.to_vec()), Bound::Included(upper.to_vec())))
+            cache
+                .range((
+                    Bound::Included(lower.to_vec()),
+                    Bound::Included(upper.to_vec()),
+                ))
                 .map(|(k, v)| (k.clone(), v.clone()))
-                .collect()
+                .collect(),
         )
     }
 
@@ -53,10 +57,13 @@ impl InMemoryStorageEngine {
         let delimiter_plus_1 = DELIMITER.as_bytes()[0] + 1;
         let upper = format!("{}{}", DATABASES_PREFIX, delimiter_plus_1);
 
-        self.get_range(lower.as_bytes(), upper.as_bytes()).unwrap()
+        self.get_range(lower.as_bytes(), upper.as_bytes())
+            .unwrap()
             .iter()
             .map(|(k, v)| {
-                let name = InMemoryStorageEngine::database_name(String::from_utf8(k.clone()).unwrap().as_ref());
+                let name = InMemoryStorageEngine::database_name(
+                    String::from_utf8(k.clone()).unwrap().as_ref(),
+                );
                 let id = InMemoryStorageEngine::database_id(&v);
                 (name, id)
             })
@@ -94,7 +101,7 @@ impl InMemoryStorageEngine {
     }
 }
 
-impl  StorageEngine for InMemoryStorageEngine {
+impl StorageEngine for InMemoryStorageEngine {
     fn list_databases(&self) -> Vec<String> {
         self.get_databases()
             .iter()
