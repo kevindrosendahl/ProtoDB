@@ -30,12 +30,12 @@ def list_databases(stub):
     request = ListDatabasesRequest()
     response = stub.ListDatabases(request)
 
-    print('got databases: {}', response.database)
+    print('got databases: {}'.format(response.database))
 
 
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:10000') as channel:
         stub = protodb_pb2_grpc.ProtoDBStub(channel)
-        create_database(stub, 'foo2')
+        create_database(stub, 'foo')
         list_databases(stub)
 
