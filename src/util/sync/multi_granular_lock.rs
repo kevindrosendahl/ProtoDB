@@ -17,12 +17,16 @@ pub struct MultiGranularLock {
     lock: Mutex<()>,
 
     waiting: Mutex<Vec<(Thread, Granularity)>>,
+    state: Mutex<MultiGranularLockState>,
+}
 
-    intention_shared: Mutex<usize>,
-    intention_exclusive: Mutex<usize>,
-    shared: Mutex<usize>,
-    shared_and_intention_exclusive: Mutex<usize>,
-    exclusive: Mutex<bool>,
+#[derive(Debug)]
+struct MultiGranularLockState {
+    intention_shared: usize,
+    intention_exclusive: usize,
+    shared: usize,
+    shared_and_intention_exclusive: usize,
+    exclusive: bool,
 }
 
 /// The different granularities that can be requested
@@ -51,14 +55,18 @@ impl<'a> Drop for MultiGranularLockGuard<'a> {
     #[inline]
     fn drop(&mut self) {
         let _l = self.lock.lock.lock().unwrap();
-        match self.granularity {
-            Granularity::IntentionShared => *self.lock.intention_shared.lock().unwrap() -= 1,
-            Granularity::IntentionExclusive => *self.lock.intention_exclusive.lock().unwrap() -= 1,
-            Granularity::Shared => *self.lock.shared.lock().unwrap() -= 1,
-            Granularity::SharedAndIntentionExclusive => {
-                *self.lock.shared_and_intention_exclusive.lock().unwrap() -= 1
+
+        {
+            let mut state = self.lock.state.lock().unwrap();
+            match self.granularity {
+                Granularity::IntentionShared => (*state).intention_shared -= 1,
+                Granularity::IntentionExclusive => (*state).intention_exclusive -= 1,
+                Granularity::Shared => (*state).shared -= 1,
+                Granularity::SharedAndIntentionExclusive => {
+                    (*state).shared_and_intention_exclusive -= 1
+                }
+                Granularity::Exclusive => (*state).exclusive = false,
             }
-            Granularity::Exclusive => *self.lock.exclusive.lock().unwrap() = false,
         }
 
         // While still holding the mutex, find all threads that can possibly acquire the lock
@@ -94,12 +102,13 @@ impl MultiGranularLock {
             lock: Mutex::new(()),
 
             waiting: Mutex::new(Vec::new()),
-
-            intention_shared: Mutex::new(0),
-            intention_exclusive: Mutex::new(0),
-            shared: Mutex::new(0),
-            shared_and_intention_exclusive: Mutex::new(0),
-            exclusive: Mutex::new(false),
+            state: Mutex::new(MultiGranularLockState {
+                intention_shared: 0,
+                intention_exclusive: 0,
+                shared: 0,
+                shared_and_intention_exclusive: 0,
+                exclusive: false,
+            }),
         }
     }
 
@@ -137,14 +146,15 @@ impl MultiGranularLock {
             return None;
         }
 
+        let mut state = self.state.lock().unwrap();
         match granularity {
-            Granularity::IntentionShared => *self.intention_shared.lock().unwrap() += 1,
-            Granularity::IntentionExclusive => *self.intention_exclusive.lock().unwrap() += 1,
-            Granularity::Shared => *self.shared.lock().unwrap() += 1,
+            Granularity::IntentionShared => (*state).intention_shared += 1,
+            Granularity::IntentionExclusive => (*state).intention_exclusive += 1,
+            Granularity::Shared => (*state).shared += 1,
             Granularity::SharedAndIntentionExclusive => {
-                *self.shared_and_intention_exclusive.lock().unwrap() += 1
+                (*state).shared_and_intention_exclusive += 1
             }
-            Granularity::Exclusive => *self.exclusive.lock().unwrap() = true,
+            Granularity::Exclusive => (*state).exclusive = true,
         }
 
         Some(MultiGranularLockGuard {
@@ -154,30 +164,29 @@ impl MultiGranularLock {
     }
 
     fn can_acquire(&self, granularity: Granularity) -> bool {
+        let state = self.state.lock().unwrap();
         match granularity {
-            Granularity::IntentionShared => !*self.exclusive.lock().unwrap(),
+            Granularity::IntentionShared => !state.exclusive,
             Granularity::IntentionExclusive => {
-                !(*self.exclusive.lock().unwrap()
-                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
-                    || *self.shared.lock().unwrap() > 0)
+                !(state.exclusive || state.shared_and_intention_exclusive > 0 || state.shared > 0)
             }
             Granularity::Shared => {
-                !(*self.exclusive.lock().unwrap()
-                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
-                    || *self.intention_exclusive.lock().unwrap() > 0)
+                !(state.exclusive
+                    || state.shared_and_intention_exclusive > 0
+                    || state.intention_exclusive > 0)
             }
             Granularity::SharedAndIntentionExclusive => {
-                !(*self.exclusive.lock().unwrap()
-                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
-                    || *self.shared.lock().unwrap() > 0
-                    || *self.intention_exclusive.lock().unwrap() > 0)
+                !(state.exclusive
+                    || state.shared_and_intention_exclusive > 0
+                    || state.shared > 0
+                    || state.intention_exclusive > 0)
             }
             Granularity::Exclusive => {
-                !(*self.exclusive.lock().unwrap()
-                    || *self.shared_and_intention_exclusive.lock().unwrap() > 0
-                    || *self.shared.lock().unwrap() > 0
-                    || *self.intention_exclusive.lock().unwrap() > 0
-                    || *self.intention_shared.lock().unwrap() > 0)
+                !(state.exclusive
+                    || state.shared_and_intention_exclusive > 0
+                    || state.shared > 0
+                    || state.intention_exclusive > 0
+                    || state.intention_shared > 0)
             }
         }
     }
