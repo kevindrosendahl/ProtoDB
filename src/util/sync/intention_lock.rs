@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Granularity {
     IntentionShared,
     IntentionExclusive,
@@ -55,74 +55,50 @@ impl MultiGranularLock {
 
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
         let _ = self.lock.lock().unwrap();
+        if !self.can_acquire(granularity) {
+            return None;
+        }
+
         match granularity {
-            Granularity::IntentionShared => {
-                if *self.exclusive.lock().unwrap() {
-                    None
-                } else {
-                    *self.intention_shared.lock().unwrap() += 1;
-                    Some(MultiGranularLockGuard {
-                        lock: self,
-                        granularity: Granularity::IntentionShared,
-                    })
-                }
-            }
+            Granularity::IntentionShared => *self.intention_shared.lock().unwrap() += 1,
+            Granularity::IntentionExclusive => *self.intention_exclusive.lock().unwrap() += 1,
+            Granularity::Shared => *self.shared.lock().unwrap() += 1,
+            Granularity::SharedAndIntentionExclusive => *self.shared_and_intention_exclusive.lock().unwrap() += 1,
+            Granularity::Exclusive => *self.exclusive.lock().unwrap() = true,
+        }
+
+        Some(MultiGranularLockGuard{
+            lock: &self,
+            granularity,
+        })
+    }
+
+    fn can_acquire(&self, granularity: Granularity) -> bool {
+        match granularity {
+            Granularity::IntentionShared => !*self.exclusive.lock().unwrap(),
             Granularity::IntentionExclusive => {
-               if *self.exclusive.lock().unwrap() ||
+               !(*self.exclusive.lock().unwrap() ||
                    *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                   *self.shared.lock().unwrap() > 0 {
-                   None
-               } else {
-                   *self.intention_exclusive.lock().unwrap() += 1;
-                   Some(MultiGranularLockGuard {
-                       lock: self,
-                       granularity: Granularity::IntentionExclusive,
-                   })
-               }
+                   *self.shared.lock().unwrap() > 0)
             }
             Granularity::Shared => {
-                if *self.exclusive.lock().unwrap() ||
+                !(*self.exclusive.lock().unwrap() ||
                     *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
-                    *self.intention_exclusive.lock().unwrap() > 0 {
-                    None
-                } else {
-                    *self.shared.lock().unwrap() += 1;
-                    Some(MultiGranularLockGuard {
-                        lock: self,
-                        granularity: Granularity::Shared,
-                    })
-                }
+                    *self.intention_exclusive.lock().unwrap() > 0)
             }
             Granularity::SharedAndIntentionExclusive => {
-                if *self.exclusive.lock().unwrap() ||
+                !(*self.exclusive.lock().unwrap() ||
                     *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
                     *self.shared.lock().unwrap() > 0 ||
-                    *self.intention_exclusive.lock().unwrap() > 0 {
-                    None
-                } else {
-                    *self.shared_and_intention_exclusive.lock().unwrap() += 1;
-                    Some(MultiGranularLockGuard {
-                        lock: self,
-                        granularity: Granularity::SharedAndIntentionExclusive,
-                    })
-                }
+                    *self.intention_exclusive.lock().unwrap() > 0)
             }
             Granularity::Exclusive => {
-                if *self.exclusive.lock().unwrap() ||
+                !(*self.exclusive.lock().unwrap() ||
                     *self.shared_and_intention_exclusive.lock().unwrap() > 0 ||
                     *self.shared.lock().unwrap() > 0 ||
                     *self.intention_exclusive.lock().unwrap() > 0 ||
-                    *self.intention_shared.lock().unwrap() > 0 {
-                    None
-                } else {
-                    *self.exclusive.lock().unwrap() = true;
-                    Some(MultiGranularLockGuard {
-                        lock: self,
-                        granularity: Granularity::Exclusive,
-                    })
-                }
+                    *self.intention_shared.lock().unwrap() > 0)
             }
-            _ => None,
         }
     }
 }
