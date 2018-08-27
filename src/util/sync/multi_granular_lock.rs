@@ -20,6 +20,7 @@ pub struct MultiGranularLock {
     state: Mutex<MultiGranularLockState>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug)]
 struct MultiGranularLockState {
     intention_shared: usize,
@@ -33,10 +34,15 @@ struct MultiGranularLockState {
 /// to acquire the lock with.
 #[derive(Debug, Clone, Copy)]
 pub enum Granularity {
+    #[allow(dead_code)]
     IntentionShared,
+    #[allow(dead_code)]
     IntentionExclusive,
+    #[allow(dead_code)]
     Shared,
+    #[allow(dead_code)]
     SharedAndIntentionExclusive,
+    #[allow(dead_code)]
     Exclusive,
 }
 
@@ -45,6 +51,7 @@ pub enum Granularity {
 /// bookkeeping about the granularity it had been acquired with,
 /// and attempt to wake up any threads that can try again to acquire
 /// the lock under the new semantics.
+#[allow(dead_code)]
 #[derive(Debug)]
 pub struct MultiGranularLockGuard<'a> {
     lock: &'a MultiGranularLock,
@@ -97,6 +104,7 @@ impl<'a> Drop for MultiGranularLockGuard<'a> {
 }
 
 impl MultiGranularLock {
+    #[allow(dead_code)]
     pub fn new() -> MultiGranularLock {
         MultiGranularLock {
             lock: Mutex::new(()),
@@ -113,6 +121,7 @@ impl MultiGranularLock {
     }
 
     /// Blocks until the lock can be acquired with the specified granularity.
+    #[allow(dead_code)]
     pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard {
         // Acquire the mutex and attempt to lock with the specified granularity.
         // If it does not succeed, park the thread and wait to be unparked by
@@ -136,6 +145,7 @@ impl MultiGranularLock {
     }
 
     /// Attempts to acquire the lock at the specified granularity without blocking.
+    #[allow(dead_code)]
     pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
         let _l = self.lock.lock().unwrap();
         self.try_acquire_locked(granularity)
