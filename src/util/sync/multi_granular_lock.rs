@@ -370,7 +370,6 @@ mod tests {
 
     #[test]
     fn acquire_exclusive() {
-        let mut expected_success = HashSet::new();
         expected_success.insert(0);
         test_acquire(AcquireTest {
             queued_granularities: vec![
@@ -385,13 +384,43 @@ mod tests {
                 Granularity::IntentionShared,
                 Granularity::IntentionShared,
             ],
-            expected_success,
+            expected_success: HashSet::new(),
             expected_state: State {
                 exclusive: true,
                 shared_and_intention_exclusive: 0,
                 shared: 0,
                 intention_exclusive: 0,
                 intention_shared: 0,
+            },
+        })
+    }
+
+    #[test]
+    fn acquire_shared_intention_exclusive() {
+        let mut expected_success = HashSet::new();
+        expected_success.insert(9);
+        expected_success.insert(10);
+        test_acquire(AcquireTest {
+            queued_granularities: vec![
+                Granularity::SharedIntentionExclusive,
+                Granularity::Exclusive,
+                Granularity::Exclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::Shared,
+                Granularity::Shared,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionShared,
+                Granularity::IntentionShared,
+            ],
+            expected_success,
+            expected_state: State {
+                exclusive: true,
+                shared_and_intention_exclusive: 1,
+                shared: 0,
+                intention_exclusive: 0,
+                intention_shared: 2,
             },
         })
     }
@@ -407,6 +436,8 @@ mod tests {
     }
 
     fn test_acquire(test: AcquireTest) {
+        test.expected_success.insert(0);
+
         let l = Arc::new(MultiGranularLock::new());
         let l1 = l.clone();
 
