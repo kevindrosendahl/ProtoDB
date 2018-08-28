@@ -327,10 +327,11 @@ impl MultiGranularLock {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{HashMap, HashSet};
     use std::sync::{Arc, Condvar, Mutex};
     use std::thread;
 
-    use super::{Granularity, MultiGranularLock};
+    use super::{Granularity, MultiGranularLock, State};
 
     #[test]
     fn drop() {
@@ -361,41 +362,91 @@ mod tests {
         }
     }
 
-    #[test]
-    fn exclusive() {
-        let l = Arc::new(MultiGranularLock::new());
-        let l1 = l.clone();
+    struct AcquireTest {
+        queued_granularities: Vec<Granularity>,
+        expected_success: HashSet<usize>,
+        expected_state: State,
+    }
 
-        let granularities = vec![
+    #[test]
+    fn acquire_exclusive() {
+        let mut expected_success = HashSet::new();
+        expected_success.insert(0);
+        test_acquire(AcquireTest {
+            queued_granularities: vec![
+                Granularity::Exclusive,
+                Granularity::Exclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::Shared,
+                Granularity::Shared,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionShared,
+                Granularity::IntentionShared,
+            ],
+            expected_success,
+            expected_state: State {
+                exclusive: true,
+                shared_and_intention_exclusive: 0,
+                shared: 0,
+                intention_exclusive: 0,
+                intention_shared: 0,
+            },
+        })
+    }
+
+    lazy_static! {
+        static ref ALL_GRANULARITIES: Vec<Granularity> = vec![
             Granularity::Exclusive,
             Granularity::SharedAndIntentionExclusive,
             Granularity::Shared,
             Granularity::IntentionExclusive,
-            Granularity::IntentionShared
+            Granularity::IntentionShared,
         ];
+    }
+
+    fn test_acquire(test: AcquireTest) {
+        let l = Arc::new(MultiGranularLock::new());
+        let l1 = l.clone();
 
         let acquired_pair = Arc::new((Mutex::new(0), Condvar::new()));
         let checked_pair = Arc::new((Mutex::new(false), Condvar::new()));
         let mut threads = Vec::new();
+        let thread_ids = Arc::new(Mutex::new(HashMap::new()));
         {
+            // First, acquire the lock exclusively. It doesn't really matter what granularity
+            // we acquire the lock originally with, since it will only ever be acquired by one
+            // thread initially, essentially having exclusive lock semantics.
             let g = l1.try_acquire(Granularity::Exclusive);
             assert!(g.is_some());
 
-            for g in granularities.clone() {
-                assert!(l1.try_acquire(g).is_none());
-            }
-
-            for (i, g) in granularities.clone().iter().enumerate() {
+            // For each of the desired queued granularities, spawn a thread.
+            // The thread will then spin until all of the previous threads have queued
+            // their granularity and attempted to acquire the lock.
+            // Then, the thread will attempt to acquire the lock.
+            // Once the thread has acquired the lock, it will increment the acquired
+            // counter and notify on the condition variable.
+            // Then it will wait for the main test thread to notify it that it is done
+            // doing its checks, at which point it will exit the thread, dropping the lock.
+            for (i, g) in test.queued_granularities.iter().enumerate() {
                 let l2 = l.clone();
                 let g2 = g.clone();
                 let acquired_pair = acquired_pair.clone();
                 let checked_pair = checked_pair.clone();
+                let thread_ids = thread_ids.clone();
+
                 let t = thread::spawn(move || {
                     loop {
                         let wait_queue = l2.wait_queue.lock().unwrap();
                         if wait_queue.len() >= i {
                             break;
                         }
+                    }
+
+                    {
+                        let mut thread_ids = thread_ids.lock().unwrap();
+                        thread_ids.insert(thread::current().id(), i);
                     }
 
                     let _l = l2.acquire(g2.clone());
@@ -419,12 +470,13 @@ mod tests {
 
             loop {
                 let wait_queue = l1.wait_queue.lock().unwrap();
-                if wait_queue.len() == granularities.len() {
+                if wait_queue.len() == test.queued_granularities.len() {
                     break;
                 }
             }
-        }
+        } // drop the lock
 
+        // Wait for the expected number of lock acquisitions to happen.
         {
             let &(ref lock, ref cvar) = &*acquired_pair;
             let mut acquired = lock.lock().unwrap();
@@ -433,24 +485,39 @@ mod tests {
             }
         }
 
+        // Ensure that the correct threads were woken up and that the state is as expected.
         {
+            let expected_waiting = test.queued_granularities.len() - test.expected_success.len();
+
             let wait_queue = l.wait_queue.try_lock().expect("unable to get wait_queue lock");
-            assert_eq!(wait_queue.len(), 4);
+            assert_eq!(wait_queue.len(), expected_waiting);
+
+            let thread_ids = thread_ids.clone();
+            let thread_ids = thread_ids.lock().unwrap();
+
+            let entries = &wait_queue.inner;
+            for entry in entries {
+                let idx = thread_ids.get(&entry.thread.id()).unwrap();
+                if test.expected_success.contains(idx) {
+                    panic!("expected thread {} to have acquired the lock", idx);
+                }
+            }
 
             let state = l.state.lock().expect("unable to get state lock");
             assert!(state.acquired());
 
-            assert!(state.exclusive);
-            assert_eq!(state.shared_and_intention_exclusive, 0);
-            assert_eq!(state.shared, 0);
-            assert_eq!(state.intention_exclusive, 0);
-            assert_eq!(state.intention_shared, 0);
+            assert_eq!(state.exclusive, test.expected_state.exclusive);
+            assert_eq!(state.shared_and_intention_exclusive, test.expected_state.shared_and_intention_exclusive);
+            assert_eq!(state.shared, test.expected_state.shared);
+            assert_eq!(state.intention_exclusive, test.expected_state.intention_exclusive);
+            assert_eq!(state.intention_shared, test.expected_state.intention_shared);
 
-            for g in granularities {
-                assert!(!state.can_acquire(g));
+            for g in ALL_GRANULARITIES.iter() {
+                assert!(!state.can_acquire(*g));
             }
         }
 
+        // Alert the threads we are done checking so they can exit.
         {
             let &(ref lock, ref cvar) = &*checked_pair;
             let mut checked = lock.lock().unwrap();
@@ -459,109 +526,8 @@ mod tests {
         }
 
         for thread in threads {
-            thread.join();
+            thread.join().unwrap();
         }
     }
-
-//    #[test]
-//    fn shared_and_intention_exclusive() {
-//        let l = MultiGranularLock::new();
-//        let g = l.try_acquire(Granularity::SharedAndIntentionExclusive);
-//        assert!(g.is_some());
-//
-//        assert!(l.try_acquire(Granularity::Exclusive).is_none());
-//        assert!(
-//            l.try_acquire(Granularity::SharedAndIntentionExclusive)
-//                .is_none()
-//        );
-//        assert!(l.try_acquire(Granularity::Shared).is_none());
-//        assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
-//        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-//    }
-//
-//    #[test]
-//    fn shared() {
-//        let l = MultiGranularLock::new();
-//        let g = l.try_acquire(Granularity::Shared);
-//        assert!(g.is_some());
-//
-//        assert!(l.try_acquire(Granularity::Exclusive).is_none());
-//        assert!(
-//            l.try_acquire(Granularity::SharedAndIntentionExclusive)
-//                .is_none()
-//        );
-//        assert!(l.try_acquire(Granularity::Shared).is_some());
-//        assert!(l.try_acquire(Granularity::IntentionExclusive).is_none());
-//        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-//    }
-//
-//    #[test]
-//    fn intention_exclusive() {
-//        let l = MultiGranularLock::new();
-//        let g = l.try_acquire(Granularity::IntentionExclusive);
-//        assert!(g.is_some());
-//
-//        assert!(l.try_acquire(Granularity::Exclusive).is_none());
-//        assert!(
-//            l.try_acquire(Granularity::SharedAndIntentionExclusive)
-//                .is_none()
-//        );
-//        assert!(l.try_acquire(Granularity::Shared).is_none());
-//        assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-//        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-//    }
-//
-//    #[test]
-//    fn intention_shared() {
-//        let l = MultiGranularLock::new();
-//        let g = l.try_acquire(Granularity::IntentionShared);
-//        assert!(g.is_some());
-//
-//        assert!(l.try_acquire(Granularity::Exclusive).is_none());
-//        assert!(
-//            l.try_acquire(Granularity::SharedAndIntentionExclusive)
-//                .is_some()
-//        );
-//        assert!(l.try_acquire(Granularity::Shared).is_some());
-//        assert!(l.try_acquire(Granularity::IntentionExclusive).is_some());
-//        assert!(l.try_acquire(Granularity::IntentionShared).is_some());
-//    }
-//
-//    #[test]
-//    #[ignore]
-//    fn acquire() {
-//        let l = Arc::new(MultiGranularLock::new());
-//
-//        let h;
-//        {
-//            let pair = Arc::new((Mutex::new(false), Condvar::new()));
-//            let pair2 = pair.clone();
-//
-//            let l1 = l.clone();
-//            let g = l1.try_acquire(Granularity::Exclusive);
-//            assert!(g.is_some());
-//
-//            let l2 = l.clone();
-//            h = thread::spawn(move || {
-//                assert!(l2.try_acquire(Granularity::Exclusive).is_none());
-//
-//                {
-//                    let &(ref lock, ref cvar) = &*pair2;
-//                    let mut tried = lock.lock().unwrap();
-//                    *tried = true;
-//                    cvar.notify_one();
-//                }
-//
-//                l2.acquire(Granularity::Exclusive);
-//            });
-//
-//            let &(ref lock, ref cvar) = &*pair;
-//            let mut tried = lock.lock().unwrap();
-//            while !*tried {
-//                tried = cvar.wait(tried).unwrap();
-//            }
-//        }
-//
-//        h.join().unwrap();
-//    }
 }
+

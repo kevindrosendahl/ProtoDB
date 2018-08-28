@@ -2,6 +2,9 @@ extern crate byteorder;
 extern crate bytes;
 extern crate futures;
 
+#[macro_use]
+extern crate lazy_static;
+
 extern crate prost;
 #[macro_use]
 extern crate prost_derive;
