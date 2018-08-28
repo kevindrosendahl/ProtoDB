@@ -49,7 +49,7 @@ struct State {
     intention_shared: usize,
     intention_exclusive: usize,
     shared: usize,
-    shared_and_intention_exclusive: usize,
+    shared_and_intention_exclusive: bool,
     exclusive: bool,
 }
 
@@ -63,7 +63,7 @@ impl State {
             Granularity::IntentionShared => self.intention_shared += 1,
             Granularity::IntentionExclusive => self.intention_exclusive += 1,
             Granularity::Shared => self.shared += 1,
-            Granularity::SharedAndIntentionExclusive => self.shared_and_intention_exclusive += 1,
+            Granularity::SharedAndIntentionExclusive => self.shared_and_intention_exclusive = true,
             Granularity::Exclusive => self.exclusive = true,
         }
     }
@@ -73,7 +73,7 @@ impl State {
             Granularity::IntentionShared => self.intention_shared -= 1,
             Granularity::IntentionExclusive => self.intention_exclusive -= 1,
             Granularity::Shared => self.shared -= 1,
-            Granularity::SharedAndIntentionExclusive => self.shared_and_intention_exclusive -= 1,
+            Granularity::SharedAndIntentionExclusive => self.shared_and_intention_exclusive = false,
             Granularity::Exclusive => self.exclusive = false,
         }
     }
@@ -82,22 +82,22 @@ impl State {
         match granularity {
             Granularity::IntentionShared => !self.exclusive,
             Granularity::IntentionExclusive => {
-                !(self.exclusive || self.shared_and_intention_exclusive > 0 || self.shared > 0)
+                !(self.exclusive || self.shared_and_intention_exclusive || self.shared > 0)
             }
             Granularity::Shared => {
                 !(self.exclusive
-                    || self.shared_and_intention_exclusive > 0
+                    || self.shared_and_intention_exclusive
                     || self.intention_exclusive > 0)
             }
             Granularity::SharedAndIntentionExclusive => {
                 !(self.exclusive
-                    || self.shared_and_intention_exclusive > 0
+                    || self.shared_and_intention_exclusive
                     || self.shared > 0
                     || self.intention_exclusive > 0)
             }
             Granularity::Exclusive => {
                 !(self.exclusive
-                    || self.shared_and_intention_exclusive > 0
+                    || self.shared_and_intention_exclusive
                     || self.shared > 0
                     || self.intention_exclusive > 0
                     || self.intention_shared > 0)
@@ -229,7 +229,7 @@ impl MultiGranularLock {
                 intention_shared: 0,
                 intention_exclusive: 0,
                 shared: 0,
-                shared_and_intention_exclusive: 0,
+                shared_and_intention_exclusive: false,
                 exclusive: false,
             }),
         }
@@ -370,7 +370,6 @@ mod tests {
 
     #[test]
     fn acquire_exclusive() {
-        expected_success.insert(0);
         test_acquire(AcquireTest {
             queued_granularities: vec![
                 Granularity::Exclusive,
@@ -387,7 +386,7 @@ mod tests {
             expected_success: HashSet::new(),
             expected_state: State {
                 exclusive: true,
-                shared_and_intention_exclusive: 0,
+                shared_and_intention_exclusive: false,
                 shared: 0,
                 intention_exclusive: 0,
                 intention_shared: 0,
@@ -402,7 +401,7 @@ mod tests {
         expected_success.insert(10);
         test_acquire(AcquireTest {
             queued_granularities: vec![
-                Granularity::SharedIntentionExclusive,
+                Granularity::SharedAndIntentionExclusive,
                 Granularity::Exclusive,
                 Granularity::Exclusive,
                 Granularity::SharedAndIntentionExclusive,
@@ -416,8 +415,8 @@ mod tests {
             ],
             expected_success,
             expected_state: State {
-                exclusive: true,
-                shared_and_intention_exclusive: 1,
+                exclusive: false,
+                shared_and_intention_exclusive: true,
                 shared: 0,
                 intention_exclusive: 0,
                 intention_shared: 2,
@@ -425,17 +424,169 @@ mod tests {
         })
     }
 
-    lazy_static! {
-        static ref ALL_GRANULARITIES: Vec<Granularity> = vec![
-            Granularity::Exclusive,
-            Granularity::SharedAndIntentionExclusive,
-            Granularity::Shared,
-            Granularity::IntentionExclusive,
-            Granularity::IntentionShared,
-        ];
+    #[test]
+    fn acquire_shared() {
+        let mut expected_success = HashSet::new();
+        expected_success.insert(5);
+        expected_success.insert(6);
+        expected_success.insert(9);
+        expected_success.insert(10);
+        test_acquire(AcquireTest {
+            queued_granularities: vec![
+                Granularity::Shared,
+                Granularity::Exclusive,
+                Granularity::Exclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::Shared,
+                Granularity::Shared,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionShared,
+                Granularity::IntentionShared,
+            ],
+            expected_success,
+            expected_state: State {
+                exclusive: false,
+                shared_and_intention_exclusive: false,
+                shared: 3,
+                intention_exclusive: 0,
+                intention_shared: 2,
+            },
+        })
     }
 
-    fn test_acquire(test: AcquireTest) {
+    #[test]
+    fn acquire_intention_exclusive() {
+        let mut expected_success = HashSet::new();
+        expected_success.insert(7);
+        expected_success.insert(8);
+        expected_success.insert(9);
+        expected_success.insert(10);
+        test_acquire(AcquireTest {
+            queued_granularities: vec![
+                Granularity::IntentionExclusive,
+                Granularity::Exclusive,
+                Granularity::Exclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::SharedAndIntentionExclusive,
+                Granularity::Shared,
+                Granularity::Shared,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionExclusive,
+                Granularity::IntentionShared,
+                Granularity::IntentionShared,
+            ],
+            expected_success,
+            expected_state: State {
+                exclusive: false,
+                shared_and_intention_exclusive: false,
+                shared: 0,
+                intention_exclusive: 3,
+                intention_shared: 2,
+            },
+        })
+    }
+
+    #[test]
+    fn acquire_intention_shared() {
+        // SharedAndIntentionExclusive is the highest priority
+        {
+            let mut expected_success = HashSet::new();
+            expected_success.insert(3);
+            expected_success.insert(9);
+            expected_success.insert(10);
+            test_acquire(AcquireTest {
+                queued_granularities: vec![
+                    Granularity::IntentionShared,
+                    Granularity::Exclusive,
+                    Granularity::Exclusive,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::Shared,
+                    Granularity::Shared,
+                    Granularity::IntentionExclusive,
+                    Granularity::IntentionExclusive,
+                    Granularity::IntentionShared,
+                    Granularity::IntentionShared,
+                ],
+                expected_success,
+                expected_state: State {
+                    exclusive: false,
+                    shared_and_intention_exclusive: true,
+                    shared: 0,
+                    intention_exclusive: 0,
+                    intention_shared: 3,
+                },
+            })
+        }
+
+        // Shared is the highest priority
+        {
+            let mut expected_success = HashSet::new();
+            expected_success.insert(3);
+            expected_success.insert(6);
+            expected_success.insert(9);
+            expected_success.insert(10);
+            test_acquire(AcquireTest {
+                queued_granularities: vec![
+                    Granularity::IntentionShared,
+                    Granularity::Exclusive,
+                    Granularity::Exclusive,
+                    Granularity::Shared,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::Shared,
+                    Granularity::IntentionExclusive,
+                    Granularity::IntentionExclusive,
+                    Granularity::IntentionShared,
+                    Granularity::IntentionShared,
+                ],
+                expected_success,
+                expected_state: State {
+                    exclusive: false,
+                    shared_and_intention_exclusive: false,
+                    shared: 2,
+                    intention_exclusive: 0,
+                    intention_shared: 3,
+                },
+            })
+        }
+
+        // IntentionExclusive is the highest priority
+        {
+            let mut expected_success = HashSet::new();
+            expected_success.insert(3);
+            expected_success.insert(8);
+            expected_success.insert(9);
+            expected_success.insert(10);
+            test_acquire(AcquireTest {
+                queued_granularities: vec![
+                    Granularity::IntentionShared,
+                    Granularity::Exclusive,
+                    Granularity::Exclusive,
+                    Granularity::IntentionExclusive,
+                    Granularity::Shared,
+                    Granularity::Shared,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::SharedAndIntentionExclusive,
+                    Granularity::IntentionExclusive,
+                    Granularity::IntentionShared,
+                    Granularity::IntentionShared,
+                ],
+                expected_success,
+                expected_state: State {
+                    exclusive: false,
+                    shared_and_intention_exclusive: false,
+                    shared: 0,
+                    intention_exclusive: 2,
+                    intention_shared: 3,
+                },
+            })
+        }
+    }
+
+    fn test_acquire(mut test: AcquireTest) {
         test.expected_success.insert(0);
 
         let l = Arc::new(MultiGranularLock::new());
@@ -521,7 +672,6 @@ mod tests {
             let expected_waiting = test.queued_granularities.len() - test.expected_success.len();
 
             let wait_queue = l.wait_queue.try_lock().expect("unable to get wait_queue lock");
-            assert_eq!(wait_queue.len(), expected_waiting);
 
             let thread_ids = thread_ids.clone();
             let thread_ids = thread_ids.lock().unwrap();
@@ -534,6 +684,8 @@ mod tests {
                 }
             }
 
+            assert_eq!(wait_queue.len(), expected_waiting);
+
             let state = l.state.lock().expect("unable to get state lock");
             assert!(state.acquired());
 
@@ -542,10 +694,6 @@ mod tests {
             assert_eq!(state.shared, test.expected_state.shared);
             assert_eq!(state.intention_exclusive, test.expected_state.intention_exclusive);
             assert_eq!(state.intention_shared, test.expected_state.intention_shared);
-
-            for g in ALL_GRANULARITIES.iter() {
-                assert!(!state.can_acquire(*g));
-            }
         }
 
         // Alert the threads we are done checking so they can exit.
