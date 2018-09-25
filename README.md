@@ -46,6 +46,8 @@ message User {
     
     string first_name = 2;
     string last_name = 3;
+    
+    bool verified = 4;
 }
 
 message Post {
@@ -85,6 +87,9 @@ for post in posts:
                 author.last_name,
             )
         )
+
+for user in db.users.watch().filter(lambda u: u.verified):
+    print("new verified user: {} {}".format(user.first_name, user.last_name))
 ```
 - replication
 - sharding
