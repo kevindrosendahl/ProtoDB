@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protodb;
+
+import "google/protobuf/descriptor.proto";
+
+message ProtoDBOptions {
+    bool primary_key = 1;
+}
+
+extend google.protobuf.FieldOptions {
+    ProtoDBOptions protodb = 88888;
+}

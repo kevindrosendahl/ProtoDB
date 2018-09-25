@@ -12,6 +12,7 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
+from protodb import extensions_pb2 as protodb_dot_extensions__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -19,8 +20,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='protodb.test',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nuser.proto\x12\x0cprotodb.test\"G\n\x04User\x12\x0b\n\x03_id\x18\x01 \x01(\x04\x12\x12\n\nfirst_name\x18\x02 \x01(\t\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
-)
+  serialized_pb=_b('\n\nuser.proto\x12\x0cprotodb.test\x1a\x18protodb/extensions.proto\"N\n\x04User\x12\x12\n\x02id\x18\x01 \x01(\x04\x42\x06\xc2\xb3+\x02\x08\x00\x12\x12\n\nfirst_name\x18\x02 \x01(\t\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
+  ,
+  dependencies=[protodb_dot_extensions__pb2.DESCRIPTOR,])
 
 
 
@@ -33,12 +35,12 @@ _USER = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='_id', full_name='protodb.test.User._id', index=0,
+      name='id', full_name='protodb.test.User.id', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
+      serialized_options=_b('\302\263+\002\010\000'), file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='first_name', full_name='protodb.test.User.first_name', index=1,
       number=2, type=9, cpp_type=9, label=1,
@@ -72,8 +74,8 @@ _USER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=28,
-  serialized_end=99,
+  serialized_start=54,
+  serialized_end=132,
 )
 
 DESCRIPTOR.message_types_by_name['User'] = _USER
@@ -87,4 +89,5 @@ User = _reflection.GeneratedProtocolMessageType('User', (_message.Message,), dic
 _sym_db.RegisterMessage(User)
 
 
+_USER.fields_by_name['id']._options = None
 # @@protoc_insertion_point(module_scope)
