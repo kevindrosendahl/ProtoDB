@@ -1,12 +1,19 @@
 import grpc
 
+from google.protobuf.descriptor_pb2 import DescriptorProto
+
 from protodb import protodb_pb2_grpc
 
 from protodb.database_create_pb2 import CreateDatabaseRequest, CreateDatabaseResponse
 from protodb.database_create_pb2 import _CREATEDATABASERESPONSE_FAILURECODE
 
+from protodb.collection_create_pb2 import CreateCollectionRequest
+from protodb.collection_create_pb2 import CreateCollectionResponse
+from protodb.collection_create_pb2 import _CREATECOLLECTIONRESPONSE_FAILURECODE
+
 from protodb.database_list_pb2 import ListDatabasesRequest, ListDatabasesResponse
 
+from user_pb2 import User
 
 def create_database(stub, db_name):
     request = CreateDatabaseRequest()
@@ -33,9 +40,31 @@ def list_databases(stub):
     print('got databases: {}'.format(response.database))
 
 
+def create_collection(stub, db_name, collection_name, schema):
+    create_collection_request = CreateCollectionRequest()
+    create_collection_request.database = db_name
+    create_collection_request.name = collection_name
+
+    descriptor_proto = DescriptorProto()
+    schema.CopyToProto(descriptor_proto)
+    print(descriptor_proto)
+    create_collection_request.schema.MergeFrom(descriptor_proto)
+    create_collection_response = stub.CreateCollection(create_collection_request)
+
+    if create_collection_response.success:
+        print("create collection succeeded!")
+    else:
+        if create_collection_response.failure_code == CreateCollectionResponse.DB_EXISTS:
+            print("collection already exists")
+        else:
+            failure_code_str = _CREATECOLLECTIONRESPONSE_FAILURECODE.values_by_number[
+                create_collection_response.failure_code].name
+            print("create collection failed: " + failure_code_str)
+
+
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:10000') as channel:
         stub = protodb_pb2_grpc.ProtoDBStub(channel)
         create_database(stub, 'foo')
         list_databases(stub)
-
+        create_collection(stub, 'foo', 'users', User.DESCRIPTOR)

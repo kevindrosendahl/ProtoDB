@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package protodb;
+
+import "google/protobuf/descriptor.proto";
+
+message CreateCollectionRequest {
+    string database = 1;
+    string name = 2;
+    google.protobuf.DescriptorProto schema = 3;
+}
+
+message CreateCollectionResponse {
+    bool success = 1;
+    enum FailureCode {
+        NO_ERROR = 0;
+        INVALID_DB = 1;
+        INVALID_COLLECTION = 2;
+        COLLECTION_EXISTS = 3;
+        INVALID_SCHEMA = 4;
+    }
+    FailureCode failure_code = 2;
+}

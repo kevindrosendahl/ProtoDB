@@ -414,6 +414,7 @@ dependencies = [
  "log 0.4.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "prost-derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prost-types 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.73 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.73 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.26 (registry+https://github.com/rust-lang/crates.io-index)",

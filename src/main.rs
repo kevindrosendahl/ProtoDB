@@ -1,4 +1,4 @@
-extern crate libprotodb;
+use libprotodb;
 
 pub fn main() {
     let storage_engine = libprotodb::storage::in_memory::InMemoryStorageEngine::new();

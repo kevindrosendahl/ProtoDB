@@ -237,7 +237,7 @@ impl MultiGranularLock {
 
     /// Blocks until the lock can be acquired with the specified granularity.
     #[allow(dead_code)]
-    pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard {
+    pub fn acquire(&self, granularity: Granularity) -> MultiGranularLockGuard<'_> {
         // If we can acquire the lock, do so and return the guard.
         if let Some(g) = self.try_acquire(granularity) {
             return g;
@@ -285,7 +285,7 @@ impl MultiGranularLock {
 
     /// Attempts to acquire the lock at the specified granularity without blocking.
     #[allow(dead_code)]
-    pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard> {
+    pub fn try_acquire(&self, granularity: Granularity) -> Option<MultiGranularLockGuard<'_>> {
         // Check to see if the lock is already acquired at any granularity.
         // If it is, return None.
         let already_locked = self.locked.compare_and_swap(false, true, Ordering::SeqCst);

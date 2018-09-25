@@ -5,6 +5,8 @@ use std::{
     sync::{Arc, Mutex, RwLock},
 };
 
+use prost_types::{DescriptorProto};
+
 mod database;
 use self::database::Database;
 
@@ -116,5 +118,12 @@ impl StorageEngine for InMemoryStorageEngine {
 
     fn create_database(&self, name: &str) {
         self.create_database(name)
+    }
+
+    fn list_collections(&self, database: &str) -> Option<Vec<String>> {
+        None
+    }
+    fn create_collection(&self, database: &str, name: &str, schema: &DescriptorProto) {
+        println!("{}", schema.name())
     }
 }

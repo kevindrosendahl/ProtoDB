@@ -1,6 +1,6 @@
 #! /bin/bash
 
-mkdir -p src
+protoc -I src/protos --python_out=src src/protos/*.proto
 
 python -m grpc_tools.protoc \
     -I ../../proto \

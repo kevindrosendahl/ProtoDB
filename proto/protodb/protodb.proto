@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package protodb;
 
+import "protodb/collection_create.proto";
 import "protodb/database_create.proto";
 import "protodb/database_list.proto";
 
@@ -9,4 +10,5 @@ service ProtoDB {
     rpc CreateDatabase (protodb.CreateDatabaseRequest) returns (protodb.CreateDatabaseResponse);
     rpc ListDatabases (protodb.ListDatabasesRequest) returns (protodb.ListDatabasesResponse);
 
+    rpc CreateCollection (protodb.CreateCollectionRequest) returns (protodb.CreateCollectionResponse);
 }
