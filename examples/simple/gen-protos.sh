@@ -2,6 +2,7 @@
 
 protoc -I src/protos \
         -I ../../proto \
+        -I /usr/local/include \
         --python_out=src \
         src/protos/*.proto
 

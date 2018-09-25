@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/extensions.proto',
   package='protodb',
   syntax='proto3',
-  serialized_pb=_b('\n\x18protodb/extensions.proto\x12\x07protodb\x1a google/protobuf/descriptor.proto\"%\n\x0eProtoDBOptions\x12\x13\n\x0bprimary_key\x18\x01 \x01(\x08:I\n\x07protodb\x12\x1d.google.protobuf.FieldOptions\x18\xb8\xb6\x05 \x01(\x0b\x32\x17.protodb.ProtoDBOptionsb\x06proto3')
+  serialized_pb=_b('\n\x18protodb/extensions.proto\x12\x07protodb\x1a google/protobuf/descriptor.proto\"G\n\x0eProtoDBOptions\x12\x13\n\x0bprimary_key\x18\x01 \x01(\x08\x12 \n\x03orm\x18\x02 \x01(\x0b\x32\x13.protodb.OrmOptions\"\x1e\n\nOrmOptions\x12\x10\n\x08retrieve\x18\x01 \x01(\x08:I\n\x07protodb\x12\x1d.google.protobuf.FieldOptions\x18\xb8\xb6\x05 \x01(\x0b\x32\x17.protodb.ProtoDBOptionsb\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -49,6 +49,13 @@ _PROTODBOPTIONS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='orm', full_name='protodb.ProtoDBOptions.orm', index=1,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -62,10 +69,43 @@ _PROTODBOPTIONS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=71,
-  serialized_end=108,
+  serialized_end=142,
 )
 
+
+_ORMOPTIONS = _descriptor.Descriptor(
+  name='OrmOptions',
+  full_name='protodb.OrmOptions',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='retrieve', full_name='protodb.OrmOptions.retrieve', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=144,
+  serialized_end=174,
+)
+
+_PROTODBOPTIONS.fields_by_name['orm'].message_type = _ORMOPTIONS
 DESCRIPTOR.message_types_by_name['ProtoDBOptions'] = _PROTODBOPTIONS
+DESCRIPTOR.message_types_by_name['OrmOptions'] = _ORMOPTIONS
 DESCRIPTOR.extensions_by_name['protodb'] = protodb
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -75,6 +115,13 @@ ProtoDBOptions = _reflection.GeneratedProtocolMessageType('ProtoDBOptions', (_me
   # @@protoc_insertion_point(class_scope:protodb.ProtoDBOptions)
   ))
 _sym_db.RegisterMessage(ProtoDBOptions)
+
+OrmOptions = _reflection.GeneratedProtocolMessageType('OrmOptions', (_message.Message,), dict(
+  DESCRIPTOR = _ORMOPTIONS,
+  __module__ = 'protodb.extensions_pb2'
+  # @@protoc_insertion_point(class_scope:protodb.OrmOptions)
+  ))
+_sym_db.RegisterMessage(OrmOptions)
 
 protodb.message_type = _PROTODBOPTIONS
 google_dot_protobuf_dot_descriptor__pb2.FieldOptions.RegisterExtension(protodb)

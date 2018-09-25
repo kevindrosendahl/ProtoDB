@@ -5,9 +5,10 @@ package protodb.test;
 import "protodb/extensions.proto";
 
 message User {
-    uint64 id = 1 [(protodb).primary_key = false];
+    uint64 id = 1 [(protodb).primary_key = true,
+                   (protodb).orm.retrieve = true];
 
-    string first_name = 2;
+    string first_name = 2 [(protodb).orm.retrieve = true];
     string last_name = 3;
     uint32 age = 4;
 }

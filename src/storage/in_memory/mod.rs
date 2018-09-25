@@ -125,8 +125,8 @@ impl StorageEngine for InMemoryStorageEngine {
     }
     fn create_collection(&self, database: &str, name: &str, schema: &DescriptorProto) {
         println!("{}", schema.name());
+        println!("{:?}", schema);
         println!("{:?}", schema.extension);
-//        println!("{:?}", schema);
         println!("{:?}", schema.field[0]);
         println!("{:?}", schema.field[0].options.clone().unwrap());
     }

@@ -47,7 +47,10 @@ def create_collection(stub, db_name, collection_name, schema):
 
     descriptor_proto = DescriptorProto()
     schema.CopyToProto(descriptor_proto)
-    print(descriptor_proto)
+    print(dir(User.DESCRIPTOR))
+    print(dir(User.DESCRIPTOR.fields[0]))
+    print(User.DESCRIPTOR.fields[0].full_name)
+    print(User.DESCRIPTOR.fields[0].GetOptions())
     create_collection_request.schema.MergeFrom(descriptor_proto)
     create_collection_response = stub.CreateCollection(create_collection_request)
 
