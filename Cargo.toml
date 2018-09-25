@@ -1,7 +1,8 @@
 [package]
 name = "protodb"
 version = "0.1.0"
-authors = ["kevin"]
+authors = ["kevindrosendahl"]
+edition = "2018"
 
 [lib]
 name = "libprotodb"
