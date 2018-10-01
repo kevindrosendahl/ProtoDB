@@ -34,7 +34,7 @@ Longer term goals:
   - more interesting queries
 - concurrency
   - add lock manager
-  - multi granular lock implemented already in src/util/sync
+  - multi granular lock implemented already in [`src/util/sync/multi_granular_lock.rs`](https://github.com/kevindrosendahl/ProtoDB/blob/revamp/src/util/sync/multi_granular_lock.rs)
 
 Open ended goals:
 - cross-collection relations
