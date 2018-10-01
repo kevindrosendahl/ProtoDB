@@ -308,7 +308,8 @@ impl MultiGranularLock {
         // the self.state mutex.
         // So if self.state.try_lock() fails, we have a bug with either our state bookkeeping
         // logic or with the MultiGranularLockGuard drop logic.
-        let mut state = self.state
+        let mut state = self
+            .state
             .try_lock()
             .expect("unable to acquire internal state lock when freshly acquiring lock");
         state.acquire(granularity);
@@ -671,7 +672,10 @@ mod tests {
         {
             let expected_waiting = test.queued_granularities.len() - test.expected_success.len();
 
-            let wait_queue = l.wait_queue.try_lock().expect("unable to get wait_queue lock");
+            let wait_queue = l
+                .wait_queue
+                .try_lock()
+                .expect("unable to get wait_queue lock");
 
             let thread_ids = thread_ids.clone();
             let thread_ids = thread_ids.lock().unwrap();
@@ -690,9 +694,15 @@ mod tests {
             assert!(state.acquired());
 
             assert_eq!(state.exclusive, test.expected_state.exclusive);
-            assert_eq!(state.shared_and_intention_exclusive, test.expected_state.shared_and_intention_exclusive);
+            assert_eq!(
+                state.shared_and_intention_exclusive,
+                test.expected_state.shared_and_intention_exclusive
+            );
             assert_eq!(state.shared, test.expected_state.shared);
-            assert_eq!(state.intention_exclusive, test.expected_state.intention_exclusive);
+            assert_eq!(
+                state.intention_exclusive,
+                test.expected_state.intention_exclusive
+            );
             assert_eq!(state.intention_shared, test.expected_state.intention_shared);
         }
 
@@ -709,4 +719,3 @@ mod tests {
         }
     }
 }
-

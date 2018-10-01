@@ -11,8 +11,7 @@ fn main() {
                 "proto/protodb/{}",
                 d.path().file_name().unwrap().to_str().unwrap()
             )
-        })
-        .collect();
+        }).collect();
 
     tower_grpc_build::Config::new()
         .enable_server(true)

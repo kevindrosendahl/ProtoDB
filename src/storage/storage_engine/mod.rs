@@ -1,4 +1,4 @@
-use prost_types::{DescriptorProto};
+use prost_types::DescriptorProto;
 
 pub trait StorageEngine {
     fn list_databases(&self) -> Vec<String>;

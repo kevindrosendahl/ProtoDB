@@ -61,7 +61,7 @@ impl generated::server::ProtoDb for Handler {
     }
 
     type CreateCollectionFuture =
-    future::FutureResult<Response<response::CreateCollection>, tower_grpc::Error>;
+        future::FutureResult<Response<response::CreateCollection>, tower_grpc::Error>;
 
     fn create_collection(
         &mut self,
@@ -69,9 +69,11 @@ impl generated::server::ProtoDb for Handler {
     ) -> Self::CreateCollectionFuture {
         println!("got request to create {}", request.get_ref().name);
 
-        self.storage_engine
-            .clone()
-            .create_collection(&request.get_ref().database, &request.get_ref().name, &request.get_ref().schema.clone().unwrap());
+        self.storage_engine.clone().create_collection(
+            &request.get_ref().database,
+            &request.get_ref().name,
+            &request.get_ref().schema.clone().unwrap(),
+        );
 
         let response = Response::new(response::CreateCollection {
             success: true,

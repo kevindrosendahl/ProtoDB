@@ -5,7 +5,7 @@ use std::{
     sync::{Arc, Mutex, RwLock},
 };
 
-use prost_types::{DescriptorProto};
+use prost_types::DescriptorProto;
 
 mod database;
 use self::database::Database;
@@ -20,14 +20,18 @@ const DELIMITER: &'static str = "/";
 
 pub struct InMemoryStorageEngine {
     cache: Arc<RwLock<BTreeMap<Vec<u8>, Vec<u8>>>>,
+
     database_id_counter: Arc<Mutex<u64>>,
+    databases: Arc<RwLock<BTreeMap<String, Database>>>,
 }
 
 impl InMemoryStorageEngine {
     pub fn new() -> InMemoryStorageEngine {
         InMemoryStorageEngine {
             cache: Arc::new(RwLock::new(BTreeMap::new())),
+
             database_id_counter: Arc::new(Mutex::new(1)),
+            databases: Arc::new(RwLock::new(BTreeMap::new())),
         }
     }
 
@@ -45,8 +49,7 @@ impl InMemoryStorageEngine {
                 .range((
                     Bound::Included(lower.to_vec()),
                     Bound::Included(upper.to_vec()),
-                ))
-                .map(|(k, v)| (k.clone(), v.clone()))
+                )).map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
         )
     }
@@ -70,8 +73,7 @@ impl InMemoryStorageEngine {
                 );
                 let id = InMemoryStorageEngine::database_id(&v);
                 (name, id)
-            })
-            .collect()
+            }).collect()
     }
 
     fn create_database(&self, name: &str) {
@@ -80,9 +82,9 @@ impl InMemoryStorageEngine {
         *count += 1;
 
         let key = InMemoryStorageEngine::database_entry_key(name);
-        let mut wtr = vec![];
-        wtr.write_u64::<LittleEndian>(curr).unwrap();
-        self.put(key.as_bytes(), &wtr);
+        let mut writer = vec![];
+        writer.write_u64::<LittleEndian>(curr).unwrap();
+        self.put(key.as_bytes(), &writer);
     }
 
     fn database_entry_key(name: &str) -> String {
@@ -112,8 +114,7 @@ impl StorageEngine for InMemoryStorageEngine {
             .map(|(name, id)| {
                 println!("{}: {}", name, id);
                 name.clone()
-            })
-            .collect()
+            }).collect()
     }
 
     fn create_database(&self, name: &str) {
