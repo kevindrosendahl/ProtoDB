@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package protodb;
+package protodb.database;
 
 message CreateDatabaseRequest {
     string name = 1;
@@ -10,8 +10,7 @@ message CreateDatabaseResponse {
     bool success = 1;
     enum FailureCode {
         NO_ERROR = 0;
-        INVALID_DB = 1;
-        DB_EXISTS = 2;
+        DATABASE_EXISTS = 1;
     }
     FailureCode failure_code = 2;
 }

@@ -2,13 +2,15 @@ syntax = "proto3";
 
 package protodb;
 
-import "protodb/collection_create.proto";
-import "protodb/database_create.proto";
-import "protodb/database_list.proto";
+import "protodb/collection/create.proto";
+import "protodb/collection/list.proto";
+import "protodb/database/create.proto";
+import "protodb/database/list.proto";
 
 service ProtoDB {
-    rpc CreateDatabase (protodb.CreateDatabaseRequest) returns (protodb.CreateDatabaseResponse);
-    rpc ListDatabases (protodb.ListDatabasesRequest) returns (protodb.ListDatabasesResponse);
+    rpc CreateDatabase (protodb.database.CreateDatabaseRequest) returns (protodb.database.CreateDatabaseResponse);
+    rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
 
-    rpc CreateCollection (protodb.CreateCollectionRequest) returns (protodb.CreateCollectionResponse);
+    rpc CreateCollection (protodb.collection.CreateCollectionRequest) returns (protodb.collection.CreateCollectionResponse);
+    rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
 }

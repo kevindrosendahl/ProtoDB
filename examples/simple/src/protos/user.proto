@@ -1,14 +1,9 @@
 syntax = "proto3";
 
-package protodb.test;
-
-import "protodb/extensions.proto";
-
 message User {
-    uint64 id = 1 [(protodb).primary_key = true,
-                   (protodb).orm.retrieve = true];
+    uint64 id = 1;
 
-    string first_name = 2 [(protodb).orm.retrieve = true];
+    string first_name = 2;
     string last_name = 3;
     uint32 age = 4;
 }

@@ -12,51 +12,49 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-from protodb import extensions_pb2 as protodb_dot_extensions__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='user.proto',
-  package='protodb.test',
+  package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nuser.proto\x12\x0cprotodb.test\x1a\x18protodb/extensions.proto\"`\n\x04User\x12\x1a\n\x02id\x18\x01 \x01(\x04\x42\x0e\xc2\xb3+\x02\x08\x01\xc2\xb3+\x04\x12\x02\x08\x01\x12\x1c\n\nfirst_name\x18\x02 \x01(\tB\x08\xc2\xb3+\x04\x12\x02\x08\x01\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
-  ,
-  dependencies=[protodb_dot_extensions__pb2.DESCRIPTOR,])
+  serialized_pb=_b('\n\nuser.proto\"F\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x12\n\nfirst_name\x18\x02 \x01(\t\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
+)
 
 
 
 
 _USER = _descriptor.Descriptor(
   name='User',
-  full_name='protodb.test.User',
+  full_name='User',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='protodb.test.User.id', index=0,
+      name='id', full_name='User.id', index=0,
       number=1, type=4, cpp_type=4, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=_b('\302\263+\002\010\001\302\263+\004\022\002\010\001'), file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='first_name', full_name='protodb.test.User.first_name', index=1,
+      name='first_name', full_name='User.first_name', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
-      serialized_options=_b('\302\263+\004\022\002\010\001'), file=DESCRIPTOR),
+      serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='last_name', full_name='protodb.test.User.last_name', index=2,
+      name='last_name', full_name='User.last_name', index=2,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='age', full_name='protodb.test.User.age', index=3,
+      name='age', full_name='User.age', index=3,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -74,8 +72,8 @@ _USER = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=54,
-  serialized_end=150,
+  serialized_start=14,
+  serialized_end=84,
 )
 
 DESCRIPTOR.message_types_by_name['User'] = _USER
@@ -84,11 +82,9 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 User = _reflection.GeneratedProtocolMessageType('User', (_message.Message,), dict(
   DESCRIPTOR = _USER,
   __module__ = 'user_pb2'
-  # @@protoc_insertion_point(class_scope:protodb.test.User)
+  # @@protoc_insertion_point(class_scope:User)
   ))
 _sym_db.RegisterMessage(User)
 
 
-_USER.fields_by_name['id']._options = None
-_USER.fields_by_name['first_name']._options = None
 # @@protoc_insertion_point(module_scope)

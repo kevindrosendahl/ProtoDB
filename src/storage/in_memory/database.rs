@@ -1,16 +1,11 @@
 use std::{
     collections::BTreeMap,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
 };
 
-use prost_types::DescriptorProto;
+use super::collection::Collection;
 
+#[derive(Default)]
 pub struct Database {
-    collection_id_counter: Arc<Mutex<u64>>,
-    collections: Arc<RwLock<BTreeMap<String, Collection>>>,
-}
-
-pub struct Collection {
-    name: string,
-    schema: DescriptorProto,
+    pub collections: Arc<RwLock<BTreeMap<String, Collection>>>,
 }

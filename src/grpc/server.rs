@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 
-use super::generated::server;
+use super::generated::protodb::server;
 use super::handler::Handler;
 
 use futures::{Future, Stream};

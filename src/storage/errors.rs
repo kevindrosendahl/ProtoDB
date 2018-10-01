@@ -2,9 +2,8 @@ use std::{error, fmt};
 
 #[derive(Debug)]
 pub enum StorageError {
-    CollectionAlreadyExists,
+    DatabaseError(DatabaseError),
     CollectionError(CollectionError),
-    ProtobufError(::protobuf::ProtobufError),
 }
 
 impl fmt::Display for StorageError {
@@ -16,18 +15,22 @@ impl fmt::Display for StorageError {
 impl error::Error for StorageError {
     fn description(&self) -> &str {
         match self {
-            &StorageError::CollectionAlreadyExists => "collection already exists",
-            &StorageError::CollectionError(ref err) => err.description(),
-            &StorageError::ProtobufError(ref err) => err.description(),
+            StorageError::DatabaseError(ref err) => err.description(),
+            StorageError::CollectionError(ref err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            &StorageError::CollectionAlreadyExists => None,
-            &StorageError::CollectionError(ref e) => e.cause(),
-            &StorageError::ProtobufError(ref e) => e.cause(),
+            StorageError::DatabaseError(ref e) => e.cause(),
+            StorageError::CollectionError(ref e) => e.cause(),
         }
+    }
+}
+
+impl From<DatabaseError> for StorageError {
+    fn from(err: DatabaseError) -> StorageError {
+        StorageError::DatabaseError(err)
     }
 }
 
@@ -37,8 +40,55 @@ impl From<CollectionError> for StorageError {
     }
 }
 
-impl From<::protobuf::ProtobufError> for StorageError {
-    fn from(err: ::protobuf::ProtobufError) -> StorageError {
-        StorageError::ProtobufError(err)
+#[derive(Debug)]
+pub enum DatabaseError {
+    DatabaseAlreadyExists,
+    InvalidDatabase,
+}
+
+impl fmt::Display for DatabaseError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+impl error::Error for DatabaseError {
+    fn description(&self) -> &str {
+        match self {
+            DatabaseError::DatabaseAlreadyExists => "database already exists",
+            DatabaseError::InvalidDatabase => "invalid database",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            DatabaseError::DatabaseAlreadyExists => None,
+            DatabaseError::InvalidDatabase => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum CollectionError {
+    CollectionAlreadyExists,
+}
+
+impl fmt::Display for CollectionError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+impl error::Error for CollectionError {
+    fn description(&self) -> &str {
+        match self {
+            CollectionError::CollectionAlreadyExists => "collection already exists",
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            CollectionError::CollectionAlreadyExists => None,
+        }
     }
 }

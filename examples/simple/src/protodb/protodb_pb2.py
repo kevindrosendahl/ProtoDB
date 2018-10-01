@@ -13,18 +13,19 @@ from google.protobuf import descriptor_pb2
 _sym_db = _symbol_database.Default()
 
 
-from protodb import collection_create_pb2 as protodb_dot_collection__create__pb2
-from protodb import database_create_pb2 as protodb_dot_database__create__pb2
-from protodb import database_list_pb2 as protodb_dot_database__list__pb2
+from protodb.collection import create_pb2 as protodb_dot_collection_dot_create__pb2
+from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
+from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
+from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/protodb.proto',
   package='protodb',
   syntax='proto3',
-  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection_create.proto\x1a\x1dprotodb/database_create.proto\x1a\x1bprotodb/database_list.proto2\x85\x02\n\x07ProtoDB\x12Q\n\x0e\x43reateDatabase\x12\x1e.protodb.CreateDatabaseRequest\x1a\x1f.protodb.CreateDatabaseResponse\x12N\n\rListDatabases\x12\x1d.protodb.ListDatabasesRequest\x1a\x1e.protodb.ListDatabasesResponse\x12W\n\x10\x43reateCollection\x12 .protodb.CreateCollectionRequest\x1a!.protodb.CreateCollectionResponseb\x06proto3')
+  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection/create.proto\x1a\x1dprotodb/collection/list.proto\x1a\x1dprotodb/database/create.proto\x1a\x1bprotodb/database/list.proto2\xab\x03\n\x07ProtoDB\x12\x63\n\x0e\x43reateDatabase\x12\'.protodb.database.CreateDatabaseRequest\x1a(.protodb.database.CreateDatabaseResponse\x12`\n\rListDatabases\x12&.protodb.database.ListDatabasesRequest\x1a\'.protodb.database.ListDatabasesResponse\x12m\n\x10\x43reateCollection\x12+.protodb.collection.CreateCollectionRequest\x1a,.protodb.collection.CreateCollectionResponse\x12j\n\x0fListCollections\x12*.protodb.collection.ListCollectionsRequest\x1a+.protodb.collection.ListCollectionsResponseb\x06proto3')
   ,
-  dependencies=[protodb_dot_collection__create__pb2.DESCRIPTOR,protodb_dot_database__create__pb2.DESCRIPTOR,protodb_dot_database__list__pb2.DESCRIPTOR,])
+  dependencies=[protodb_dot_collection_dot_create__pb2.DESCRIPTOR,protodb_dot_collection_dot_list__pb2.DESCRIPTOR,protodb_dot_database_dot_create__pb2.DESCRIPTOR,protodb_dot_database_dot_list__pb2.DESCRIPTOR,])
 
 
 
@@ -38,16 +39,16 @@ _PROTODB = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=128,
-  serialized_end=389,
+  serialized_start=159,
+  serialized_end=586,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateDatabase',
     full_name='protodb.ProtoDB.CreateDatabase',
     index=0,
     containing_service=None,
-    input_type=protodb_dot_database__create__pb2._CREATEDATABASEREQUEST,
-    output_type=protodb_dot_database__create__pb2._CREATEDATABASERESPONSE,
+    input_type=protodb_dot_database_dot_create__pb2._CREATEDATABASEREQUEST,
+    output_type=protodb_dot_database_dot_create__pb2._CREATEDATABASERESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
@@ -55,8 +56,8 @@ _PROTODB = _descriptor.ServiceDescriptor(
     full_name='protodb.ProtoDB.ListDatabases',
     index=1,
     containing_service=None,
-    input_type=protodb_dot_database__list__pb2._LISTDATABASESREQUEST,
-    output_type=protodb_dot_database__list__pb2._LISTDATABASESRESPONSE,
+    input_type=protodb_dot_database_dot_list__pb2._LISTDATABASESREQUEST,
+    output_type=protodb_dot_database_dot_list__pb2._LISTDATABASESRESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
@@ -64,8 +65,17 @@ _PROTODB = _descriptor.ServiceDescriptor(
     full_name='protodb.ProtoDB.CreateCollection',
     index=2,
     containing_service=None,
-    input_type=protodb_dot_collection__create__pb2._CREATECOLLECTIONREQUEST,
-    output_type=protodb_dot_collection__create__pb2._CREATECOLLECTIONRESPONSE,
+    input_type=protodb_dot_collection_dot_create__pb2._CREATECOLLECTIONREQUEST,
+    output_type=protodb_dot_collection_dot_create__pb2._CREATECOLLECTIONRESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='ListCollections',
+    full_name='protodb.ProtoDB.ListCollections',
+    index=3,
+    containing_service=None,
+    input_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSREQUEST,
+    output_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSRESPONSE,
     options=None,
   ),
 ])

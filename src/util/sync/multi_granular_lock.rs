@@ -141,11 +141,11 @@ impl WaitQueue {
 
     pub fn wake_compatible(&mut self, state: &mut State) {
         self.inner.retain(|entry| {
-            if !state.can_acquire(entry.granularity.clone()) {
+            if !state.can_acquire(entry.granularity) {
                 return true;
             }
 
-            state.acquire(entry.granularity.clone());
+            state.acquire(entry.granularity);
             entry.thread.unpark();
             false
         })

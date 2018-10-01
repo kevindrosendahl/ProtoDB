@@ -1,134 +1,103 @@
 use std::{
     collections::BTreeMap,
-    io::Cursor,
-    ops::Bound,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, RwLock},
 };
+
+mod collection;
+mod database;
+use self::{collection::Collection, database::Database};
+
+use crate::storage::{errors, StorageEngine};
 
 use prost_types::DescriptorProto;
 
-mod database;
-use self::database::Database;
-
-use crate::storage::storage_engine::StorageEngine;
-
-use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
-
-const DATABASE_PREFIX: &'static str = "database";
-const DATABASES_PREFIX: &'static str = "databases";
-const DELIMITER: &'static str = "/";
-
+#[derive(Default)]
 pub struct InMemoryStorageEngine {
-    cache: Arc<RwLock<BTreeMap<Vec<u8>, Vec<u8>>>>,
-
-    database_id_counter: Arc<Mutex<u64>>,
     databases: Arc<RwLock<BTreeMap<String, Database>>>,
 }
 
 impl InMemoryStorageEngine {
     pub fn new() -> InMemoryStorageEngine {
         InMemoryStorageEngine {
-            cache: Arc::new(RwLock::new(BTreeMap::new())),
-
-            database_id_counter: Arc::new(Mutex::new(1)),
             databases: Arc::new(RwLock::new(BTreeMap::new())),
         }
     }
 
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
-        let cache = self.cache.clone();
-        let cache = cache.read().unwrap();
-        cache.get(key).map(|v| v.clone())
+    fn list_databases(&self) -> Vec<String> {
+        let dbs = self.databases.clone();
+        let dbs = dbs.read().unwrap();
+        dbs.keys().cloned().collect()
     }
 
-    fn get_range(&self, lower: &[u8], upper: &[u8]) -> Option<Vec<(Vec<u8>, Vec<u8>)>> {
-        let cache = self.cache.clone();
-        let cache = cache.read().unwrap();
-        Some(
-            cache
-                .range((
-                    Bound::Included(lower.to_vec()),
-                    Bound::Included(upper.to_vec()),
-                )).map(|(k, v)| (k.clone(), v.clone()))
-                .collect(),
-        )
+    fn create_database(&self, name: &str) -> Result<(), errors::StorageError> {
+        let dbs = self.databases.clone();
+        let mut dbs = dbs.write().unwrap();
+        if dbs.contains_key(name) {
+            return Err(errors::StorageError::DatabaseError(
+                errors::DatabaseError::DatabaseAlreadyExists,
+            ));
+        }
+
+        dbs.insert(name.to_string(), Default::default());
+        Ok(())
     }
 
-    fn put(&self, key: &[u8], value: &[u8]) {
-        let cache = self.cache.clone();
-        cache.write().unwrap().insert(key.to_vec(), value.to_vec());
+    fn create_collection(
+        &self,
+        database: &str,
+        name: &str,
+        schema: &DescriptorProto,
+    ) -> Result<(), errors::StorageError> {
+        let dbs = self.databases.clone();
+        let dbs = dbs.read().unwrap();
+        let db = dbs
+            .get(database)
+            .ok_or_else(|| errors::DatabaseError::InvalidDatabase)?;
+
+        let colls = db.collections.clone();
+        let mut colls = colls.write().unwrap();
+        if colls.contains_key(name) {
+            return Err(errors::StorageError::CollectionError(
+                errors::CollectionError::CollectionAlreadyExists,
+            ));
+        }
+
+        colls.insert(name.to_string(), Collection::new(schema));
+        Ok(())
     }
 
-    fn get_databases(&self) -> Vec<(String, u64)> {
-        let lower = format!("{}{}", DATABASES_PREFIX, DELIMITER);
-        let delimiter_plus_1 = DELIMITER.as_bytes()[0] + 1;
-        let upper = format!("{}{}", DATABASES_PREFIX, delimiter_plus_1);
+    fn list_collections(&self, database: &str) -> Result<Vec<String>, errors::StorageError> {
+        let dbs = self.databases.clone();
+        let dbs = dbs.read().unwrap();
+        let db = dbs
+            .get(database)
+            .ok_or_else(|| errors::DatabaseError::InvalidDatabase)?;
 
-        self.get_range(lower.as_bytes(), upper.as_bytes())
-            .unwrap()
-            .iter()
-            .map(|(k, v)| {
-                let name = InMemoryStorageEngine::database_name(
-                    String::from_utf8(k.clone()).unwrap().as_ref(),
-                );
-                let id = InMemoryStorageEngine::database_id(&v);
-                (name, id)
-            }).collect()
-    }
-
-    fn create_database(&self, name: &str) {
-        let mut count = self.database_id_counter.lock().unwrap();
-        let curr = *count;
-        *count += 1;
-
-        let key = InMemoryStorageEngine::database_entry_key(name);
-        let mut writer = vec![];
-        writer.write_u64::<LittleEndian>(curr).unwrap();
-        self.put(key.as_bytes(), &writer);
-    }
-
-    fn database_entry_key(name: &str) -> String {
-        format!("{}{}{}", DATABASES_PREFIX, DELIMITER, name)
-    }
-
-    fn database_name(key: &str) -> String {
-        let v: Vec<&str> = key.split(DELIMITER).collect();
-        v.last().unwrap().to_string()
-    }
-
-    fn database_id(v: &Vec<u8>) -> u64 {
-        Cursor::new(v).read_u64::<LittleEndian>().unwrap()
-    }
-
-    fn get_database_id(&self, name: &str) -> Option<u64> {
-        let key = InMemoryStorageEngine::database_entry_key(name);
-        self.get(key.as_ref())
-            .map(|v| InMemoryStorageEngine::database_id(&v))
+        let colls = db.collections.clone();
+        let colls = colls.read().unwrap();
+        Ok(colls.keys().cloned().collect())
     }
 }
 
 impl StorageEngine for InMemoryStorageEngine {
     fn list_databases(&self) -> Vec<String> {
-        self.get_databases()
-            .iter()
-            .map(|(name, id)| {
-                println!("{}: {}", name, id);
-                name.clone()
-            }).collect()
+        self.list_databases()
     }
 
-    fn create_database(&self, name: &str) {
+    fn create_database(&self, name: &str) -> Result<(), errors::StorageError> {
         self.create_database(name)
     }
 
-    fn list_collections(&self, database: &str) -> Option<Vec<String>> {
-        None
+    fn list_collections(&self, database: &str) -> Result<Vec<String>, errors::StorageError> {
+        self.list_collections(database)
     }
-    fn create_collection(&self, database: &str, name: &str, schema: &DescriptorProto) {
-        println!("{}", schema.name());
-        println!("{:?}", schema);
-        println!("{:?}", schema.extension);
-        println!("{:?}", schema.field[0]);
-        println!("{:?}", schema.field[0].options.clone().unwrap());
+
+    fn create_collection(
+        &self,
+        database: &str,
+        name: &str,
+        schema: &DescriptorProto,
+    ) -> Result<(), errors::StorageError> {
+        self.create_collection(database, name, schema)
     }
 }
