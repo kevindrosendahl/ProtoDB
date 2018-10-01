@@ -12,7 +12,7 @@ ProtoDB is an experimental database exploring:
 
 The `master` branch contains a first stab at implementing `ProtoDB` which was able to create collections with a schema, and persist validated protobufs in the collections.
 
-However, the branch became stable and was no longer able to build. In addition, the code was poorly factored and designed. This branch represents a new start.
+However, the branch became stale and was no longer able to build. In addition, the code was poorly factored and designed. This branch represents a new start.
 
 Short term goals:
 - implement in-memory storage engine
@@ -41,27 +41,26 @@ Open ended goals:
   - could potentially use protobuf options. e.g.:
 ```proto
 message User {
-    option (protodb).collection.name = "users";
     uint64 id = 1 [(protodb).primary_key = true];
     
     string first_name = 2;
     string last_name = 3;
     
-    bool verified = 4;
+    string username [(protodb).unique = true];
+
+    bool verified = 5;
 }
 
 message Post {
-    option (protodb).collection.name = "posts";
-    uint64 id = 1 [(protodb).primary_key = true];
+    uint64 id = 1 [(protodb).primary_key_autogenerate = true];
     
-    User author = 2 [(protodb).foreign_key.collection = "users", 
-                     (protodb).foreign_key.field = 1];
+    unit64 author = 2 [(protodb).foreign_key.collection = "users", 
+                       (protodb).foreign_key.field = 1];
     string content = 3;
 
     message Comment {
-        User author = 1 [(protodb).foreign_key.collection = "users", 
-                         (protodb).foreign_key.field = 1,
-                         (protodb).foreign_key.lazy = true];
+        uint64 author = 1 [(protodb).foreign_key.collection = "users", 
+                           (protodb).foreign_key.field = 1]
         string content = 2;
     }
     repeated Comment comments = 4;
@@ -74,7 +73,7 @@ import my_generated_client as client
 
 db = client.my_db
 user = db.users.get(1)
-posts = db.posts.posts_for_author(user)
+posts = db.posts.posts_for_author(user.id)
 
 for post in posts:
     for comment in post.comments:
