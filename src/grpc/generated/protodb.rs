@@ -1,104 +1,14 @@
-pub mod collection {
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateCollectionRequest {
-        #[prost(string, tag = "1")]
-        pub database: String,
-        #[prost(string, tag = "2")]
-        pub name: String,
-        #[prost(message, optional, tag = "3")]
-        pub schema: ::std::option::Option<::prost_types::DescriptorProto>,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateCollectionResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
-        #[prost(
-            enumeration = "create_collection_response::FailureCode",
-            tag = "2"
-        )]
-        pub failure_code: i32,
-    }
-    pub mod create_collection_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum FailureCode {
-            NoError = 0,
-            InvalidDatabase = 1,
-            CollectionExists = 2,
-            InvalidSchema = 3,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsRequest {
-        #[prost(string, tag = "1")]
-        pub database: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
-        #[prost(
-            enumeration = "list_collection_response::FailureCode",
-            tag = "2"
-        )]
-        pub failure_code: i32,
-        #[prost(string, repeated, tag = "3")]
-        pub collections: ::std::vec::Vec<String>,
-    }
-    pub mod list_collection_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum FailureCode {
-            NoError = 0,
-            InvalidDatabase = 1,
-            CollectionExists = 2,
-            InvalidSchema = 3,
-        }
-    }
-}
-
-pub mod database {
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseRequest {
-        #[prost(string, tag = "1")]
-        pub name: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
-        #[prost(
-            enumeration = "create_database_response::FailureCode",
-            tag = "2"
-        )]
-        pub failure_code: i32,
-    }
-    pub mod create_database_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum FailureCode {
-            NoError = 0,
-            DatabaseExists = 1,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesRequest {}
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesResponse {
-        #[prost(string, repeated, tag = "1")]
-        pub databases: ::std::vec::Vec<String>,
-    }
-}
-
 pub mod server {
+    use super::collection;
     use super::collection::{
         CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
         ListCollectionsResponse,
     };
+    use super::database;
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
     };
     use tower_grpc::codegen::server::*;
-    // FIXME: added custom imports here
-    use super::collection;
-    use super::database;
 
     // Redefine the try_ready macro so that it doesn't need to be explicitly
     // imported by the user of this generated code.
@@ -396,19 +306,18 @@ pub mod server {
         }
 
         pub mod methods {
+            use super::super::collection;
             use super::super::collection::{
                 CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
                 ListCollectionsResponse,
             };
+            use super::super::database;
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
                 ListDatabasesResponse,
             };
             use super::super::ProtoDb;
             use tower_grpc::codegen::server::*;
-            // FIXME: added custom imports here
-            use super::super::collection;
-            use super::super::database;
 
             pub struct CreateDatabase<T>(pub T);
 
@@ -491,4 +400,94 @@ pub mod server {
             }
         }
     }
+}
+
+pub mod collection {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateCollectionRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub name: String,
+        #[prost(message, optional, tag = "3")]
+        pub schema: ::std::option::Option<::prost_types::DescriptorProto>,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateCollectionResponse {
+        #[prost(bool, tag = "1")]
+        pub success: bool,
+        #[prost(
+            enumeration = "create_collection_response::FailureCode",
+            tag = "2"
+        )]
+        pub failure_code: i32,
+    }
+    pub mod create_collection_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum FailureCode {
+            NoError = 0,
+            InvalidDatabase = 1,
+            CollectionExists = 2,
+            InvalidSchema = 3,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsResponse {
+        #[prost(bool, tag = "1")]
+        pub success: bool,
+        #[prost(
+            enumeration = "list_collections_response::FailureCode",
+            tag = "2"
+        )]
+        pub failure_code: i32,
+        #[prost(string, repeated, tag = "3")]
+        pub collections: ::std::vec::Vec<String>,
+    }
+    pub mod list_collections_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum FailureCode {
+            NoError = 0,
+            InvalidDatabase = 1,
+            CollectionExists = 2,
+            InvalidSchema = 3,
+        }
+    }
+
+}
+pub mod database {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseRequest {
+        #[prost(string, tag = "1")]
+        pub name: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseResponse {
+        #[prost(bool, tag = "1")]
+        pub success: bool,
+        #[prost(
+            enumeration = "create_database_response::FailureCode",
+            tag = "2"
+        )]
+        pub failure_code: i32,
+    }
+    pub mod create_database_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum FailureCode {
+            NoError = 0,
+            DatabaseExists = 1,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesRequest {}
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesResponse {
+        #[prost(string, repeated, tag = "1")]
+        pub databases: ::std::vec::Vec<String>,
+    }
+
 }

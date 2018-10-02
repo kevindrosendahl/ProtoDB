@@ -1,8 +1,5 @@
 use libprotodb::{
-    grpc::{
-        handler::Handler,
-        server::Server,
-    },
+    grpc::{handler::Handler, server::Server},
     storage::in_memory::InMemoryStorageEngine,
 };
 

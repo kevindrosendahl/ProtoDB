@@ -35,10 +35,10 @@ impl protodb::server::ProtoDb for Handler {
             .storage_engine
             .clone()
             .create_database(&request.get_ref().name)
-            .and(Ok(database::CreateDatabaseResponse{
+            .and(Ok(database::CreateDatabaseResponse {
                 success: true,
-                failure_code: database::create_database_response::FailureCode::NoError as i32}))
-            .unwrap_or_else(|err| {
+                failure_code: database::create_database_response::FailureCode::NoError as i32,
+            })).unwrap_or_else(|err| {
                 let failure_code = match err {
                     errors::StorageError::DatabaseError(err) => {
                         match err {
@@ -52,7 +52,7 @@ impl protodb::server::ProtoDb for Handler {
                     // FIXME: replace this by specifying possible errors for each action
                     _ => panic!(format!("unexpected create database error: {}", err)),
                 };
-                database::CreateDatabaseResponse{
+                database::CreateDatabaseResponse {
                     success: false,
                     failure_code: failure_code as i32,
                 }
