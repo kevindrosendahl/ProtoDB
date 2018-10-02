@@ -1,81 +1,21 @@
-use std::sync::Arc;
+use std::error::Error;
 
-use crate::storage::{errors, schema::errors::SchemaError, StorageEngine};
+use super::super::generated::{
+    protodb,
+    protodb::{collection, database},
+};
+use super::Handler;
 
-use super::generated::protodb;
-use super::generated::protodb::collection;
-use super::generated::protodb::database;
+use crate::storage::{errors, schema::errors::SchemaError};
 
-use futures::future;
-use tower_grpc;
-use tower_grpc::{Request, Response};
-
-#[derive(Clone)]
-pub struct Handler {
-    storage_engine: Arc<Box<dyn StorageEngine>>,
-}
+use tower_grpc::Request;
 
 impl Handler {
-    pub fn new(storage_engine: Box<dyn StorageEngine>) -> Handler {
-        Handler {
-            storage_engine: Arc::new(storage_engine),
-        }
-    }
-}
-
-impl protodb::server::ProtoDb for Handler {
-    type CreateDatabaseFuture =
-        future::FutureResult<Response<database::CreateDatabaseResponse>, tower_grpc::Error>;
-
-    fn create_database(
-        &mut self,
-        request: Request<database::CreateDatabaseRequest>,
-    ) -> Self::CreateDatabaseFuture {
-        let response = self
-            .storage_engine
-            .clone()
-            .create_database(&request.get_ref().name)
-            .and(Ok(database::CreateDatabaseResponse {
-                success: true,
-                failure_code: database::create_database_response::FailureCode::NoError as i32,
-            })).unwrap_or_else(|err| {
-                let failure_code = match err {
-                    errors::CreateDatabaseError::DatabaseExists => {
-                        database::create_database_response::FailureCode::DatabaseExists
-                    }
-                };
-                database::CreateDatabaseResponse {
-                    success: false,
-                    failure_code: failure_code as i32,
-                }
-            });
-
-        future::ok(Response::new(response))
-    }
-
-    type ListDatabasesFuture =
-        future::FutureResult<Response<database::ListDatabasesResponse>, tower_grpc::Error>;
-
-    fn list_databases(
-        &mut self,
-        _request: Request<database::ListDatabasesRequest>,
-    ) -> Self::ListDatabasesFuture {
-        let response = Response::new(database::ListDatabasesResponse {
-            databases: self.storage_engine.clone().list_databases(),
-        });
-
-        future::ok(response)
-    }
-
-    type CreateCollectionFuture =
-        future::FutureResult<Response<collection::CreateCollectionResponse>, tower_grpc::Error>;
-
-    fn create_collection(
+    pub(crate) fn handle_create_collection(
         &mut self,
         request: Request<collection::CreateCollectionRequest>,
-    ) -> Self::CreateCollectionFuture {
-        let response = self
-            .storage_engine
+    ) -> collection::CreateCollectionResponse {
+        self.storage_engine
             .clone()
             .create_collection(
                 &request.get_ref().database,
@@ -116,20 +56,14 @@ impl protodb::server::ProtoDb for Handler {
                     failure_code: failure_code as i32,
                     schema_error: schema_error as i32,
                 }
-            });
-
-        future::ok(Response::new(response))
+            })
     }
 
-    type ListCollectionsFuture =
-        future::FutureResult<Response<collection::ListCollectionsResponse>, tower_grpc::Error>;
-
-    fn list_collections(
+    pub(crate) fn handle_list_collections(
         &mut self,
         request: Request<collection::ListCollectionsRequest>,
-    ) -> Self::ListCollectionsFuture {
-        let response = self
-            .storage_engine
+    ) -> collection::ListCollectionsResponse {
+        self.storage_engine
             .clone()
             .list_collections(&request.get_ref().database)
             .and_then(|collections| {
@@ -150,8 +84,50 @@ impl protodb::server::ProtoDb for Handler {
                     failure_code: failure_code as i32,
                     collections: Vec::new(),
                 }
-            });
+            })
+    }
 
-        future::ok(Response::new(response))
+    pub(crate) fn handle_insert_object(
+        &mut self,
+        request: Request<collection::InsertObjectRequest>,
+    ) -> collection::InsertObjectResponse {
+        self
+            .storage_engine
+            .clone()
+            .insert_object(
+                &request.get_ref().database,
+                &request.get_ref().collection,
+                &request.get_ref().object,
+            )
+            .and_then(|collections| {
+                Ok(collection::InsertObjectResponse {
+                    success: true,
+                    failure_code: collection::insert_object_response::FailureCode::NoFailure
+                        as i32,
+                    object_error: None,
+                })
+            }).unwrap_or_else(|err| {
+            let (failure_code, object_error) = match err {
+                errors::InsertObjectError::InvalidDatabase => {
+                    (collection::insert_object_response::FailureCode::InvalidDatabase, None)
+                }
+                errors::InsertObjectError::InvalidCollection => {
+                    (collection::insert_object_response::FailureCode::InvalidCollection, None)
+                }
+                errors::InsertObjectError::ObjectError(err)=> {
+                    let object_error = collection::insert_object_response::ObjectError{
+                        // FIXME: add match
+                        code: collection::insert_object_response::object_error::ObjectErrorCode::DecodeError as i32,
+                        message: err.description().into(),
+                    };
+                    (collection::insert_object_response::FailureCode::InvalidDatabase, Some(object_error))
+                }
+            };
+            collection::InsertObjectResponse {
+                success: false,
+                failure_code: failure_code as i32,
+                object_error,
+            }
+        })
     }
 }

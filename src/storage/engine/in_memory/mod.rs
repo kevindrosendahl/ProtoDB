@@ -74,9 +74,29 @@ impl InMemoryStorageEngine {
             .get(database)
             .ok_or_else(|| errors::ListCollectionsError::InvalidDatabase)?;
 
-        let colls = db.collections.clone();
-        let colls = colls.read().unwrap();
-        Ok(colls.keys().cloned().collect())
+        let collections = db.collections.clone();
+        let collections = collections.read().unwrap();
+        Ok(collections.keys().cloned().collect())
+    }
+
+    fn insert_object(
+        &self,
+        database: &str,
+        collection: &str,
+        object: &[u8],
+    ) -> Result<(), errors::InsertObjectError> {
+        let dbs = self.databases.clone();
+        let dbs = dbs.read().unwrap();
+        let db = dbs
+            .get(database)
+            .ok_or_else(|| errors::InsertObjectError::InvalidDatabase)?;
+
+        let collections = db.collections.clone();
+        let collections = collections.write().unwrap();
+        let collection = collections
+            .get(collection)
+            .ok_or_else(|| errors::InsertObjectError::InvalidCollection)?;
+        collection.insert_object(object)
     }
 }
 
@@ -103,5 +123,14 @@ impl StorageEngine for InMemoryStorageEngine {
         schema: &DescriptorProto,
     ) -> Result<(), errors::CreateCollectionError> {
         self.create_collection(database, name, schema)
+    }
+
+    fn insert_object(
+        &self,
+        database: &str,
+        collection: &str,
+        object: &[u8],
+    ) -> Result<(), errors::InsertObjectError> {
+        self.insert_object(database, collection, object)
     }
 }

@@ -90,32 +90,32 @@ impl From<SchemaError> for CreateCollectionError {
 }
 
 #[derive(Debug)]
-pub enum InsertError {
+pub enum InsertObjectError {
     InvalidDatabase,
     InvalidCollection,
     ObjectError(ObjectError),
 }
 
-impl fmt::Display for InsertError {
+impl fmt::Display for InsertObjectError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }
 
-impl error::Error for InsertError {
+impl error::Error for InsertObjectError {
     fn description(&self) -> &str {
         match self {
-            InsertError::InvalidDatabase => "invalid database",
-            InsertError::InvalidCollection => "invalid collection",
-            InsertError::ObjectError(err) => err.description(),
+            InsertObjectError::InvalidDatabase => "invalid database",
+            InsertObjectError::InvalidCollection => "invalid collection",
+            InsertObjectError::ObjectError(err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            InsertError::InvalidDatabase => None,
-            InsertError::InvalidCollection => None,
-            InsertError::ObjectError(err) => err.cause(),
+            InsertObjectError::InvalidDatabase => None,
+            InsertObjectError::InvalidCollection => None,
+            InsertObjectError::ObjectError(err) => err.cause(),
         }
     }
 }

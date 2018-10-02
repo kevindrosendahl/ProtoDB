@@ -1,5 +1,7 @@
 use std::{error, fmt};
 
+use prost::DecodeError;
+
 #[derive(Debug)]
 pub enum SchemaError {
     InvalidIdType,
@@ -30,7 +32,7 @@ impl error::Error for SchemaError {
 
 #[derive(Debug)]
 pub enum ObjectError {
-    MalformedData,
+    DecodeError(DecodeError),
 }
 
 impl fmt::Display for ObjectError {
@@ -42,13 +44,19 @@ impl fmt::Display for ObjectError {
 impl error::Error for ObjectError {
     fn description(&self) -> &str {
         match self {
-            ObjectError::MalformedData => "malformed data",
+            ObjectError::DecodeError(err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            ObjectError::MalformedData => None,
+            ObjectError::DecodeError(err) => err.cause(),
         }
+    }
+}
+
+impl From<DecodeError> for ObjectError {
+    fn from(err: DecodeError) -> ObjectError {
+        ObjectError::DecodeError(err)
     }
 }

@@ -1,9 +1,3 @@
-use std::{
-    collections::BTreeMap,
-    ops::Bound,
-    sync::{Arc, RwLock},
-};
-
 use super::cache::Cache;
 use crate::storage::{
     errors,
@@ -26,7 +20,7 @@ impl Collection {
         })
     }
 
-    fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertError> {
+    pub fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertObjectError> {
         Ok(())
     }
 }

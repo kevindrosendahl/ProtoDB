@@ -1,5 +1,6 @@
 use prost_types::DescriptorProto;
 
+mod decode;
 pub mod errors;
 
 pub struct Schema {

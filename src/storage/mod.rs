@@ -17,10 +17,10 @@ pub trait StorageEngine {
     fn list_collections(&self, database: &str)
         -> Result<Vec<String>, errors::ListCollectionsError>;
 
-    //    fn insert_object(
-    //        &self,
-    //        database: &str,
-    //        collection: &str,
-    //        object: &[u8],
-    //    ) -> Result<(), errors::InsertError>;
+    fn insert_object(
+        &self,
+        database: &str,
+        collection: &str,
+        object: &[u8],
+    ) -> Result<(), errors::InsertObjectError>;
 }
