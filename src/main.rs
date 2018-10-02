@@ -1,6 +1,6 @@
 use libprotodb::{
     grpc::{handler::Handler, server::Server},
-    storage::engines::in_memory::InMemoryStorageEngine,
+    storage::engine::in_memory::InMemoryStorageEngine,
 };
 
 pub fn main() {

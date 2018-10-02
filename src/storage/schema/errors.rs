@@ -2,6 +2,7 @@ use std::{error, fmt};
 
 #[derive(Debug)]
 pub enum SchemaError {
+    InvalidIdType,
     MissingIdField,
 }
 
@@ -14,12 +15,14 @@ impl fmt::Display for SchemaError {
 impl error::Error for SchemaError {
     fn description(&self) -> &str {
         match self {
+            SchemaError::InvalidIdType => "invalid id type",
             SchemaError::MissingIdField => "missing id field",
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
+            SchemaError::InvalidIdType => None,
             SchemaError::MissingIdField => None,
         }
     }

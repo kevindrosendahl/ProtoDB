@@ -98,6 +98,9 @@ impl protodb::server::ProtoDb for Handler {
                     ),
                     errors::CreateCollectionError::SchemaError(err) => {
                         let schema_err = match err {
+                            SchemaError::InvalidIdType => {
+                                collection::create_collection_response::SchemaError::InvalidIdType
+                            }
                             SchemaError::MissingIdField => {
                                 collection::create_collection_response::SchemaError::MissingIdField
                             }

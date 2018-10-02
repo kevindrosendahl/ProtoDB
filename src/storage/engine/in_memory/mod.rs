@@ -3,6 +3,7 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+mod cache;
 mod collection;
 mod database;
 use self::{collection::Collection, database::Database};

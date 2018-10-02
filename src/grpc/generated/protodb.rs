@@ -345,6 +345,7 @@ pub mod create_collection_response {
     pub enum SchemaError {
         NoSchemaError = 0,
         MissingIdField = 1,
+        InvalidIdType = 2,
     }
 }
 #[derive(Clone, PartialEq, Message)]
