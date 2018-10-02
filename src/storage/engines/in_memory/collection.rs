@@ -14,7 +14,7 @@ use crate::storage::{
 
 use prost_types::DescriptorProto;
 
-pub struct Collection {
+pub(crate) struct Collection {
     pub schema: Schema,
     cache: Arc<RwLock<BTreeMap<Vec<u8>, Vec<u8>>>>,
 }

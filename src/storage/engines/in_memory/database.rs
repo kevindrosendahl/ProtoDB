@@ -6,6 +6,6 @@ use std::{
 use super::collection::Collection;
 
 #[derive(Default)]
-pub struct Database {
+pub(crate) struct Database {
     pub collections: Arc<RwLock<BTreeMap<String, Collection>>>,
 }
