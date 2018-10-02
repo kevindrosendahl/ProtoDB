@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::storage::{errors, StorageEngine};
+use crate::storage::{errors, schema::errors::SchemaError, StorageEngine};
 
 use super::generated::protodb;
 use super::generated::protodb::collection;
@@ -40,17 +40,9 @@ impl protodb::server::ProtoDb for Handler {
                 failure_code: database::create_database_response::FailureCode::NoError as i32,
             })).unwrap_or_else(|err| {
                 let failure_code = match err {
-                    errors::StorageError::DatabaseError(err) => {
-                        match err {
-                            errors::DatabaseError::DatabaseAlreadyExists => {
-                                database::create_database_response::FailureCode::DatabaseExists
-                            }
-                            // FIXME: replace this by specifying possible errors for each action
-                            _ => panic!(format!("unexpected create database error: {}", err)),
-                        }
+                    errors::CreateDatabaseError::DatabaseExists => {
+                        database::create_database_response::FailureCode::DatabaseExists
                     }
-                    // FIXME: replace this by specifying possible errors for each action
-                    _ => panic!(format!("unexpected create database error: {}", err)),
                 };
                 database::CreateDatabaseResponse {
                     success: false,
@@ -91,25 +83,35 @@ impl protodb::server::ProtoDb for Handler {
                 &request.get_ref().schema.clone().unwrap(),
             ).and(Ok(collection::CreateCollectionResponse {
                 success: true,
-                failure_code: collection::create_collection_response::FailureCode::NoError as i32,
+                failure_code: collection::create_collection_response::FailureCode::NoFailure as i32,
+                schema_error: collection::create_collection_response::SchemaError::NoSchemaError
+                    as i32,
             })).unwrap_or_else(|err| {
-                let failure_code = match err {
-                    errors::StorageError::DatabaseError(err) => {
-                        match err {
-                            errors::DatabaseError::InvalidDatabase => {
-                                collection::create_collection_response::FailureCode::InvalidDatabase
+                let (failure_code, schema_error) = match err {
+                    errors::CreateCollectionError::InvalidDatabase => (
+                        collection::create_collection_response::FailureCode::InvalidDatabase,
+                        collection::create_collection_response::SchemaError::NoSchemaError,
+                    ),
+                    errors::CreateCollectionError::CollectionExists => (
+                        collection::create_collection_response::FailureCode::CollectionExists,
+                        collection::create_collection_response::SchemaError::NoSchemaError,
+                    ),
+                    errors::CreateCollectionError::SchemaError(err) => {
+                        let schema_err = match err {
+                            SchemaError::MissingIdField => {
+                                collection::create_collection_response::SchemaError::MissingIdField
                             }
-                            // FIXME: replace this by specifying possible errors for each action
-                            _ => panic!(format!("unexpected create collection error: {}", err)),
-                        }
-                    }
-                    errors::StorageError::CollectionError(_) => {
-                        collection::create_collection_response::FailureCode::CollectionExists
+                        };
+                        (
+                            collection::create_collection_response::FailureCode::SchemaError,
+                            schema_err,
+                        )
                     }
                 };
                 collection::CreateCollectionResponse {
                     success: false,
                     failure_code: failure_code as i32,
+                    schema_error: schema_error as i32,
                 }
             });
 
@@ -130,30 +132,19 @@ impl protodb::server::ProtoDb for Handler {
             .and_then(|collections| {
                 Ok(collection::ListCollectionsResponse {
                     success: true,
-                    failure_code: collection::create_collection_response::FailureCode::NoError
+                    failure_code: collection::list_collections_response::FailureCode::NoError
                         as i32,
-
                     collections,
                 })
             }).unwrap_or_else(|err| {
                 let failure_code = match err {
-                    errors::StorageError::DatabaseError(err) => {
-                        match err {
-                            errors::DatabaseError::InvalidDatabase => {
-                                collection::create_collection_response::FailureCode::InvalidDatabase
-                            }
-                            // FIXME: replace this by specifying possible errors for each action
-                            _ => panic!(format!("unexpected create collection error: {}", err)),
-                        }
-                    }
-                    errors::StorageError::CollectionError(_) => {
-                        collection::create_collection_response::FailureCode::CollectionExists
+                    errors::ListCollectionsError::InvalidDatabase => {
+                        collection::list_collections_response::FailureCode::InvalidDatabase
                     }
                 };
                 collection::ListCollectionsResponse {
                     success: false,
                     failure_code: failure_code as i32,
-
                     collections: Vec::new(),
                 }
             });

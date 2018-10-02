@@ -4,6 +4,8 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use crate::storage::errors;
+
 use prost_types::DescriptorProto;
 
 #[derive(Default)]
@@ -18,6 +20,10 @@ impl Collection {
             schema: schema.clone(),
             cache: Arc::new(RwLock::new(BTreeMap::new())),
         }
+    }
+
+    fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertError> {
+        Ok(())
     }
 
     fn get(&self, key: &[u8]) -> Option<Vec<u8>> {

@@ -1,94 +1,115 @@
 use std::{error, fmt};
 
+use super::schema::errors::{ObjectError, SchemaError};
+
 #[derive(Debug)]
-pub enum StorageError {
-    DatabaseError(DatabaseError),
-    CollectionError(CollectionError),
+pub enum CreateDatabaseError {
+    DatabaseExists,
 }
 
-impl fmt::Display for StorageError {
+impl fmt::Display for CreateDatabaseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }
 
-impl error::Error for StorageError {
+impl error::Error for CreateDatabaseError {
     fn description(&self) -> &str {
         match self {
-            StorageError::DatabaseError(ref err) => err.description(),
-            StorageError::CollectionError(ref err) => err.description(),
+            CreateDatabaseError::DatabaseExists => "database already exists",
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            StorageError::DatabaseError(ref e) => e.cause(),
-            StorageError::CollectionError(ref e) => e.cause(),
+            CreateDatabaseError::DatabaseExists => None,
         }
     }
 }
 
-impl From<DatabaseError> for StorageError {
-    fn from(err: DatabaseError) -> StorageError {
-        StorageError::DatabaseError(err)
-    }
-}
-
-impl From<CollectionError> for StorageError {
-    fn from(err: CollectionError) -> StorageError {
-        StorageError::CollectionError(err)
-    }
-}
-
 #[derive(Debug)]
-pub enum DatabaseError {
-    DatabaseAlreadyExists,
+pub enum ListCollectionsError {
     InvalidDatabase,
 }
 
-impl fmt::Display for DatabaseError {
+impl fmt::Display for ListCollectionsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }
 
-impl error::Error for DatabaseError {
+impl error::Error for ListCollectionsError {
     fn description(&self) -> &str {
         match self {
-            DatabaseError::DatabaseAlreadyExists => "database already exists",
-            DatabaseError::InvalidDatabase => "invalid database",
+            ListCollectionsError::InvalidDatabase => "invald database",
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            DatabaseError::DatabaseAlreadyExists => None,
-            DatabaseError::InvalidDatabase => None,
+            ListCollectionsError::InvalidDatabase => None,
         }
     }
 }
 
 #[derive(Debug)]
-pub enum CollectionError {
-    CollectionAlreadyExists,
+pub enum CreateCollectionError {
+    InvalidDatabase,
+    CollectionExists,
+    SchemaError(SchemaError),
 }
 
-impl fmt::Display for CollectionError {
+impl fmt::Display for CreateCollectionError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }
 }
 
-impl error::Error for CollectionError {
+impl error::Error for CreateCollectionError {
     fn description(&self) -> &str {
         match self {
-            CollectionError::CollectionAlreadyExists => "collection already exists",
+            CreateCollectionError::InvalidDatabase => "invalid database",
+            CreateCollectionError::CollectionExists => "collection exists",
+            CreateCollectionError::SchemaError(err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            CollectionError::CollectionAlreadyExists => None,
+            CreateCollectionError::InvalidDatabase => None,
+            CreateCollectionError::CollectionExists => None,
+            CreateCollectionError::SchemaError(err) => err.cause(),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum InsertError {
+    InvalidDatabase,
+    InvalidCollection,
+    ObjectError(ObjectError),
+}
+
+impl fmt::Display for InsertError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+impl error::Error for InsertError {
+    fn description(&self) -> &str {
+        match self {
+            InsertError::InvalidDatabase => "invalid database",
+            InsertError::InvalidCollection => "invalid collection",
+            InsertError::ObjectError(err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            InsertError::InvalidDatabase => None,
+            InsertError::InvalidCollection => None,
+            InsertError::ObjectError(err) => err.cause(),
         }
     }
 }

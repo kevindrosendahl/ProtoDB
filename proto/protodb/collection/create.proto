@@ -13,10 +13,16 @@ message CreateCollectionRequest {
 message CreateCollectionResponse {
     bool success = 1;
     enum FailureCode {
-        NO_ERROR = 0;
+        NO_FAILURE = 0;
         INVALID_DATABASE = 1;
         COLLECTION_EXISTS = 2;
-        INVALID_SCHEMA = 3;
+        SCHEMA_ERROR = 3;
     }
     FailureCode failure_code = 2;
+
+    enum SchemaError {
+        NO_SCHEMA_ERROR = 0;
+        MISSING_ID_FIELD = 1;
+    }
+    SchemaError schema_error = 3;
 }
