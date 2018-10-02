@@ -21,6 +21,7 @@ impl Collection {
     }
 
     pub fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertObjectError> {
+        self.schema.decode_object(object);
         Ok(())
     }
 }
