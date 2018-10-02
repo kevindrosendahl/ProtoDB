@@ -14,6 +14,7 @@ _sym_db = _symbol_database.Default()
 
 
 from protodb.collection import create_pb2 as protodb_dot_collection_dot_create__pb2
+from protodb.collection import insert_object_pb2 as protodb_dot_collection_dot_insert__object__pb2
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
@@ -23,9 +24,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/protodb.proto',
   package='protodb',
   syntax='proto3',
-  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection/create.proto\x1a\x1dprotodb/collection/list.proto\x1a\x1dprotodb/database/create.proto\x1a\x1bprotodb/database/list.proto2\xab\x03\n\x07ProtoDB\x12\x63\n\x0e\x43reateDatabase\x12\'.protodb.database.CreateDatabaseRequest\x1a(.protodb.database.CreateDatabaseResponse\x12`\n\rListDatabases\x12&.protodb.database.ListDatabasesRequest\x1a\'.protodb.database.ListDatabasesResponse\x12m\n\x10\x43reateCollection\x12+.protodb.collection.CreateCollectionRequest\x1a,.protodb.collection.CreateCollectionResponse\x12j\n\x0fListCollections\x12*.protodb.collection.ListCollectionsRequest\x1a+.protodb.collection.ListCollectionsResponseb\x06proto3')
+  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection/create.proto\x1a&protodb/collection/insert_object.proto\x1a\x1dprotodb/collection/list.proto\x1a\x1dprotodb/database/create.proto\x1a\x1bprotodb/database/list.proto2\x8e\x04\n\x07ProtoDB\x12\x63\n\x0e\x43reateDatabase\x12\'.protodb.database.CreateDatabaseRequest\x1a(.protodb.database.CreateDatabaseResponse\x12`\n\rListDatabases\x12&.protodb.database.ListDatabasesRequest\x1a\'.protodb.database.ListDatabasesResponse\x12m\n\x10\x43reateCollection\x12+.protodb.collection.CreateCollectionRequest\x1a,.protodb.collection.CreateCollectionResponse\x12j\n\x0fListCollections\x12*.protodb.collection.ListCollectionsRequest\x1a+.protodb.collection.ListCollectionsResponse\x12\x61\n\x0cInsertObject\x12\'.protodb.collection.InsertObjectRequest\x1a(.protodb.collection.InsertObjectResponseb\x06proto3')
   ,
-  dependencies=[protodb_dot_collection_dot_create__pb2.DESCRIPTOR,protodb_dot_collection_dot_list__pb2.DESCRIPTOR,protodb_dot_database_dot_create__pb2.DESCRIPTOR,protodb_dot_database_dot_list__pb2.DESCRIPTOR,])
+  dependencies=[protodb_dot_collection_dot_create__pb2.DESCRIPTOR,protodb_dot_collection_dot_insert__object__pb2.DESCRIPTOR,protodb_dot_collection_dot_list__pb2.DESCRIPTOR,protodb_dot_database_dot_create__pb2.DESCRIPTOR,protodb_dot_database_dot_list__pb2.DESCRIPTOR,])
 
 
 
@@ -39,8 +40,8 @@ _PROTODB = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=159,
-  serialized_end=586,
+  serialized_start=199,
+  serialized_end=725,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateDatabase',
@@ -76,6 +77,15 @@ _PROTODB = _descriptor.ServiceDescriptor(
     containing_service=None,
     input_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSREQUEST,
     output_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSRESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='InsertObject',
+    full_name='protodb.ProtoDB.InsertObject',
+    index=4,
+    containing_service=None,
+    input_type=protodb_dot_collection_dot_insert__object__pb2._INSERTOBJECTREQUEST,
+    output_type=protodb_dot_collection_dot_insert__object__pb2._INSERTOBJECTRESPONSE,
     options=None,
   ),
 ])

@@ -14,6 +14,7 @@ from protodb.collection.create_pb2 import _CREATECOLLECTIONRESPONSE_FAILURECODE
 from protodb.database.list_pb2 import ListDatabasesRequest, ListDatabasesResponse
 from protodb.collection.list_pb2 import ListCollectionsRequest, ListCollectionsResponse
 from protodb.collection.list_pb2 import _LISTCOLLECTIONSRESPONSE_FAILURECODE
+from protodb.collection.insert_object_pb2 import InsertObjectRequest, InsertObjectResponse
 
 from user_pb2 import User
 
@@ -85,6 +86,35 @@ def list_collections(stub, db_name):
                 list_collections_response.failure_code].name
             print('list collections failed: ' + failure_code_str)
 
+
+def insert_user(stub, database, collection, first_name, last_name, age):
+    user = User()
+    user.id = 1
+    user.first_name = first_name
+    user.last_name = last_name
+    user.age = age
+
+    insert_object_request = InsertObjectRequest()
+    insert_object_request.database = database
+    insert_object_request.collection = collection
+    insert_object_request.object = user.SerializeToString()
+
+    insert_object_response  = stub.InsertObject(insert_object_request)
+    print(insert_object_response)
+
+    # if insert_object_response .success:
+    #     print('collections:')
+    #     for collection in insert_object_response .collections:
+    #         print('  {}'.format(collection))
+    # else:
+    #     if insert_object_response .failure_code == ListCollectionsResponse.INVALID_DATABASE:
+    #         print('collection already exists')
+    #     else:
+    #         failure_code_str = _LISTCOLLECTIONSRESPONSE_FAILURECODE.values_by_number[
+    #             insert_object_response .failure_code].name
+    #         print('list collections failed: ' + failure_code_str)
+
+
 if __name__ == '__main__':
     with grpc.insecure_channel('localhost:10000') as channel:
         stub = protodb_pb2_grpc.ProtoDBStub(channel)
@@ -92,3 +122,4 @@ if __name__ == '__main__':
         list_databases(stub)
         create_collection(stub, 'foo', 'users', User.DESCRIPTOR)
         list_collections(stub, 'foo')
+        insert_user(stub, 'foo', 'users', 'john', 'doe', 45)

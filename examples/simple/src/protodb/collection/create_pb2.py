@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/collection/create.proto',
   package='protodb.collection',
   syntax='proto3',
-  serialized_pb=_b('\n\x1fprotodb/collection/create.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"k\n\x17\x43reateCollectionRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x30\n\x06schema\x18\x03 \x01(\x0b\x32 .google.protobuf.DescriptorProto\"\xd9\x01\n\x18\x43reateCollectionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12N\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x38.protodb.collection.CreateCollectionResponse.FailureCode\"\\\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x12\x15\n\x11\x43OLLECTION_EXISTS\x10\x02\x12\x12\n\x0eINVALID_SCHEMA\x10\x03\x62\x06proto3')
+  serialized_pb=_b('\n\x1fprotodb/collection/create.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"k\n\x17\x43reateCollectionRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x30\n\x06schema\x18\x03 \x01(\x0b\x32 .google.protobuf.DescriptorProto\"\xf8\x02\n\x18\x43reateCollectionResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12N\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x38.protodb.collection.CreateCollectionResponse.FailureCode\x12N\n\x0cschema_error\x18\x03 \x01(\x0e\x32\x38.protodb.collection.CreateCollectionResponse.SchemaError\"\\\n\x0b\x46\x61ilureCode\x12\x0e\n\nNO_FAILURE\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x12\x15\n\x11\x43OLLECTION_EXISTS\x10\x02\x12\x10\n\x0cSCHEMA_ERROR\x10\x03\"M\n\x0bSchemaError\x12\x13\n\x0fNO_SCHEMA_ERROR\x10\x00\x12\x14\n\x10MISSING_ID_FIELD\x10\x01\x12\x13\n\x0fINVALID_ID_TYPE\x10\x02\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -33,7 +33,7 @@ _CREATECOLLECTIONRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='NO_ERROR', index=0, number=0,
+      name='NO_FAILURE', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
@@ -45,16 +45,42 @@ _CREATECOLLECTIONRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_SCHEMA', index=3, number=3,
+      name='SCHEMA_ERROR', index=3, number=3,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=324,
-  serialized_end=416,
+  serialized_start=404,
+  serialized_end=496,
 )
 _sym_db.RegisterEnumDescriptor(_CREATECOLLECTIONRESPONSE_FAILURECODE)
+
+_CREATECOLLECTIONRESPONSE_SCHEMAERROR = _descriptor.EnumDescriptor(
+  name='SchemaError',
+  full_name='protodb.collection.CreateCollectionResponse.SchemaError',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='NO_SCHEMA_ERROR', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='MISSING_ID_FIELD', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='INVALID_ID_TYPE', index=2, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=498,
+  serialized_end=575,
+)
+_sym_db.RegisterEnumDescriptor(_CREATECOLLECTIONRESPONSE_SCHEMAERROR)
 
 
 _CREATECOLLECTIONREQUEST = _descriptor.Descriptor(
@@ -123,12 +149,20 @@ _CREATECOLLECTIONRESPONSE = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='schema_error', full_name='protodb.collection.CreateCollectionResponse.schema_error', index=2,
+      number=3, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
     _CREATECOLLECTIONRESPONSE_FAILURECODE,
+    _CREATECOLLECTIONRESPONSE_SCHEMAERROR,
   ],
   options=None,
   is_extendable=False,
@@ -137,12 +171,14 @@ _CREATECOLLECTIONRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=199,
-  serialized_end=416,
+  serialized_end=575,
 )
 
 _CREATECOLLECTIONREQUEST.fields_by_name['schema'].message_type = google_dot_protobuf_dot_descriptor__pb2._DESCRIPTORPROTO
 _CREATECOLLECTIONRESPONSE.fields_by_name['failure_code'].enum_type = _CREATECOLLECTIONRESPONSE_FAILURECODE
+_CREATECOLLECTIONRESPONSE.fields_by_name['schema_error'].enum_type = _CREATECOLLECTIONRESPONSE_SCHEMAERROR
 _CREATECOLLECTIONRESPONSE_FAILURECODE.containing_type = _CREATECOLLECTIONRESPONSE
+_CREATECOLLECTIONRESPONSE_SCHEMAERROR.containing_type = _CREATECOLLECTIONRESPONSE
 DESCRIPTOR.message_types_by_name['CreateCollectionRequest'] = _CREATECOLLECTIONREQUEST
 DESCRIPTOR.message_types_by_name['CreateCollectionResponse'] = _CREATECOLLECTIONRESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)

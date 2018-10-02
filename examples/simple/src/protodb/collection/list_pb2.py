@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/collection/list.proto',
   package='protodb.collection',
   syntax='proto3',
-  serialized_pb=_b('\n\x1dprotodb/collection/list.proto\x12\x12protodb.collection\"*\n\x16ListCollectionsRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\"\xec\x01\n\x17ListCollectionsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12M\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x37.protodb.collection.ListCollectionsResponse.FailureCode\x12\x13\n\x0b\x63ollections\x18\x03 \x03(\t\"\\\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x12\x15\n\x11\x43OLLECTION_EXISTS\x10\x02\x12\x12\n\x0eINVALID_SCHEMA\x10\x03\x62\x06proto3')
+  serialized_pb=_b('\n\x1dprotodb/collection/list.proto\x12\x12protodb.collection\"*\n\x16ListCollectionsRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\"\xc1\x01\n\x17ListCollectionsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12M\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x37.protodb.collection.ListCollectionsResponse.FailureCode\x12\x13\n\x0b\x63ollections\x18\x03 \x03(\t\"1\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x62\x06proto3')
 )
 
 
@@ -38,19 +38,11 @@ _LISTCOLLECTIONSRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
       name='INVALID_DATABASE', index=1, number=1,
       options=None,
       type=None),
-    _descriptor.EnumValueDescriptor(
-      name='COLLECTION_EXISTS', index=2, number=2,
-      options=None,
-      type=None),
-    _descriptor.EnumValueDescriptor(
-      name='INVALID_SCHEMA', index=3, number=3,
-      options=None,
-      type=None),
   ],
   containing_type=None,
   options=None,
   serialized_start=242,
-  serialized_end=334,
+  serialized_end=291,
 )
 _sym_db.RegisterEnumDescriptor(_LISTCOLLECTIONSRESPONSE_FAILURECODE)
 
@@ -128,7 +120,7 @@ _LISTCOLLECTIONSRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=98,
-  serialized_end=334,
+  serialized_end=291,
 )
 
 _LISTCOLLECTIONSRESPONSE.fields_by_name['failure_code'].enum_type = _LISTCOLLECTIONSRESPONSE_FAILURECODE

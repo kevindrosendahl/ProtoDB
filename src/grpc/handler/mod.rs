@@ -27,6 +27,7 @@ impl Handler {
     }
 }
 
+// TODO: can probably refactor this into a macro
 impl protodb::server::ProtoDb for Handler {
     type CreateDatabaseFuture =
         future::FutureResult<Response<protodb_database::CreateDatabaseResponse>, tower_grpc::Error>;
