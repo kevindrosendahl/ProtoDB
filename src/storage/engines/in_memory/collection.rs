@@ -4,22 +4,28 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::storage::errors;
+use crate::storage::{
+    errors,
+    schema::{
+        errors::SchemaError,
+        Schema,
+    },
+};
 
 use prost_types::DescriptorProto;
 
-#[derive(Default)]
 pub struct Collection {
-    pub schema: DescriptorProto,
+    pub schema: Schema,
     cache: Arc<RwLock<BTreeMap<Vec<u8>, Vec<u8>>>>,
 }
 
 impl Collection {
-    pub fn new(schema: &DescriptorProto) -> Collection {
-        Collection {
-            schema: schema.clone(),
+    pub fn new(descriptor: &DescriptorProto) -> Result<Collection, SchemaError> {
+        let schema = Schema::new(descriptor)?;
+        Ok(Collection {
+            schema,
             cache: Arc::new(RwLock::new(BTreeMap::new())),
-        }
+        })
     }
 
     fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertError> {

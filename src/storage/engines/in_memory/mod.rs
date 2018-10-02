@@ -44,7 +44,7 @@ impl InMemoryStorageEngine {
         &self,
         database: &str,
         name: &str,
-        schema: &DescriptorProto,
+        descriptor: &DescriptorProto,
     ) -> Result<(), errors::CreateCollectionError> {
         let dbs = self.databases.clone();
         let dbs = dbs.read().unwrap();
@@ -52,13 +52,14 @@ impl InMemoryStorageEngine {
             .get(database)
             .ok_or_else(|| errors::CreateCollectionError::InvalidDatabase)?;
 
-        let colls = db.collections.clone();
-        let mut colls = colls.write().unwrap();
-        if colls.contains_key(name) {
+        let collections = db.collections.clone();
+        let mut collections = collections.write().unwrap();
+        if collections.contains_key(name) {
             return Err(errors::CreateCollectionError::CollectionExists);
         }
 
-        colls.insert(name.to_string(), Collection::new(schema));
+        let collection = Collection::new(descriptor)?;
+        collections.insert(name.to_string(), collection);
         Ok(())
     }
 

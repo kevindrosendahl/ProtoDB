@@ -83,6 +83,12 @@ impl error::Error for CreateCollectionError {
     }
 }
 
+impl From<SchemaError> for CreateCollectionError {
+    fn from(err: SchemaError) -> CreateCollectionError {
+        CreateCollectionError::SchemaError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum InsertError {
     InvalidDatabase,

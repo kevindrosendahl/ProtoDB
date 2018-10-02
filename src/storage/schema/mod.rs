@@ -8,7 +8,7 @@ pub struct Schema {
 }
 
 impl Schema {
-    pub fn new(descriptor: DescriptorProto) -> Result<Schema, errors::SchemaError> {
+    pub fn new(descriptor: &DescriptorProto) -> Result<Schema, errors::SchemaError> {
         let id_field = descriptor
             .field
             .iter()
@@ -17,7 +17,7 @@ impl Schema {
             .map(|field| field.number() as u32)?;
 
         Ok(Schema {
-            descriptor,
+            descriptor: descriptor.clone(),
             id_field,
         })
     }
