@@ -1,17 +1,14 @@
-use super::super::generated::{
-    protodb,
-    protodb::{collection, database},
-};
+use super::super::generated::protodb::database;
 use super::Handler;
 
-use crate::storage::{errors, schema::errors::SchemaError};
+use crate::storage::errors;
 
 use tower_grpc::Request;
 
 impl Handler {
     pub(crate) fn handle_create_database(
         &mut self,
-        request: Request<database::CreateDatabaseRequest>,
+        request: &Request<database::CreateDatabaseRequest>,
     ) -> database::CreateDatabaseResponse {
         self.storage_engine
             .clone()

@@ -1,9 +1,6 @@
 use std::error::Error;
 
-use super::super::generated::{
-    protodb,
-    protodb::{collection, database},
-};
+use super::super::generated::protodb::collection;
 use super::Handler;
 
 use crate::storage::{errors, schema::errors::SchemaError};
@@ -13,7 +10,7 @@ use tower_grpc::Request;
 impl Handler {
     pub(crate) fn handle_create_collection(
         &mut self,
-        request: Request<collection::CreateCollectionRequest>,
+        request: &Request<collection::CreateCollectionRequest>,
     ) -> collection::CreateCollectionResponse {
         self.storage_engine
             .clone()
@@ -61,7 +58,7 @@ impl Handler {
 
     pub(crate) fn handle_list_collections(
         &mut self,
-        request: Request<collection::ListCollectionsRequest>,
+        request: &Request<collection::ListCollectionsRequest>,
     ) -> collection::ListCollectionsResponse {
         self.storage_engine
             .clone()
@@ -89,7 +86,7 @@ impl Handler {
 
     pub(crate) fn handle_insert_object(
         &mut self,
-        request: Request<collection::InsertObjectRequest>,
+        request: &Request<collection::InsertObjectRequest>,
     ) -> collection::InsertObjectResponse {
         self
             .storage_engine
@@ -99,7 +96,7 @@ impl Handler {
                 &request.get_ref().collection,
                 &request.get_ref().object,
             )
-            .and_then(|collections| {
+            .and_then(|_| {
                 Ok(collection::InsertObjectResponse {
                     success: true,
                     failure_code: collection::insert_object_response::FailureCode::NoFailure

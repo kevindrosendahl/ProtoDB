@@ -1,15 +1,16 @@
 .PHONY: all
 all:
-	cargo +beta build
+	cargo build
+	@$(MAKE) fmt
 
 .PHONY: run
 run:
-	cargo +beta run
+	cargo run
 
 .PHONY: fmt
 fmt:
-	cargo +beta fmt
+	cargo fmt
 
 .PHONY: clippy
 clippy:
-	cargo +beta clippy
+	cargo clippy

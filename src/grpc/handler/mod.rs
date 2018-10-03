@@ -36,7 +36,7 @@ impl protodb::server::ProtoDb for Handler {
         &mut self,
         request: Request<protodb_database::CreateDatabaseRequest>,
     ) -> Self::CreateDatabaseFuture {
-        future::ok(Response::new(self.handle_create_database(request)))
+        future::ok(Response::new(self.handle_create_database(&request)))
     }
 
     type ListDatabasesFuture =
@@ -58,7 +58,7 @@ impl protodb::server::ProtoDb for Handler {
         &mut self,
         request: Request<protodb_collection::CreateCollectionRequest>,
     ) -> Self::CreateCollectionFuture {
-        future::ok(Response::new(self.handle_create_collection(request)))
+        future::ok(Response::new(self.handle_create_collection(&request)))
     }
 
     type ListCollectionsFuture = future::FutureResult<
@@ -70,7 +70,7 @@ impl protodb::server::ProtoDb for Handler {
         &mut self,
         request: Request<protodb_collection::ListCollectionsRequest>,
     ) -> Self::ListCollectionsFuture {
-        future::ok(Response::new(self.handle_list_collections(request)))
+        future::ok(Response::new(self.handle_list_collections(&request)))
     }
 
     type InsertObjectFuture =
@@ -80,6 +80,6 @@ impl protodb::server::ProtoDb for Handler {
         &mut self,
         request: Request<protodb_collection::InsertObjectRequest>,
     ) -> Self::InsertObjectFuture {
-        future::ok(Response::new(self.handle_insert_object(request)))
+        future::ok(Response::new(self.handle_insert_object(&request)))
     }
 }
