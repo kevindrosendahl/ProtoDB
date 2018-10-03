@@ -27,59 +27,54 @@ impl Handler {
     }
 }
 
-// TODO: can probably refactor this into a macro
-impl protodb::server::ProtoDb for Handler {
-    type CreateDatabaseFuture =
-        future::FutureResult<Response<protodb_database::CreateDatabaseResponse>, tower_grpc::Error>;
+macro_rules! protodb_handler {
+    ( $( ($method:ident, $handler:ident, $future:ident, $request:path, $response:path) ),* ) => {
+            impl protodb::server::ProtoDb for Handler {
+                $(
+                    type $future = future::FutureResult<Response<$response>, tower_grpc::Error>;
 
-    fn create_database(
-        &mut self,
-        request: Request<protodb_database::CreateDatabaseRequest>,
-    ) -> Self::CreateDatabaseFuture {
-        future::ok(Response::new(self.handle_create_database(&request)))
-    }
-
-    type ListDatabasesFuture =
-        future::FutureResult<Response<protodb_database::ListDatabasesResponse>, tower_grpc::Error>;
-
-    fn list_databases(
-        &mut self,
-        _request: Request<protodb_database::ListDatabasesRequest>,
-    ) -> Self::ListDatabasesFuture {
-        future::ok(Response::new(self.handle_list_databases()))
-    }
-
-    type CreateCollectionFuture = future::FutureResult<
-        Response<protodb_collection::CreateCollectionResponse>,
-        tower_grpc::Error,
-    >;
-
-    fn create_collection(
-        &mut self,
-        request: Request<protodb_collection::CreateCollectionRequest>,
-    ) -> Self::CreateCollectionFuture {
-        future::ok(Response::new(self.handle_create_collection(&request)))
-    }
-
-    type ListCollectionsFuture = future::FutureResult<
-        Response<protodb_collection::ListCollectionsResponse>,
-        tower_grpc::Error,
-    >;
-
-    fn list_collections(
-        &mut self,
-        request: Request<protodb_collection::ListCollectionsRequest>,
-    ) -> Self::ListCollectionsFuture {
-        future::ok(Response::new(self.handle_list_collections(&request)))
-    }
-
-    type InsertObjectFuture =
-        future::FutureResult<Response<protodb_collection::InsertObjectResponse>, tower_grpc::Error>;
-
-    fn insert_object(
-        &mut self,
-        request: Request<protodb_collection::InsertObjectRequest>,
-    ) -> Self::InsertObjectFuture {
-        future::ok(Response::new(self.handle_insert_object(&request)))
-    }
+                    fn $method(&mut self, request: Request<$request>) -> Self::$future {
+                        future::ok(Response::new(self.$handler(&request)))
+                    }
+                )*
+        }
+    };
 }
+
+protodb_handler![
+    (
+        create_database,
+        handle_create_database,
+        CreateDatabaseFuture,
+        protodb_database::CreateDatabaseRequest,
+        protodb_database::CreateDatabaseResponse
+    ),
+    (
+        list_databases,
+        handle_list_databases,
+        ListDatabasesFuture,
+        protodb_database::ListDatabasesRequest,
+        protodb_database::ListDatabasesResponse
+    ),
+    (
+        create_collection,
+        handle_create_collection,
+        CreateCollectionFuture,
+        protodb_collection::CreateCollectionRequest,
+        protodb_collection::CreateCollectionResponse
+    ),
+    (
+        list_collections,
+        handle_list_collections,
+        ListCollectionsFuture,
+        protodb_collection::ListCollectionsRequest,
+        protodb_collection::ListCollectionsResponse
+    ),
+    (
+        insert_object,
+        handle_insert_object,
+        InsertObjectFuture,
+        protodb_collection::InsertObjectRequest,
+        protodb_collection::InsertObjectResponse
+    )
+];

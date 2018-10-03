@@ -29,7 +29,10 @@ impl Handler {
             })
     }
 
-    pub(crate) fn handle_list_databases(&mut self) -> database::ListDatabasesResponse {
+    pub(crate) fn handle_list_databases(
+        &mut self,
+        _: &Request<database::ListDatabasesRequest>,
+    ) -> database::ListDatabasesResponse {
         database::ListDatabasesResponse {
             databases: self.storage_engine.clone().list_databases(),
         }
