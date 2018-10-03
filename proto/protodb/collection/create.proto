@@ -20,10 +20,15 @@ message CreateCollectionResponse {
     }
     FailureCode failure_code = 2;
 
-    enum SchemaError {
-        NO_SCHEMA_ERROR = 0;
-        MISSING_ID_FIELD = 1;
-        INVALID_ID_TYPE = 2;
+    message SchemaError {
+        enum SchemaErrorCode {
+            NO_SCHEMA_ERROR = 0;
+            MISSING_ID_FIELD = 1;
+            INVALID_ID_TYPE = 2;
+            INVALID_FIELD_TYPE = 3;
+        }
+        SchemaErrorCode code = 1;
+        string message = 2;
     }
     SchemaError schema_error = 3;
 }

@@ -1,10 +1,14 @@
 use std::{error, fmt};
 
-use prost::DecodeError;
+use prost_types::{
+    field_descriptor_proto::{Label, Type},
+    DescriptorProto,
+};
 
 #[derive(Debug)]
 pub enum SchemaError {
-    InvalidIdType,
+    InvalidFieldType((i32, Label, Type)),
+    InvalidIdType(String),
     MissingIdField,
 }
 
@@ -16,15 +20,18 @@ impl fmt::Display for SchemaError {
 
 impl error::Error for SchemaError {
     fn description(&self) -> &str {
-        match self {
-            SchemaError::InvalidIdType => "invalid id type",
+        let str = match self {
+            SchemaError::InvalidFieldType(_) => "invalid field type",
+            SchemaError::InvalidIdType(_) => "invalid id type",
             SchemaError::MissingIdField => "missing id field",
-        }
+        };
+        &str
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            SchemaError::InvalidIdType => None,
+            SchemaError::InvalidFieldType(_) => None,
+            SchemaError::InvalidIdType(_) => None,
             SchemaError::MissingIdField => None,
         }
     }
@@ -32,7 +39,7 @@ impl error::Error for SchemaError {
 
 #[derive(Debug)]
 pub enum ObjectError {
-    DecodeError(DecodeError),
+    DecodeError(prost::DecodeError),
 }
 
 impl fmt::Display for ObjectError {
@@ -55,8 +62,8 @@ impl error::Error for ObjectError {
     }
 }
 
-impl From<DecodeError> for ObjectError {
-    fn from(err: DecodeError) -> ObjectError {
+impl From<prost::DecodeError> for ObjectError {
+    fn from(err: prost::DecodeError) -> ObjectError {
         ObjectError::DecodeError(err)
     }
 }

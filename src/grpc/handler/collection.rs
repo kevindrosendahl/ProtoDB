@@ -21,37 +21,54 @@ impl Handler {
             ).and(Ok(collection::CreateCollectionResponse {
                 success: true,
                 failure_code: collection::create_collection_response::FailureCode::NoFailure as i32,
-                schema_error: collection::create_collection_response::SchemaError::NoSchemaError
-                    as i32,
+                schema_error: None,
             })).unwrap_or_else(|err| {
                 let (failure_code, schema_error) = match err {
                     errors::CreateCollectionError::InvalidDatabase => (
                         collection::create_collection_response::FailureCode::InvalidDatabase,
-                        collection::create_collection_response::SchemaError::NoSchemaError,
+                        None,
                     ),
                     errors::CreateCollectionError::CollectionExists => (
                         collection::create_collection_response::FailureCode::CollectionExists,
-                        collection::create_collection_response::SchemaError::NoSchemaError,
+                        None,
                     ),
                     errors::CreateCollectionError::SchemaError(err) => {
-                        let schema_err = match err {
-                            SchemaError::InvalidIdType => {
-                                collection::create_collection_response::SchemaError::InvalidIdType
+                        let (code, message) = match err {
+                            SchemaError::InvalidFieldType((field, label, type_)) => {
+                                (
+                                    collection::create_collection_response::schema_error::SchemaErrorCode::InvalidFieldType,
+                                    format!(
+                                        "invalid field type (field {}, type {:?} {:?})",
+                                        field, label, type_
+                                    )
+                                )
+                            }
+                            SchemaError::InvalidIdType(type_) => {
+                                (
+                                    collection::create_collection_response::schema_error::SchemaErrorCode::InvalidIdType,
+                                    format!("invalid id type ({})", type_)
+                                )
                             }
                             SchemaError::MissingIdField => {
-                                collection::create_collection_response::SchemaError::MissingIdField
+                                (
+                                    collection::create_collection_response::schema_error::SchemaErrorCode::MissingIdField,
+                                    err.description().into()
+                                )
                             }
                         };
                         (
                             collection::create_collection_response::FailureCode::SchemaError,
-                            schema_err,
+                            Some(collection::create_collection_response::SchemaError{
+                                code: code as i32,
+                                message,
+                            })
                         )
                     }
                 };
                 collection::CreateCollectionResponse {
                     success: false,
                     failure_code: failure_code as i32,
-                    schema_error: schema_error as i32,
+                    schema_error,
                 }
             })
     }

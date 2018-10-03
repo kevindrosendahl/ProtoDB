@@ -1,25 +1,62 @@
-use prost_types::DescriptorProto;
+use std::collections::BTreeMap;
+
+use prost_types::{
+    field_descriptor_proto::{Label, Type},
+    DescriptorProto,
+};
 
 mod decode;
 pub mod errors;
 
+const ID_FIELD: &str = "id";
+
 pub struct Schema {
     pub descriptor: DescriptorProto,
-    pub id_field: u32,
+    pub id_field: i32,
+    pub fields: BTreeMap<i32, (Label, Type)>,
 }
 
 impl Schema {
     pub fn new(descriptor: &DescriptorProto) -> Result<Schema, errors::SchemaError> {
-        let id_field = descriptor
-            .field
-            .iter()
-            .find(|field| field.name() == "id")
-            .ok_or(errors::SchemaError::MissingIdField)
-            .map(|field| field.number() as u32)?;
+        let mut id_field = Err(errors::SchemaError::MissingIdField);
+        let mut fields = BTreeMap::new();
+        for field in descriptor.field.iter() {
+            // check for invalid labels we currently don't support:
+            //   - required (deprecated in proto3)
+            //   - repeated
+            match field.label() {
+                Label::Optional => Ok(()),
+                _ => Err(errors::SchemaError::InvalidFieldType((
+                    field.number(),
+                    field.label(),
+                    field.type_(),
+                ))),
+            }?;
 
+            // check for invalid types we currently don't support:
+            //    - group (deprecated in proto3)
+            //    - message
+            match field.type_() {
+                Type::Group | Type::Message => Err(errors::SchemaError::InvalidFieldType((
+                    field.number(),
+                    field.label(),
+                    field.type_(),
+                ))),
+                _ => Ok(()),
+            }?;
+
+            if field.name() == ID_FIELD {
+                id_field = Ok(field.number());
+            }
+
+            fields.insert(field.number(), (field.label(), field.type_()));
+        }
+
+        let id_field = id_field?;
         Ok(Schema {
             descriptor: descriptor.clone(),
             id_field,
+            fields,
         })
     }
 }

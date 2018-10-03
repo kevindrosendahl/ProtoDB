@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\nuser.proto\"F\n\x04User\x12\n\n\x02id\x18\x01 \x01(\x04\x12\x12\n\nfirst_name\x18\x02 \x01(\t\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
+  serialized_pb=_b('\n\nuser.proto\":\n\x04User\x12\x12\n\nfirst_name\x18\x02 \x01(\t\x12\x11\n\tlast_name\x18\x03 \x01(\t\x12\x0b\n\x03\x61ge\x18\x04 \x01(\rb\x06proto3')
 )
 
 
@@ -33,28 +33,21 @@ _USER = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='User.id', index=0,
-      number=1, type=4, cpp_type=4, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='first_name', full_name='User.first_name', index=1,
+      name='first_name', full_name='User.first_name', index=0,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='last_name', full_name='User.last_name', index=2,
+      name='last_name', full_name='User.last_name', index=1,
       number=3, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='age', full_name='User.age', index=3,
+      name='age', full_name='User.age', index=2,
       number=4, type=13, cpp_type=3, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -73,7 +66,7 @@ _USER = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=14,
-  serialized_end=84,
+  serialized_end=72,
 )
 
 DESCRIPTOR.message_types_by_name['User'] = _USER

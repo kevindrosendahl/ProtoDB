@@ -66,6 +66,7 @@ def create_collection(stub, db_name, collection_name, schema):
             failure_code_str = _CREATECOLLECTIONRESPONSE_FAILURECODE.values_by_number[
                 create_collection_response.failure_code].name
             print('create collection failed: {}'.format(failure_code_str))
+            print(create_collection_response.schema_error)
 
 
 def list_collections(stub, db_name):
