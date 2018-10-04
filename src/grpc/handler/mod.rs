@@ -27,54 +27,54 @@ impl Handler {
     }
 }
 
-macro_rules! protodb_handler {
-    ( $( ($method:ident, $handler:ident, $future:ident, $request:path, $response:path) ),* ) => {
-            impl protodb::server::ProtoDb for Handler {
-                $(
-                    type $future = future::FutureResult<Response<$response>, tower_grpc::Error>;
+macro_rules! method_handler {
+    (  $method:ident, $handler:ident, $future:ident, $request:path, $response:path ) => {
+        type $future = future::FutureResult<Response<$response>, tower_grpc::Error>;
 
-                    fn $method(&mut self, request: Request<$request>) -> Self::$future {
-                        future::ok(Response::new(self.$handler(&request)))
-                    }
-                )*
+        fn $method(&mut self, request: Request<$request>) -> Self::$future {
+            future::ok(Response::new(self.$handler(&request)))
         }
-    };
+    }
 }
 
-protodb_handler![
-    (
+impl protodb::server::ProtoDb for Handler {
+    method_handler!(
         create_database,
         handle_create_database,
         CreateDatabaseFuture,
         protodb_database::CreateDatabaseRequest,
         protodb_database::CreateDatabaseResponse
-    ),
-    (
+    );
+
+    method_handler!(
         list_databases,
         handle_list_databases,
         ListDatabasesFuture,
         protodb_database::ListDatabasesRequest,
         protodb_database::ListDatabasesResponse
-    ),
-    (
+    );
+
+    method_handler!(
         create_collection,
         handle_create_collection,
         CreateCollectionFuture,
         protodb_collection::CreateCollectionRequest,
         protodb_collection::CreateCollectionResponse
-    ),
-    (
+    );
+
+    method_handler!(
         list_collections,
         handle_list_collections,
         ListCollectionsFuture,
         protodb_collection::ListCollectionsRequest,
         protodb_collection::ListCollectionsResponse
-    ),
-    (
+    );
+
+    method_handler!(
         insert_object,
         handle_insert_object,
         InsertObjectFuture,
         protodb_collection::InsertObjectRequest,
         protodb_collection::InsertObjectResponse
-    )
-];
+    );
+}
