@@ -25,9 +25,7 @@ impl Collection {
             let field = field?;
             println!(
                 "field {} ({:?}): {:?}",
-                field.tag,
-                field.wire_type,
-                field.value,
+                field.tag, field.wire_type, field.value,
             )
         }
 

@@ -57,21 +57,27 @@ impl<'a> DecodeObject<'a> {
     }
 }
 
+macro_rules! iter_err {
+    ( $inner:expr ) => {
+        Some(Err($inner))
+    };
+}
+
 macro_rules! wire_type_mismatch_err {
     (  $tag:ident, $type:ident, $wire_type:ident ) => {
-        Some(Err(ObjectError::SchemaDecodeError(format!(
+        iter_err!(ObjectError::SchemaDecodeError(format!(
             "error decoding field {} (type {:?}): unexpected wire_type {:?}",
             $tag, $type, $wire_type
-        ))))
+        )))
     };
 }
 
 macro_rules! decode_err {
     (  $tag:ident, $type:ident, $err:ident ) => {
-        Some(Err(ObjectError::SchemaDecodeError(format!(
+        iter_err!(ObjectError::SchemaDecodeError(format!(
             "error decoding field {} (type {:?}): {:?}",
             $tag, $type, $err
-        ))))
+        )))
     };
 }
 
@@ -125,7 +131,7 @@ impl<'a> Iterator for DecodeObject<'a> {
                                 _ => return wire_type_mismatch_err!(tag, type_, wire_type),
                             }
                         }
-                        Err(err) => return Some(Err(ObjectError::ProstDecodeError(err))),
+                        Err(err) => return iter_err!(ObjectError::ProstDecodeError(err)),
                     }
                 }
                 // If the field's value is a fixed size or length delimited, advance
@@ -142,22 +148,18 @@ impl<'a> Iterator for DecodeObject<'a> {
                     let mut reader = Cursor::new(&self.object_bytes[offset..offset + 4]);
                     let type_ = type_.unwrap();
                     match type_ {
-                        Type::Float => {
-                            match reader.read_f32::<LittleEndian>() {
-                                Ok(val) => FieldValue::Float(val),
-                                Err(err) => return decode_err!(tag, type_, err),
-                            }
+                        Type::Float => match reader.read_f32::<LittleEndian>() {
+                            Ok(val) => FieldValue::Float(val),
+                            Err(err) => return decode_err!(tag, type_, err),
                         },
-                        Type::Fixed32 => {
-                            match reader.read_u32::<LittleEndian>() {
-                                Ok(val) => FieldValue::Fixed32(val),
-                                Err(err) => return decode_err!(tag, type_, err),
-                            }
+                        Type::Fixed32 => match reader.read_u32::<LittleEndian>() {
+                            Ok(val) => FieldValue::Fixed32(val),
+                            Err(err) => return decode_err!(tag, type_, err),
                         },
                         Type::Sfixed32 => match reader.read_i32::<LittleEndian>() {
                             Ok(val) => FieldValue::Sfixed32(val),
                             Err(err) => return decode_err!(tag, type_, err),
-                        }
+                        },
                         _ => return wire_type_mismatch_err!(tag, type_, wire_type),
                     }
                 }
@@ -172,22 +174,18 @@ impl<'a> Iterator for DecodeObject<'a> {
                     let mut reader = Cursor::new(&self.object_bytes[offset..offset + 8]);
                     let type_ = type_.unwrap();
                     match type_ {
-                        Type::Double => {
-                            match reader.read_f32::<LittleEndian>() {
-                                Ok(val) => FieldValue::Float(val),
-                                Err(err) => return decode_err!(tag, type_, err),
-                            }
+                        Type::Double => match reader.read_f32::<LittleEndian>() {
+                            Ok(val) => FieldValue::Float(val),
+                            Err(err) => return decode_err!(tag, type_, err),
                         },
-                        Type::Fixed64 => {
-                            match reader.read_u64::<LittleEndian>() {
-                                Ok(val) => FieldValue::Fixed64(val),
-                                Err(err) => return decode_err!(tag, type_, err),
-                            }
+                        Type::Fixed64 => match reader.read_u64::<LittleEndian>() {
+                            Ok(val) => FieldValue::Fixed64(val),
+                            Err(err) => return decode_err!(tag, type_, err),
                         },
                         Type::Sfixed64 => match reader.read_i64::<LittleEndian>() {
                             Ok(val) => FieldValue::Sfixed64(val),
                             Err(err) => return decode_err!(tag, type_, err),
-                        }
+                        },
                         _ => return wire_type_mismatch_err!(tag, type_, wire_type),
                     }
                 }
@@ -209,7 +207,7 @@ impl<'a> Iterator for DecodeObject<'a> {
                                 _ => return wire_type_mismatch_err!(tag, type_, wire_type),
                             }
                         }
-                        Err(err) => return Some(Err(ObjectError::ProstDecodeError(err))),
+                        Err(err) => return iter_err!(ObjectError::ProstDecodeError(err)),
                     }
                 }
             };
