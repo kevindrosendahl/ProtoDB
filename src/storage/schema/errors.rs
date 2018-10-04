@@ -39,7 +39,8 @@ impl error::Error for SchemaError {
 
 #[derive(Debug)]
 pub enum ObjectError {
-    DecodeError(prost::DecodeError),
+    ProstDecodeError(prost::DecodeError),
+    SchemaDecodeError(String),
 }
 
 impl fmt::Display for ObjectError {
@@ -51,19 +52,21 @@ impl fmt::Display for ObjectError {
 impl error::Error for ObjectError {
     fn description(&self) -> &str {
         match self {
-            ObjectError::DecodeError(err) => err.description(),
+            ObjectError::ProstDecodeError(err) => err.description(),
+            ObjectError::SchemaDecodeError(message) => message,
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            ObjectError::DecodeError(err) => err.cause(),
+            ObjectError::ProstDecodeError(err) => err.cause(),
+            ObjectError::SchemaDecodeError(_) => None,
         }
     }
 }
 
 impl From<prost::DecodeError> for ObjectError {
     fn from(err: prost::DecodeError) -> ObjectError {
-        ObjectError::DecodeError(err)
+        ObjectError::ProstDecodeError(err)
     }
 }

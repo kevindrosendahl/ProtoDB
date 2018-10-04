@@ -119,3 +119,9 @@ impl error::Error for InsertObjectError {
         }
     }
 }
+
+impl From<ObjectError> for InsertObjectError {
+    fn from(err: ObjectError) -> InsertObjectError {
+        InsertObjectError::ObjectError(err)
+    }
+}

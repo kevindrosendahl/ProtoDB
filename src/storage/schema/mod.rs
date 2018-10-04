@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::HashMap;
 
 use prost_types::{
     field_descriptor_proto::{Label, Type},
@@ -13,13 +13,13 @@ const ID_FIELD: &str = "id";
 pub struct Schema {
     pub descriptor: DescriptorProto,
     pub id_field: i32,
-    pub fields: BTreeMap<i32, (Label, Type)>,
+    pub fields: HashMap<i32, (Label, Type)>,
 }
 
 impl Schema {
     pub fn new(descriptor: &DescriptorProto) -> Result<Schema, errors::SchemaError> {
         let mut id_field = Err(errors::SchemaError::MissingIdField);
-        let mut fields = BTreeMap::new();
+        let mut fields = HashMap::new();
         for field in descriptor.field.iter() {
             // check for invalid labels we currently don't support:
             //   - required (deprecated in proto3)

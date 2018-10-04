@@ -21,7 +21,16 @@ impl Collection {
     }
 
     pub fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertObjectError> {
-        self.schema.decode_object(object);
+        for field in self.schema.decode_object(object) {
+            let field = field?;
+            println!(
+                "field {} ({:?}): {:?}",
+                field.tag,
+                field.wire_type,
+                field.value,
+            )
+        }
+
         Ok(())
     }
 }
