@@ -9,14 +9,39 @@ use prost_types::{field_descriptor_proto::Type, DescriptorProto};
 
 impl Schema {
     pub fn decode_object<'a>(&'a self, object: &'a [u8]) -> DecodeObject<'a> {
-        DecodeObject::new(object, self)
+        DecodeObject {
+            object_buf: Cursor::new(object),
+            object_bytes: &object,
+            schema: self,
+        }
+    }
+
+    pub fn encode_field(tag: i32, value: &FieldValue, buf: &mut impl BufMut) {
+        let tag = tag as u32;
+        match value {
+            FieldValue::Double(val) => encoding::double::encode(tag, val, buf),
+            FieldValue::Float(val) => encoding::float::encode(tag, val, buf),
+            FieldValue::Int32(val) => encoding::int32::encode(tag, val, buf),
+            FieldValue::Int64(val) => encoding::int64::encode(tag, val, buf),
+            FieldValue::Uint32(val) => encoding::uint32::encode(tag, val, buf),
+            FieldValue::Uint64(val) => encoding::uint64::encode(tag, val, buf),
+            FieldValue::Sint32(val) => encoding::sint32::encode(tag, val, buf),
+            FieldValue::Sint64(val) => encoding::sint64::encode(tag, val, buf),
+            FieldValue::Fixed32(val) => encoding::fixed32::encode(tag, val, buf),
+            FieldValue::Fixed64(val) => encoding::fixed64::encode(tag, val, buf),
+            FieldValue::Sfixed32(val) => encoding::sfixed32::encode(tag, val, buf),
+            FieldValue::Sfixed64(val) => encoding::sfixed64::encode(tag, val, buf),
+            FieldValue::Bool(val) => encoding::bool::encode(tag, val, buf),
+            FieldValue::String(val) => encoding::bytes::encode(tag, &val.to_vec(), buf),
+            FieldValue::Bytes(val) => encoding::bytes::encode(tag, &val.to_vec(), buf),
+            FieldValue::Enum(val) => encoding::uint64::encode(tag, val, buf),
+        }
     }
 }
 
 pub struct DecodeObject<'a> {
     object_buf: Cursor<&'a [u8]>,
     object_bytes: &'a [u8],
-    len: usize,
     schema: &'a Schema,
 }
 
@@ -36,25 +61,14 @@ pub enum FieldValue<'a> {
     Uint64(u64),
     Sint32(i32),
     Sint64(i64),
-    Fixed64(u64),
     Fixed32(u32),
+    Fixed64(u64),
     Sfixed32(i32),
     Sfixed64(i64),
     Bool(bool),
     String(&'a [u8]),
     Bytes(&'a [u8]),
     Enum(u64),
-}
-
-impl<'a> DecodeObject<'a> {
-    fn new(object: &'a [u8], schema: &'a Schema) -> DecodeObject<'a> {
-        DecodeObject {
-            object_buf: Cursor::new(object),
-            object_bytes: &object,
-            len: object.len(),
-            schema,
-        }
-    }
 }
 
 macro_rules! iter_err {
@@ -106,7 +120,7 @@ impl<'a> Iterator for DecodeObject<'a> {
                 None => None,
             };
 
-            let offset = self.len - self.object_buf.remaining();
+            let offset = self.object_bytes.len() - self.object_buf.remaining();
             let value = match wire_type {
                 // If the field's value is a varint, use the encoding library to decode it.
                 // This will advance the buffer.
@@ -174,8 +188,8 @@ impl<'a> Iterator for DecodeObject<'a> {
                     let mut reader = Cursor::new(&self.object_bytes[offset..offset + 8]);
                     let type_ = type_.unwrap();
                     match type_ {
-                        Type::Double => match reader.read_f32::<LittleEndian>() {
-                            Ok(val) => FieldValue::Float(val),
+                        Type::Double => match reader.read_f64::<LittleEndian>() {
+                            Ok(val) => FieldValue::Double(val),
                             Err(err) => return decode_err!(tag, type_, err),
                         },
                         Type::Fixed64 => match reader.read_u64::<LittleEndian>() {
