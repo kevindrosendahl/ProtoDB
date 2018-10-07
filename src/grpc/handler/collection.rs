@@ -24,15 +24,15 @@ impl Handler {
                 schema_error: None,
             })).unwrap_or_else(|err| {
                 let (failure_code, schema_error) = match err {
-                    errors::CreateCollectionError::InvalidDatabase => (
+                    errors::collection::CreateCollectionError::InvalidDatabase => (
                         collection::create_collection_response::FailureCode::InvalidDatabase,
                         None,
                     ),
-                    errors::CreateCollectionError::CollectionExists => (
+                    errors::collection::CreateCollectionError::CollectionExists => (
                         collection::create_collection_response::FailureCode::CollectionExists,
                         None,
                     ),
-                    errors::CreateCollectionError::SchemaError(err) => {
+                    errors::collection::CreateCollectionError::SchemaError(err) => {
                         let (code, message) = match err {
                             SchemaError::InvalidFieldType((field, label, type_)) => {
                                 (
@@ -89,7 +89,7 @@ impl Handler {
                 })
             }).unwrap_or_else(|err| {
                 let failure_code = match err {
-                    errors::ListCollectionsError::InvalidDatabase => {
+                    errors::collection::ListCollectionsError::InvalidDatabase => {
                         collection::list_collections_response::FailureCode::InvalidDatabase
                     }
                 };
@@ -122,13 +122,13 @@ impl Handler {
                 })
             }).unwrap_or_else(|err| {
             let (failure_code, object_error) = match err {
-                errors::InsertObjectError::InvalidDatabase => {
+                errors::collection::InsertObjectError::InvalidDatabase => {
                     (collection::insert_object_response::FailureCode::InvalidDatabase, None)
                 }
-                errors::InsertObjectError::InvalidCollection => {
+                errors::collection::InsertObjectError::InvalidCollection => {
                     (collection::insert_object_response::FailureCode::InvalidCollection, None)
                 }
-                errors::InsertObjectError::ObjectError(err)=> {
+                errors::collection::InsertObjectError::ObjectError(err)=> {
                     let object_error = collection::insert_object_response::ObjectError{
                         // FIXME: add match
                         code: collection::insert_object_response::object_error::ObjectErrorCode::DecodeError as i32,

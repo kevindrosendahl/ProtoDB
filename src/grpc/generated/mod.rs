@@ -1,4 +1,4 @@
-// FIXME: generated code not working right now due toimport inconsistencies
+// FIXME: generated code not working right now due to https://github.com/tower-rs/tower-grpc/issues/85
 //pub mod protodb {
 //    include!(concat!(env!("OUT_DIR"), "/protodb.rs"));
 //
@@ -11,4 +11,5 @@
 //    }
 //}
 
+#[allow(unused_imports)]
 pub mod protodb;

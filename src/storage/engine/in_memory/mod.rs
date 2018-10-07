@@ -30,11 +30,11 @@ impl InMemoryStorageEngine {
         dbs.keys().cloned().collect()
     }
 
-    fn create_database(&self, name: &str) -> Result<(), errors::CreateDatabaseError> {
+    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
         let dbs = self.databases.clone();
         let mut dbs = dbs.write().unwrap();
         if dbs.contains_key(name) {
-            return Err(errors::CreateDatabaseError::DatabaseExists);
+            return Err(errors::database::CreateDatabaseError::DatabaseExists);
         }
 
         dbs.insert(name.to_string(), Default::default());
@@ -46,17 +46,17 @@ impl InMemoryStorageEngine {
         database: &str,
         name: &str,
         descriptor: &DescriptorProto,
-    ) -> Result<(), errors::CreateCollectionError> {
+    ) -> Result<(), errors::collection::CreateCollectionError> {
         let dbs = self.databases.clone();
         let dbs = dbs.read().unwrap();
         let db = dbs
             .get(database)
-            .ok_or_else(|| errors::CreateCollectionError::InvalidDatabase)?;
+            .ok_or_else(|| errors::collection::CreateCollectionError::InvalidDatabase)?;
 
         let collections = db.collections.clone();
         let mut collections = collections.write().unwrap();
         if collections.contains_key(name) {
-            return Err(errors::CreateCollectionError::CollectionExists);
+            return Err(errors::collection::CreateCollectionError::CollectionExists);
         }
 
         let collection = Collection::new(db.name.clone(), name.to_string(), descriptor)?;
@@ -67,12 +67,12 @@ impl InMemoryStorageEngine {
     fn list_collections(
         &self,
         database: &str,
-    ) -> Result<Vec<String>, errors::ListCollectionsError> {
+    ) -> Result<Vec<String>, errors::collection::ListCollectionsError> {
         let dbs = self.databases.clone();
         let dbs = dbs.read().unwrap();
         let db = dbs
             .get(database)
-            .ok_or_else(|| errors::ListCollectionsError::InvalidDatabase)?;
+            .ok_or_else(|| errors::collection::ListCollectionsError::InvalidDatabase)?;
 
         let collections = db.collections.clone();
         let collections = collections.read().unwrap();
@@ -84,36 +84,29 @@ impl InMemoryStorageEngine {
         database: &str,
         collection: &str,
         object: &[u8],
-    ) -> Result<(), errors::InsertObjectError> {
+    ) -> Result<(), errors::collection::InsertObjectError> {
         let dbs = self.databases.clone();
         let dbs = dbs.read().unwrap();
         let db = dbs
             .get(database)
-            .ok_or_else(|| errors::InsertObjectError::InvalidDatabase)?;
+            .ok_or_else(|| errors::collection::InsertObjectError::InvalidDatabase)?;
 
         let collections = db.collections.clone();
         let collections = collections.write().unwrap();
         let collection = collections
             .get(collection)
-            .ok_or_else(|| errors::InsertObjectError::InvalidCollection)?;
+            .ok_or_else(|| errors::collection::InsertObjectError::InvalidCollection)?;
         collection.insert_object(object)
     }
 }
 
 impl StorageEngine for InMemoryStorageEngine {
-    fn list_databases(&self) -> Vec<String> {
-        self.list_databases()
-    }
-
-    fn create_database(&self, name: &str) -> Result<(), errors::CreateDatabaseError> {
+    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
         self.create_database(name)
     }
 
-    fn list_collections(
-        &self,
-        database: &str,
-    ) -> Result<Vec<String>, errors::ListCollectionsError> {
-        self.list_collections(database)
+    fn list_databases(&self) -> Vec<String> {
+        self.list_databases()
     }
 
     fn create_collection(
@@ -121,8 +114,15 @@ impl StorageEngine for InMemoryStorageEngine {
         database: &str,
         name: &str,
         schema: &DescriptorProto,
-    ) -> Result<(), errors::CreateCollectionError> {
+    ) -> Result<(), errors::collection::CreateCollectionError> {
         self.create_collection(database, name, schema)
+    }
+
+    fn list_collections(
+        &self,
+        database: &str,
+    ) -> Result<Vec<String>, errors::collection::ListCollectionsError> {
+        self.list_collections(database)
     }
 
     fn insert_object(
@@ -130,7 +130,7 @@ impl StorageEngine for InMemoryStorageEngine {
         database: &str,
         collection: &str,
         object: &[u8],
-    ) -> Result<(), errors::InsertObjectError> {
+    ) -> Result<(), errors::collection::InsertObjectError> {
         self.insert_object(database, collection, object)
     }
 }

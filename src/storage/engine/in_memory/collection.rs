@@ -1,11 +1,8 @@
-use std::sync::{Arc, RwLock};
-
 use super::cache::Cache;
-use super::database::Database;
 use crate::storage::{
     errors,
     schema::{
-        decode::{FieldInfo, FieldValue},
+        encoding::{FieldInfo, FieldValue},
         errors::{ObjectError, SchemaError},
         Schema,
     },
@@ -14,7 +11,8 @@ use crate::storage::{
 use byteorder::{LittleEndian, WriteBytesExt};
 use prost_types::DescriptorProto;
 
-const KEY_DELIMITER: &str = "/";
+const KEY_DELIMITER: char = '/';
+const NULL_CHAR: char = '\u{0}';
 
 pub(crate) struct Collection {
     pub database: String,
@@ -46,12 +44,20 @@ impl Collection {
         })
     }
 
-    pub fn insert_object(&self, object: &[u8]) -> Result<(), errors::InsertObjectError> {
+    //    pub fn get_object(&self, id: u64) -> Result<(), errors::InsertObjectError>
+
+    pub fn insert_object(
+        &self,
+        object: &[u8],
+    ) -> Result<(), errors::collection::InsertObjectError> {
         let mut id = None;
         let fields = self
             .schema
             .decode_object(object)
             .map(|f| {
+                // check to see if this field is the id field. if it is,
+                // ensure that the value is a Uint64 (for now) and set id
+                // to it
                 if f.is_err() {
                     return f;
                 }
@@ -66,22 +72,19 @@ impl Collection {
                         id = Some(val);
                         Ok(f)
                     }
-                    _ => {
-                        Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
-                            format!("{:?}", f.value),
-                        )))
-                    }
+                    _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
+                        format!("{:?}", f.value),
+                    ))),
                 }
             }).collect::<Result<Vec<FieldInfo>, ObjectError>>()?;
 
         if id.is_none() {
-            return Err(errors::InsertObjectError::ObjectError(
+            return Err(errors::collection::InsertObjectError::ObjectError(
                 ObjectError::SchemaError(SchemaError::MissingIdField),
             ));
         }
 
         let id = id.unwrap();
-
         for field in fields {
             self.cache.put(
                 self.field_key(id, field.tag).as_bytes().to_vec(),

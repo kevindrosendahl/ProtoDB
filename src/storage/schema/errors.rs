@@ -1,9 +1,6 @@
 use std::{error, fmt};
 
-use prost_types::{
-    field_descriptor_proto::{Label, Type},
-    DescriptorProto,
-};
+use prost_types::field_descriptor_proto::{Label, Type};
 
 #[derive(Debug)]
 pub enum SchemaError {

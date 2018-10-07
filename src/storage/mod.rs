@@ -5,7 +5,7 @@ pub mod schema;
 use prost_types::DescriptorProto;
 
 pub trait StorageEngine {
-    fn create_database(&self, name: &str) -> Result<(), errors::CreateDatabaseError>;
+    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError>;
     fn list_databases(&self) -> Vec<String>;
 
     fn create_collection(
@@ -13,14 +13,16 @@ pub trait StorageEngine {
         database: &str,
         name: &str,
         schema: &DescriptorProto,
-    ) -> Result<(), errors::CreateCollectionError>;
-    fn list_collections(&self, database: &str)
-        -> Result<Vec<String>, errors::ListCollectionsError>;
+    ) -> Result<(), errors::collection::CreateCollectionError>;
+    fn list_collections(
+        &self,
+        database: &str,
+    ) -> Result<Vec<String>, errors::collection::ListCollectionsError>;
 
     fn insert_object(
         &self,
         database: &str,
         collection: &str,
         object: &[u8],
-    ) -> Result<(), errors::InsertObjectError>;
+    ) -> Result<(), errors::collection::InsertObjectError>;
 }

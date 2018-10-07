@@ -18,7 +18,7 @@ impl Handler {
                 failure_code: database::create_database_response::FailureCode::NoError as i32,
             })).unwrap_or_else(|err| {
                 let failure_code = match err {
-                    errors::CreateDatabaseError::DatabaseExists => {
+                    errors::database::CreateDatabaseError::DatabaseExists => {
                         database::create_database_response::FailureCode::DatabaseExists
                     }
                 };
