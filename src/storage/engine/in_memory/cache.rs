@@ -30,22 +30,20 @@ impl Cache {
         cache.get(&key).cloned()
     }
 
-    pub(crate) fn get_range(&self, range: &Range) -> Option<Vec<(Key, Value)>> {
+    pub(crate) fn get_range(&self, range: &Range) -> Vec<(Key, Value)> {
         let cache = self.inner.clone();
         let cache = cache.read().unwrap();
         Self::get_range_locked(&cache, range)
     }
 
     #[inline(always)]
-    fn get_range_locked(cache: &Inner, range: &Range) -> Option<Vec<(Key, Value)>> {
-        Some(
-            cache
-                .range((
-                    Bound::Included(range.start.to_vec()),
-                    Bound::Included(range.end.to_vec()),
-                )).map(|(k, v)| (k.clone(), v.clone()))
-                .collect(),
-        )
+    fn get_range_locked(cache: &Inner, range: &Range) -> Vec<(Key, Value)> {
+        cache
+            .range((
+                Bound::Included(range.start.to_vec()),
+                Bound::Included(range.end.to_vec()),
+            )).map(|(k, v)| (k.clone(), v.clone()))
+            .collect()
     }
 
     pub(crate) fn put(&self, key: Key, value: Value) {

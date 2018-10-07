@@ -98,6 +98,26 @@ impl InMemoryStorageEngine {
             .ok_or_else(|| errors::collection::InsertObjectError::InvalidCollection)?;
         collection.insert_object(object)
     }
+
+    fn find_object(
+        &self,
+        database: &str,
+        collection: &str,
+        id: u64,
+    ) -> Result<Vec<u8>, errors::collection::FindObjectError> {
+        let dbs = self.databases.clone();
+        let dbs = dbs.read().unwrap();
+        let db = dbs
+            .get(database)
+            .ok_or_else(|| errors::collection::FindObjectError::InvalidDatabase)?;
+
+        let collections = db.collections.clone();
+        let collections = collections.write().unwrap();
+        let collection = collections
+            .get(collection)
+            .ok_or_else(|| errors::collection::FindObjectError::InvalidCollection)?;
+        collection.find_object(id)
+    }
 }
 
 impl StorageEngine for InMemoryStorageEngine {
@@ -132,5 +152,14 @@ impl StorageEngine for InMemoryStorageEngine {
         object: &[u8],
     ) -> Result<(), errors::collection::InsertObjectError> {
         self.insert_object(database, collection, object)
+    }
+
+    fn find_object(
+        &self,
+        database: &str,
+        collection: &str,
+        id: u64,
+    ) -> Result<Vec<u8>, errors::collection::FindObjectError> {
+        self.find_object(database, collection, id)
     }
 }

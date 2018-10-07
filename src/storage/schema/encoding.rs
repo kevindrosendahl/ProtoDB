@@ -5,7 +5,7 @@ use super::{errors::ObjectError, Schema};
 use byteorder::{LittleEndian, ReadBytesExt};
 use bytes::{Buf, BufMut};
 use prost::encoding;
-use prost_types::{field_descriptor_proto::Type};
+use prost_types::field_descriptor_proto::Type;
 
 impl Schema {
     pub fn decode_object<'a>(&'a self, object: &'a [u8]) -> DecodeObject<'a> {

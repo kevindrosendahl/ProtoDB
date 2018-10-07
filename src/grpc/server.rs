@@ -26,7 +26,7 @@ impl Server {
         let h2 = tower_h2::Server::new(new_service, Default::default(), reactor.clone());
         let bind = TcpListener::bind(&self.addr, &reactor).expect("bind");
 
-        println!("listening on {:?}", self.addr);
+        info!("listening on {}", self.addr);
 
         let serve = bind
             .incoming()

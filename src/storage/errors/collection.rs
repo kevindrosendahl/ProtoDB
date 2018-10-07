@@ -100,3 +100,43 @@ impl From<ObjectError> for InsertObjectError {
         InsertObjectError::ObjectError(err)
     }
 }
+
+#[derive(Debug)]
+pub enum FindObjectError {
+    InvalidDatabase,
+    InvalidCollection,
+    InvalidId,
+    ObjectError(ObjectError),
+}
+
+impl fmt::Display for FindObjectError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
+
+impl error::Error for FindObjectError {
+    fn description(&self) -> &str {
+        match self {
+            FindObjectError::InvalidDatabase => "invalid database",
+            FindObjectError::InvalidCollection => "invalid collection",
+            FindObjectError::InvalidId => "invalid id",
+            FindObjectError::ObjectError(err) => err.description(),
+        }
+    }
+
+    fn cause(&self) -> Option<&error::Error> {
+        match self {
+            FindObjectError::InvalidDatabase => None,
+            FindObjectError::InvalidCollection => None,
+            FindObjectError::InvalidId => None,
+            FindObjectError::ObjectError(err) => err.cause(),
+        }
+    }
+}
+
+impl From<ObjectError> for FindObjectError {
+    fn from(err: ObjectError) -> FindObjectError {
+        FindObjectError::ObjectError(err)
+    }
+}

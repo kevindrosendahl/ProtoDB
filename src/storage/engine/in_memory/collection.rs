@@ -1,4 +1,4 @@
-use super::cache::Cache;
+use super::cache::{Cache, Range};
 use crate::storage::{
     errors,
     schema::{
@@ -11,8 +11,8 @@ use crate::storage::{
 use byteorder::{LittleEndian, WriteBytesExt};
 use prost_types::DescriptorProto;
 
-const KEY_DELIMITER: char = '/';
-const NULL_CHAR: char = '\u{0}';
+const KEY_DELIMITER: &str = "/";
+const NULL_CHAR: &str = "\u{0}";
 
 pub(crate) struct Collection {
     pub database: String,
@@ -43,8 +43,6 @@ impl Collection {
             cache: Default::default(),
         })
     }
-
-    //    pub fn get_object(&self, id: u64) -> Result<(), errors::InsertObjectError>
 
     pub fn insert_object(
         &self,
@@ -95,6 +93,27 @@ impl Collection {
         Ok(())
     }
 
+    pub fn find_object(&self, id: u64) -> Result<Vec<u8>, errors::collection::FindObjectError> {
+//        let start = self.object_key_prefix(id);
+//        let mut end = start.clone();
+//        end.push_str(NULL_CHAR);
+//
+//        let mut buf = Vec::new();
+//        // the id is encoded as part of the key, so we won't
+//        // see it during the iteration over the fields, so add
+//        // it to the buffer first
+//        self.schema.encode_field(self.schema.id_field, FieldValue::Uint64(id), &mut buf);
+//
+//        let entries = self.cache.get_range(&Range {
+//            start: start.into_bytes(),
+//            end: end.into_bytes(),
+//        });
+//        for (key, value) in entries {
+//
+//        }
+        Ok(vec![])
+    }
+
     fn field_encoding(value: FieldValue) -> Vec<u8> {
         // TODO: can probably macro this out a bit more
         match value {
@@ -120,17 +139,27 @@ impl Collection {
         }
     }
 
-    fn undo_insert(&self, id: u64, tags: i32) {}
+//    #[inline(always)]
+//    fn field_from_key(&self, id: &str) ->
 
     #[inline(always)]
-    fn field_key(&self, id: u64, tag: i32) -> String {
+    fn object_key_prefix(&self, id: u64) -> String {
         format!(
-            "{database}{delimiter}{collection}{delimiter}{id}{delimiter}{tag}",
+            "{database}{delimiter}{collection}{delimiter}{id}",
             database = self.database,
             delimiter = KEY_DELIMITER,
             collection = self.name,
             id = id,
-            tag = tag
+        )
+    }
+
+    #[inline(always)]
+    fn field_key(&self, id: u64, tag: i32) -> String {
+        format!(
+            "{prefix}{delimiter}{tag}",
+            prefix = self.object_key_prefix(id),
+            delimiter = KEY_DELIMITER,
+            tag = tag,
         )
     }
 }

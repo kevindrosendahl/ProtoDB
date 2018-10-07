@@ -25,4 +25,10 @@ pub trait StorageEngine {
         collection: &str,
         object: &[u8],
     ) -> Result<(), errors::collection::InsertObjectError>;
+    fn find_object(
+        &self,
+        database: &str,
+        collection: &str,
+        id: u64,
+    ) -> Result<Vec<u8>, errors::collection::FindObjectError>;
 }

@@ -28,10 +28,11 @@ impl Handler {
 }
 
 macro_rules! method_handler {
-    (  $method:ident, $handler:ident, $future:ident, $request:path, $response:path ) => {
+    (  $desc:expr, $method:ident, $handler:ident, $future:ident, $request:path, $response:path ) => {
         type $future = future::FutureResult<Response<$response>, tower_grpc::Error>;
 
         fn $method(&mut self, request: Request<$request>) -> Self::$future {
+            debug!("received {} request", $desc);
             future::ok(Response::new(self.$handler(&request)))
         }
     }
@@ -39,6 +40,7 @@ macro_rules! method_handler {
 
 impl protodb::server::ProtoDb for Handler {
     method_handler!(
+        "create database",
         create_database,
         handle_create_database,
         CreateDatabaseFuture,
@@ -47,6 +49,7 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "list database",
         list_databases,
         handle_list_databases,
         ListDatabasesFuture,
@@ -55,6 +58,7 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "create collection",
         create_collection,
         handle_create_collection,
         CreateCollectionFuture,
@@ -63,6 +67,7 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "list collections",
         list_collections,
         handle_list_collections,
         ListCollectionsFuture,
@@ -71,10 +76,20 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "insert object",
         insert_object,
         handle_insert_object,
         InsertObjectFuture,
         protodb_collection::InsertObjectRequest,
         protodb_collection::InsertObjectResponse
+    );
+
+    method_handler!(
+        "find object",
+        find_object,
+        handle_find_object,
+        FindObjectFuture,
+        protodb_collection::FindObjectRequest,
+        protodb_collection::FindObjectResponse
     );
 }

@@ -3,7 +3,7 @@ pub mod server {
 use super::database;
 use super::collection;
     use super::database::{CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse};
-    use super::collection::{CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest, ListCollectionsResponse, InsertObjectRequest, InsertObjectResponse};
+    use super::collection::{CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest, ListCollectionsResponse, InsertObjectRequest, InsertObjectResponse, FindObjectRequest, FindObjectResponse};
 
     // Redefine the try_ready macro so that it doesn't need to be explicitly
     // imported by the user of this generated code.
@@ -21,6 +21,7 @@ use super::collection;
         type CreateCollectionFuture: futures::Future<Item = grpc::Response<collection::CreateCollectionResponse>, Error = grpc::Error>;
         type ListCollectionsFuture: futures::Future<Item = grpc::Response<collection::ListCollectionsResponse>, Error = grpc::Error>;
         type InsertObjectFuture: futures::Future<Item = grpc::Response<collection::InsertObjectResponse>, Error = grpc::Error>;
+        type FindObjectFuture: futures::Future<Item = grpc::Response<collection::FindObjectResponse>, Error = grpc::Error>;
 
         fn create_database(&mut self, request: grpc::Request<database::CreateDatabaseRequest>) -> Self::CreateDatabaseFuture;
 
@@ -31,6 +32,8 @@ use super::collection;
         fn list_collections(&mut self, request: grpc::Request<collection::ListCollectionsRequest>) -> Self::ListCollectionsFuture;
 
         fn insert_object(&mut self, request: grpc::Request<collection::InsertObjectRequest>) -> Self::InsertObjectFuture;
+
+        fn find_object(&mut self, request: grpc::Request<collection::FindObjectRequest>) -> Self::FindObjectFuture;
     }
 
     #[derive(Debug, Clone)]
@@ -87,6 +90,11 @@ use super::collection;
                     let response = grpc::Grpc::unary(service, request);
                     proto_db::ResponseFuture { kind: Ok(InsertObject(response)) }
                 }
+                "/protodb.ProtoDB/FindObject" => {
+                    let service = proto_db::methods::FindObject(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture { kind: Ok(FindObject(response)) }
+                }
                 _ => {
                     proto_db::ResponseFuture { kind: Err(grpc::Status::UNIMPLEMENTED) }
                 }
@@ -122,6 +130,7 @@ use super::collection;
                 grpc::unary::ResponseFuture<methods::CreateCollection<T>, tower_h2::RecvBody>,
                 grpc::unary::ResponseFuture<methods::ListCollections<T>, tower_h2::RecvBody>,
                 grpc::unary::ResponseFuture<methods::InsertObject<T>, tower_h2::RecvBody>,
+                grpc::unary::ResponseFuture<methods::FindObject<T>, tower_h2::RecvBody>,
             >, grpc::Status>,
         }
 
@@ -170,6 +179,13 @@ use super::collection;
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
+                    Ok(FindObject(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody { kind: Ok(FindObject(body)) };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
                     Err(ref status) => {
                         let body = ResponseBody { kind: Err(status.clone()) };
                         Ok(grpc::Response::new(body).into_http().into())
@@ -187,6 +203,7 @@ use super::collection;
                 grpc::Encode<grpc::unary::Once<<methods::CreateCollection<T> as grpc::UnaryService>::Response>>,
                 grpc::Encode<grpc::unary::Once<<methods::ListCollections<T> as grpc::UnaryService>::Response>>,
                 grpc::Encode<grpc::unary::Once<<methods::InsertObject<T> as grpc::UnaryService>::Response>>,
+                grpc::Encode<grpc::unary::Once<<methods::FindObject<T> as grpc::UnaryService>::Response>>,
             >, grpc::Status>,
         }
 
@@ -204,6 +221,7 @@ use super::collection;
                     Ok(CreateCollection(ref v)) => v.is_end_stream(),
                     Ok(ListCollections(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
+                    Ok(FindObject(ref v)) => v.is_end_stream(),
                     Err(_) => true,
                 }
             }
@@ -217,6 +235,7 @@ use super::collection;
                     Ok(CreateCollection(ref mut v)) => v.poll_data(),
                     Ok(ListCollections(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
+                    Ok(FindObject(ref mut v)) => v.poll_data(),
                     Err(_) => Ok(None.into()),
                 }
             }
@@ -230,6 +249,7 @@ use super::collection;
                     Ok(CreateCollection(ref mut v)) => v.poll_trailers(),
                     Ok(ListCollections(ref mut v)) => v.poll_trailers(),
                     Ok(InsertObject(ref mut v)) => v.poll_trailers(),
+                    Ok(FindObject(ref mut v)) => v.poll_trailers(),
                     Err(ref status) => {
                         let mut map = http::HeaderMap::new();
                         map.insert("grpc-status", status.to_header_value());
@@ -240,12 +260,13 @@ use super::collection;
         }
 
         #[derive(Debug, Clone)]
-        pub(super) enum Kind<CreateDatabase, ListDatabases, CreateCollection, ListCollections, InsertObject> {
+        pub(super) enum Kind<CreateDatabase, ListDatabases, CreateCollection, ListCollections, InsertObject, FindObject> {
             CreateDatabase(CreateDatabase),
             ListDatabases(ListDatabases),
             CreateCollection(CreateCollection),
             ListCollections(ListCollections),
             InsertObject(InsertObject),
+            FindObject(FindObject),
         }
 
         pub mod methods {
@@ -254,7 +275,7 @@ use super::super::database;
 use super::super::collection;
             use super::super::ProtoDb;
             use super::super::database::{CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse};
-            use super::super::collection::{CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest, ListCollectionsResponse, InsertObjectRequest, InsertObjectResponse};
+            use super::super::collection::{CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest, ListCollectionsResponse, InsertObjectRequest, InsertObjectResponse, FindObjectRequest, FindObjectResponse};
 
             pub struct CreateDatabase<T>(pub T);
 
@@ -350,6 +371,25 @@ use super::super::collection;
                     self.0.insert_object(request)
                 }
             }
+
+            pub struct FindObject<T>(pub T);
+
+            impl<T> tower::Service for FindObject<T>
+            where T: ProtoDb,
+            {
+                type Request = grpc::Request<collection::FindObjectRequest>;
+                type Response = grpc::Response<collection::FindObjectResponse>;
+                type Error = grpc::Error;
+                type Future = T::FindObjectFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(&mut self, request: Self::Request) -> Self::Future {
+                    self.0.find_object(request)
+                }
+            }
         }
     }
 }
@@ -396,6 +436,33 @@ pub mod create_collection_response {
         InvalidDatabase = 1,
         CollectionExists = 2,
         SchemaError = 3,
+    }
+}
+#[derive(Clone, PartialEq, Message)]
+pub struct FindObjectRequest {
+    #[prost(string, tag="1")]
+    pub database: String,
+    #[prost(string, tag="2")]
+    pub collection: String,
+    #[prost(uint64, tag="3")]
+    pub id: u64,
+}
+#[derive(Clone, PartialEq, Message)]
+pub struct FindObjectResponse {
+    #[prost(bool, tag="1")]
+    pub success: bool,
+    #[prost(enumeration="find_object_response::FailureCode", tag="2")]
+    pub failure_code: i32,
+    #[prost(bytes, tag="3")]
+    pub object: Vec<u8>,
+}
+pub mod find_object_response {
+    #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+    pub enum FailureCode {
+        NoFailure = 0,
+        InvalidDatabase = 1,
+        InvalidCollection = 2,
+        InvalidId = 3,
     }
 }
 #[derive(Clone, PartialEq, Message)]

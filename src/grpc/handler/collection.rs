@@ -144,4 +144,53 @@ impl Handler {
             }
         })
     }
+
+    pub(crate) fn handle_find_object(
+        &mut self,
+        request: &Request<collection::FindObjectRequest>,
+    ) -> collection::FindObjectResponse {
+        //        self
+        //            .storage_engine
+        //            .clone()
+        //            .insert_object(
+        //                &request.get_ref().database,
+        //                &request.get_ref().collection,
+        //                &request.get_ref().object,
+        //            )
+        //            .and_then(|_| {
+        //                Ok(collection::InsertObjectResponse {
+        //                    success: true,
+        //                    failure_code: collection::insert_object_response::FailureCode::NoFailure
+        //                        as i32,
+        //                    object_error: None,
+        //                })
+        //            }).unwrap_or_else(|err| {
+        //            let (failure_code, object_error) = match err {
+        //                errors::collection::InsertObjectError::InvalidDatabase => {
+        //                    (collection::insert_object_response::FailureCode::InvalidDatabase, None)
+        //                }
+        //                errors::collection::InsertObjectError::InvalidCollection => {
+        //                    (collection::insert_object_response::FailureCode::InvalidCollection, None)
+        //                }
+        //                errors::collection::InsertObjectError::ObjectError(err)=> {
+        //                    let object_error = collection::insert_object_response::ObjectError{
+        //                        // FIXME: add match
+        //                        code: collection::insert_object_response::object_error::ObjectErrorCode::DecodeError as i32,
+        //                        message: err.description().into(),
+        //                    };
+        //                    (collection::insert_object_response::FailureCode::InvalidDatabase, Some(object_error))
+        //                }
+        //            };
+        //            collection::InsertObjectResponse {
+        //                success: false,
+        //                failure_code: failure_code as i32,
+        //                object_error,
+        //            }
+        //        })
+        collection::FindObjectResponse {
+            success: false,
+            failure_code: 0,
+            object: vec![],
+        }
+    }
 }
