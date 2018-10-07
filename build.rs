@@ -1,5 +1,5 @@
 extern crate tower_grpc_build;
-use std::{env, fs, io::prelude::*};
+use std::{env, fs, io::prelude::*, process::Command};
 
 fn main() {
     // Build protod
@@ -79,8 +79,13 @@ pub mod {} {{
         "{}/src/grpc/generated/protodb.rs",
         env::var("CARGO_MANIFEST_DIR").unwrap()
     );
-    let mut buffer = fs::File::create(output_path).unwrap();
+    let mut buffer = fs::File::create(output_path.clone()).unwrap();
     buffer.write(fixed.as_bytes()).unwrap();
+
+    Command::new("rustfmt")
+        .args(&[&output_path])
+        .status()
+        .expect("failed to run cargo fmt");
 }
 
 fn insert_imports(content: String, subdirectories: &Vec<&str>, level: i32) -> String {
