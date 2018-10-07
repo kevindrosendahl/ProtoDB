@@ -19,8 +19,8 @@ impl Schema {
     pub fn encode_field(tag: i32, value: &FieldValue, buf: &mut impl BufMut) {
         let tag = tag as u32;
         match value {
-            FieldValue::Double(val) => encoding::double::encode(tag, val, buf),
             FieldValue::Float(val) => encoding::float::encode(tag, val, buf),
+            FieldValue::Double(val) => encoding::double::encode(tag, val, buf),
             FieldValue::Int32(val) => encoding::int32::encode(tag, val, buf),
             FieldValue::Int64(val) => encoding::int64::encode(tag, val, buf),
             FieldValue::Uint32(val) => encoding::uint32::encode(tag, val, buf),
@@ -53,8 +53,8 @@ pub struct FieldInfo<'a> {
 
 #[derive(Debug)]
 pub enum FieldValue<'a> {
-    Double(f64),
     Float(f32),
+    Double(f64),
     Int32(i32),
     Int64(i64),
     Uint32(u32),

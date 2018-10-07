@@ -4,33 +4,57 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+pub(crate) type Key = Vec<u8>;
+pub(crate) type Value = Vec<u8>;
+type Inner = BTreeMap<Key, Value>;
+
+pub(crate) struct Range {
+    pub start: Key,
+    pub end: Key,
+}
+
 #[derive(Default)]
 pub(crate) struct Cache {
-    inner: Arc<RwLock<BTreeMap<Vec<u8>, Vec<u8>>>>,
+    inner: Arc<RwLock<Inner>>,
 }
 
 impl Cache {
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+    pub(crate) fn get(&self, key: Key) -> Option<Vec<u8>> {
         let cache = self.inner.clone();
         let cache = cache.read().unwrap();
-        cache.get(key).cloned()
+        Self::get_locked(&cache, key)
     }
 
-    fn get_range(&self, lower: &[u8], upper: &[u8]) -> Option<Vec<(Vec<u8>, Vec<u8>)>> {
+    #[inline(always)]
+    fn get_locked(cache: &Inner, key: Key) -> Option<Vec<u8>> {
+        cache.get(&key).cloned()
+    }
+
+    pub(crate) fn get_range(&self, range: &Range) -> Option<Vec<(Key, Value)>> {
         let cache = self.inner.clone();
         let cache = cache.read().unwrap();
+        Self::get_range_locked(&cache, range)
+    }
+
+    #[inline(always)]
+    fn get_range_locked(cache: &Inner, range: &Range) -> Option<Vec<(Key, Value)>> {
         Some(
             cache
                 .range((
-                    Bound::Included(lower.to_vec()),
-                    Bound::Included(upper.to_vec()),
+                    Bound::Included(range.start.to_vec()),
+                    Bound::Included(range.end.to_vec()),
                 )).map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
         )
     }
 
-    fn put(&self, key: &[u8], value: &[u8]) {
+    pub(crate) fn put(&self, key: Key, value: Value) {
         let cache = self.inner.clone();
-        cache.write().unwrap().insert(key.to_vec(), value.to_vec());
+        Self::put_locked(&mut cache.write().unwrap(), key, value);
+    }
+
+    #[inline(always)]
+    fn put_locked(cache: &mut Inner, key: Key, value: Value) {
+        cache.insert(key, value);
     }
 }

@@ -40,6 +40,7 @@ impl error::Error for SchemaError {
 #[derive(Debug)]
 pub enum ObjectError {
     ProstDecodeError(prost::DecodeError),
+    SchemaError(SchemaError),
     SchemaDecodeError(String),
 }
 
@@ -53,6 +54,7 @@ impl error::Error for ObjectError {
     fn description(&self) -> &str {
         match self {
             ObjectError::ProstDecodeError(err) => err.description(),
+            ObjectError::SchemaError(err) => err.description(),
             ObjectError::SchemaDecodeError(message) => message,
         }
     }
@@ -60,6 +62,7 @@ impl error::Error for ObjectError {
     fn cause(&self) -> Option<&error::Error> {
         match self {
             ObjectError::ProstDecodeError(err) => err.cause(),
+            ObjectError::SchemaError(err) => err.cause(),
             ObjectError::SchemaDecodeError(_) => None,
         }
     }
@@ -68,5 +71,11 @@ impl error::Error for ObjectError {
 impl From<prost::DecodeError> for ObjectError {
     fn from(err: prost::DecodeError) -> ObjectError {
         ObjectError::ProstDecodeError(err)
+    }
+}
+
+impl From<SchemaError> for ObjectError {
+    fn from(err: SchemaError) -> ObjectError {
+        ObjectError::SchemaError(err)
     }
 }

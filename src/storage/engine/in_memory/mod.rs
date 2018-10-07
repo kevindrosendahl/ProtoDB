@@ -59,7 +59,7 @@ impl InMemoryStorageEngine {
             return Err(errors::CreateCollectionError::CollectionExists);
         }
 
-        let collection = Collection::new(descriptor)?;
+        let collection = Collection::new(db.name.clone(), name.to_string(), descriptor)?;
         collections.insert(name.to_string(), collection);
         Ok(())
     }

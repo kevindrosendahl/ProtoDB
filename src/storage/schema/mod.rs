@@ -5,7 +5,7 @@ use prost_types::{
     DescriptorProto,
 };
 
-mod decode;
+pub mod decode;
 pub mod errors;
 
 const ID_FIELD: &str = "id";
