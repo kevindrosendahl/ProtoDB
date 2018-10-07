@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate log;
-
 use libprotodb::{
     grpc::{handler::Handler, server::Server},
     storage::engine::in_memory::InMemoryStorageEngine,

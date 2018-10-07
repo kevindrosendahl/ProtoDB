@@ -13,13 +13,13 @@ name = "protodb"
 path = "src/main.rs"
 
 [dependencies]
-futures = "0.1"
 bytes = "0.4"
 byteorder = "1.2"
 env_logger = { version = "0.5", default-features = false }
+futures = "0.1"
+http = "0.1"
 lazy_static = "1.1"
 log = "0.4"
-http = "0.1"
 pretty_env_logger = "0.2"
 prost = "0.4"
 prost-types = "0.4"

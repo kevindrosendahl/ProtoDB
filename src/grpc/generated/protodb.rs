@@ -503,7 +503,8 @@ pub mod insert_object_response {
         NoFailure = 0,
         InvalidDatabase = 1,
         InvalidCollection = 2,
-        ObjectError = 3,
+        ObjectExists = 3,
+        ObjectError = 4,
     }
 }
 #[derive(Clone, PartialEq, Message)]

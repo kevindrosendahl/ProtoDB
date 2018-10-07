@@ -13,18 +13,20 @@ pub(crate) struct Range {
     pub end: Key,
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub(crate) struct Cache {
     inner: Arc<RwLock<Inner>>,
 }
 
 impl Cache {
+    #[allow(dead_code)]
     pub(crate) fn get(&self, key: Key) -> Option<Vec<u8>> {
         let cache = self.inner.clone();
         let cache = cache.read().unwrap();
         Self::get_locked(&cache, key)
     }
 
+    #[allow(dead_code)]
     #[inline(always)]
     fn get_locked(cache: &Inner, key: Key) -> Option<Vec<u8>> {
         cache.get(&key).cloned()

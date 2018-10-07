@@ -8,25 +8,15 @@ use crate::storage::{
     },
 };
 
-use byteorder::{LittleEndian, WriteBytesExt};
 use prost_types::DescriptorProto;
 
 const KEY_DELIMITER: &str = "/";
-const NULL_CHAR: &str = "\u{0}";
 
 pub(crate) struct Collection {
     pub database: String,
     pub name: String,
     pub schema: Schema,
     cache: Cache,
-}
-
-macro_rules! value_encoder {
-    (  $val:ident, $encoder:ident, $size:expr ) => {{
-        let mut writer = Vec::with_capacity($size);
-        writer.$encoder::<LittleEndian>($val).unwrap();
-        writer
-    }};
 }
 
 impl Collection {
@@ -83,10 +73,15 @@ impl Collection {
         }
 
         let id = id.unwrap();
+        let id_key = self.field_key(id, self.schema.id_field).as_bytes().to_vec();
+        if self.cache.get(id_key).is_some() {
+            return Err(errors::collection::InsertObjectError::ObjectExists);
+        }
+
         for field in fields {
             self.cache.put(
                 self.field_key(id, field.tag).as_bytes().to_vec(),
-                Self::field_encoding(field.value),
+                Schema::encode_value(field.value),
             )
         }
 
@@ -94,53 +89,53 @@ impl Collection {
     }
 
     pub fn find_object(&self, id: u64) -> Result<Vec<u8>, errors::collection::FindObjectError> {
-//        let start = self.object_key_prefix(id);
-//        let mut end = start.clone();
-//        end.push_str(NULL_CHAR);
-//
-//        let mut buf = Vec::new();
-//        // the id is encoded as part of the key, so we won't
-//        // see it during the iteration over the fields, so add
-//        // it to the buffer first
-//        self.schema.encode_field(self.schema.id_field, FieldValue::Uint64(id), &mut buf);
-//
-//        let entries = self.cache.get_range(&Range {
-//            start: start.into_bytes(),
-//            end: end.into_bytes(),
-//        });
-//        for (key, value) in entries {
-//
-//        }
-        Ok(vec![])
-    }
+        let start = self.object_key_prefix(id);
 
-    fn field_encoding(value: FieldValue) -> Vec<u8> {
-        // TODO: can probably macro this out a bit more
-        match value {
-            FieldValue::Float(val) => value_encoder!(val, write_f32, 4),
-            FieldValue::Double(val) => value_encoder!(val, write_f64, 8),
-            FieldValue::Int32(val) => value_encoder!(val, write_i32, 4),
-            FieldValue::Int64(val) => value_encoder!(val, write_i64, 8),
-            FieldValue::Uint32(val) => value_encoder!(val, write_u32, 4),
-            FieldValue::Uint64(val) => value_encoder!(val, write_u64, 8),
-            FieldValue::Sint32(val) => value_encoder!(val, write_i32, 4),
-            FieldValue::Sint64(val) => value_encoder!(val, write_i64, 8),
-            FieldValue::Fixed32(val) => value_encoder!(val, write_u32, 4),
-            FieldValue::Fixed64(val) => value_encoder!(val, write_u64, 8),
-            FieldValue::Sfixed32(val) => value_encoder!(val, write_i32, 4),
-            FieldValue::Sfixed64(val) => value_encoder!(val, write_i64, 8),
-            FieldValue::Bool(val) => {
-                let val = val as u32;
-                value_encoder!(val, write_u32, 4)
-            }
-            FieldValue::String(val) => val.to_vec(),
-            FieldValue::Bytes(val) => val.to_vec(),
-            FieldValue::Enum(val) => value_encoder!(val, write_u64, 8),
+        // add 1 to the byte value of the last byte in the prefix
+        // this should make the range span over all keys with the prefix
+        // and no more
+        let end = start.clone();
+        let mut end = end.into_bytes();
+        let last = end.pop().unwrap();
+        end.push(last + 1);
+
+        let start = start.into_bytes();
+
+        // allocate the buffer that we'll be encoding the message into
+        let mut buf = Vec::new();
+
+        for (key, value) in self.cache.get_range(&Range { start, end }) {
+            let tag = self.tag_from_key(String::from_utf8(key).unwrap(), id);
+            let wire_type = match self.schema.wire_type(tag) {
+                Some(wire_type) => wire_type,
+                // this indicates there's a field in the cache that isn't in the schema
+                // this shouldn't currently be possible
+                None => continue,
+            };
+
+            Schema::encode_field(tag, wire_type, &value, &mut buf);
         }
+
+        Ok(buf)
     }
 
-//    #[inline(always)]
-//    fn field_from_key(&self, id: &str) ->
+    #[inline(always)]
+    fn tag_from_key(&self, key: String, id: u64) -> i32 {
+        let prefix = self.object_key_prefix(id);
+        let parts: Vec<&str> = key.split(&prefix).collect();
+        if parts.len() != 2 {
+            panic!("corrupted key for id {}: {}", id, key)
+        }
+
+        let suffix = parts[1];
+        let parts: Vec<&str> = suffix.split(KEY_DELIMITER).collect();
+        if parts.len() != 2 {
+            panic!("corrupted key for id {}: {}", id, key)
+        }
+
+        let tag = parts[1];
+        tag.parse().unwrap()
+    }
 
     #[inline(always)]
     fn object_key_prefix(&self, id: u64) -> String {

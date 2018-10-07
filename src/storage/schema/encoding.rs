@@ -2,12 +2,87 @@ use std::io::Cursor;
 
 use super::{errors::ObjectError, Schema};
 
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut};
-use prost::encoding;
+use prost::{encoding, encoding::WireType};
 use prost_types::field_descriptor_proto::Type;
 
+macro_rules! varint_encoder {
+    ( $val:ident ) => {{
+        let mut writer = vec![];
+        encoding::encode_varint($val as u64, &mut writer);
+        writer
+    }};
+}
+
+macro_rules! length_delimited_encoder {
+    ( $val:ident ) => {{
+        let mut writer = vec![];
+        encoding::encode_varint($val.len() as u64, &mut writer);
+        writer.put_slice($val);
+        writer
+    }};
+}
+
+macro_rules! little_endian_encoder {
+    (  $val:ident, $encoder:ident, $size:expr ) => {{
+        let mut writer = Vec::with_capacity($size);
+        // FIXME: handle this error
+        writer.$encoder::<LittleEndian>($val).unwrap();
+        writer
+    }};
+}
+
+macro_rules! varint_decoder {
+    (  $buf:ident, $ty:path, $val_ty:path ) => {{
+        let mut reader = Cursor::new($buf);
+        // FIXME: handle this error
+        let val = encoding::decode_varint(&mut reader).unwrap();
+        $val_ty(val as $ty)
+    }};
+}
+
+macro_rules! length_delimited_decoder {
+    ( $buf:ident, $ty:path ) => {{
+        let mut reader = Cursor::new($buf);
+        // FIXME: handle this error
+        let len = encoding::decode_varint(&mut reader).unwrap() as usize;
+        // FIXME: check for {over/under}flow
+        let position = reader.position() as usize;
+        $ty(&$buf[position..position + len])
+    }};
+}
+
+macro_rules! little_endian_decoder {
+    (  $buf:ident, $decoder:ident, $ty:path ) => {{
+        let mut reader = Cursor::new($buf);
+        // FIXME: handle this error
+        let val = reader.$decoder::<LittleEndian>().unwrap();
+        $ty(val)
+    }};
+}
+
 impl Schema {
+    pub fn wire_type(&self, tag: i32) -> Option<WireType> {
+        self.fields.get(&tag).map(|(_, type_)| {
+            match type_ {
+                Type::Int32
+                | Type::Int64
+                | Type::Uint32
+                | Type::Uint64
+                | Type::Sint32
+                | Type::Sint64
+                | Type::Bool
+                | Type::Enum => WireType::Varint,
+                Type::Fixed32 | Type::Sfixed32 | Type::Float => WireType::ThirtyTwoBit,
+                Type::Fixed64 | Type::Sfixed64 | Type::Double => WireType::SixtyFourBit,
+                Type::String | Type::Bytes => WireType::LengthDelimited,
+                // FIXME: handle more gracefully
+                _ => panic!("unexpected type"),
+            }
+        })
+    }
+
     pub fn decode_object<'a>(&'a self, object: &'a [u8]) -> DecodeObject<'a> {
         DecodeObject {
             object_buf: Cursor::new(object),
@@ -16,25 +91,69 @@ impl Schema {
         }
     }
 
-    pub fn encode_field(tag: i32, value: &FieldValue, buf: &mut impl BufMut) {
-        let tag = tag as u32;
+    pub fn encode_field(tag: i32, wire_type: WireType, value: &[u8], buf: &mut impl BufMut) {
+        encoding::encode_key(tag as u32, wire_type, buf);
+        buf.put(value);
+    }
+
+    pub fn encode_value(value: FieldValue) -> Vec<u8> {
+        // TODO: can probably macro this out a bit more
         match value {
-            FieldValue::Float(val) => encoding::float::encode(tag, val, buf),
-            FieldValue::Double(val) => encoding::double::encode(tag, val, buf),
-            FieldValue::Int32(val) => encoding::int32::encode(tag, val, buf),
-            FieldValue::Int64(val) => encoding::int64::encode(tag, val, buf),
-            FieldValue::Uint32(val) => encoding::uint32::encode(tag, val, buf),
-            FieldValue::Uint64(val) => encoding::uint64::encode(tag, val, buf),
-            FieldValue::Sint32(val) => encoding::sint32::encode(tag, val, buf),
-            FieldValue::Sint64(val) => encoding::sint64::encode(tag, val, buf),
-            FieldValue::Fixed32(val) => encoding::fixed32::encode(tag, val, buf),
-            FieldValue::Fixed64(val) => encoding::fixed64::encode(tag, val, buf),
-            FieldValue::Sfixed32(val) => encoding::sfixed32::encode(tag, val, buf),
-            FieldValue::Sfixed64(val) => encoding::sfixed64::encode(tag, val, buf),
-            FieldValue::Bool(val) => encoding::bool::encode(tag, val, buf),
-            FieldValue::String(val) => encoding::bytes::encode(tag, &val.to_vec(), buf),
-            FieldValue::Bytes(val) => encoding::bytes::encode(tag, &val.to_vec(), buf),
-            FieldValue::Enum(val) => encoding::uint64::encode(tag, val, buf),
+            FieldValue::Int32(val) => varint_encoder!(val),
+            FieldValue::Int64(val) => varint_encoder!(val),
+            FieldValue::Uint32(val) => varint_encoder!(val),
+            FieldValue::Uint64(val) => varint_encoder!(val),
+            FieldValue::Sint32(val) => varint_encoder!(val),
+            FieldValue::Sint64(val) => varint_encoder!(val),
+            FieldValue::Bool(val) => {
+                let val = val as u32;
+                varint_encoder!(val)
+            }
+            FieldValue::Enum(val) => varint_encoder!(val),
+
+            FieldValue::Float(val) => little_endian_encoder!(val, write_f32, 4),
+            FieldValue::Double(val) => little_endian_encoder!(val, write_f64, 8),
+            FieldValue::Fixed32(val) => little_endian_encoder!(val, write_u32, 4),
+            FieldValue::Fixed64(val) => little_endian_encoder!(val, write_u64, 8),
+            FieldValue::Sfixed32(val) => little_endian_encoder!(val, write_i32, 4),
+            FieldValue::Sfixed64(val) => little_endian_encoder!(val, write_i64, 8),
+
+            FieldValue::String(val) => length_delimited_encoder!(val),
+            FieldValue::Bytes(val) => length_delimited_encoder!(val),
+        }
+    }
+
+    #[allow(dead_code)]
+    fn decode_value(type_: Type, value: &Vec<u8>) -> FieldValue {
+        // TODO: can probably macro this out a bit more
+        match type_ {
+            Type::Int32 => varint_decoder!(value, i32, FieldValue::Int32),
+            Type::Int64 => varint_decoder!(value, i64, FieldValue::Int64),
+            Type::Uint32 => varint_decoder!(value, u32, FieldValue::Uint32),
+            Type::Uint64 => varint_decoder!(value, u64, FieldValue::Uint64),
+            Type::Sint32 => varint_decoder!(value, i32, FieldValue::Sint32),
+            Type::Sint64 => varint_decoder!(value, i64, FieldValue::Sint64),
+            Type::Bool => {
+                let val = match varint_decoder!(value, u64, FieldValue::Uint64) {
+                    FieldValue::Uint64(val) => val,
+                    _ => panic!("value_decoder! did not return Uint64 for bool"),
+                };
+                let val = val != 0;
+                FieldValue::Bool(val)
+            }
+            Type::Enum => varint_decoder!(value, u64, FieldValue::Enum),
+
+            Type::Float => little_endian_decoder!(value, read_f32, FieldValue::Float),
+            Type::Double => little_endian_decoder!(value, read_f64, FieldValue::Double),
+            Type::Fixed32 => little_endian_decoder!(value, read_u32, FieldValue::Fixed32),
+            Type::Fixed64 => little_endian_decoder!(value, read_u64, FieldValue::Fixed64),
+            Type::Sfixed32 => little_endian_decoder!(value, read_i32, FieldValue::Sfixed32),
+            Type::Sfixed64 => little_endian_decoder!(value, read_i64, FieldValue::Sfixed64),
+
+            Type::String => length_delimited_decoder!(value, FieldValue::String),
+            Type::Bytes => length_delimited_decoder!(value, FieldValue::Bytes),
+
+            _ => panic!("unexpected type {:?}", type_),
         }
     }
 }
@@ -45,6 +164,7 @@ pub struct DecodeObject<'a> {
     schema: &'a Schema,
 }
 
+#[derive(Debug)]
 pub struct FieldInfo<'a> {
     pub tag: i32,
     pub wire_type: encoding::WireType,
@@ -206,6 +326,12 @@ impl<'a> Iterator for DecodeObject<'a> {
                 encoding::WireType::LengthDelimited => {
                     match encoding::decode_varint(&mut self.object_buf) {
                         Ok(len) => {
+                            // we just read a varint off the buffer, so increase the offset
+                            // by however many bytes were read
+                            let offset = offset + encoding::encoded_len_varint(len);
+
+                            // advanced the buffer as many bytes as we're about to return
+                            // from the underlying byte array to keep the bookkeeping correct
                             self.object_buf.advance(len as usize);
 
                             // if the field was not part of the schema, go on to the next field

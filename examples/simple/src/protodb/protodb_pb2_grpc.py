@@ -2,6 +2,7 @@
 import grpc
 
 from protodb.collection import create_pb2 as protodb_dot_collection_dot_create__pb2
+from protodb.collection import find_object_pb2 as protodb_dot_collection_dot_find__object__pb2
 from protodb.collection import insert_object_pb2 as protodb_dot_collection_dot_insert__object__pb2
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
@@ -42,6 +43,11 @@ class ProtoDBStub(object):
         '/protodb.ProtoDB/InsertObject',
         request_serializer=protodb_dot_collection_dot_insert__object__pb2.InsertObjectRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_insert__object__pb2.InsertObjectResponse.FromString,
+        )
+    self.FindObject = channel.unary_unary(
+        '/protodb.ProtoDB/FindObject',
+        request_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.SerializeToString,
+        response_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.FromString,
         )
 
 
@@ -84,6 +90,13 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def FindObject(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_ProtoDBServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -111,6 +124,11 @@ def add_ProtoDBServicer_to_server(servicer, server):
           servicer.InsertObject,
           request_deserializer=protodb_dot_collection_dot_insert__object__pb2.InsertObjectRequest.FromString,
           response_serializer=protodb_dot_collection_dot_insert__object__pb2.InsertObjectResponse.SerializeToString,
+      ),
+      'FindObject': grpc.unary_unary_rpc_method_handler(
+          servicer.FindObject,
+          request_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.FromString,
+          response_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

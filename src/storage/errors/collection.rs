@@ -68,6 +68,7 @@ impl From<SchemaError> for CreateCollectionError {
 pub enum InsertObjectError {
     InvalidDatabase,
     InvalidCollection,
+    ObjectExists,
     ObjectError(ObjectError),
 }
 
@@ -82,6 +83,7 @@ impl error::Error for InsertObjectError {
         match self {
             InsertObjectError::InvalidDatabase => "invalid database",
             InsertObjectError::InvalidCollection => "invalid collection",
+            InsertObjectError::ObjectExists => "object exists",
             InsertObjectError::ObjectError(err) => err.description(),
         }
     }
@@ -90,6 +92,7 @@ impl error::Error for InsertObjectError {
         match self {
             InsertObjectError::InvalidDatabase => None,
             InsertObjectError::InvalidCollection => None,
+            InsertObjectError::ObjectExists => None,
             InsertObjectError::ObjectError(err) => err.cause(),
         }
     }

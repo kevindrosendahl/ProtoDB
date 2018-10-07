@@ -16,7 +16,8 @@ message InsertObjectResponse {
         NO_FAILURE = 0;
         INVALID_DATABASE = 1;
         INVALID_COLLECTION = 2;
-        OBJECT_ERROR = 3;
+        OBJECT_EXISTS = 3;
+        OBJECT_ERROR = 4;
     }
     FailureCode failure_code = 2;
 
