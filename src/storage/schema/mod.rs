@@ -10,6 +10,7 @@ pub mod errors;
 
 const ID_FIELD: &str = "id";
 
+#[derive(Clone, Debug)]
 pub struct Schema {
     pub descriptor: DescriptorProto,
     pub id_field: i32,

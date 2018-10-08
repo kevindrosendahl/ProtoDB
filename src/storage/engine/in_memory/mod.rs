@@ -1,165 +1,24 @@
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, RwLock},
-};
+pub mod kv_store;
 
-mod cache;
-mod collection;
-mod database;
-use self::{collection::Collection, database::Database};
+use super::kv::catalog::database::KVDatabaseCatalog;
+use crate::storage;
+use crate::storage::{catalog, StorageEngine};
 
-use crate::storage::{errors, StorageEngine};
-
-use prost_types::DescriptorProto;
-
-#[derive(Default)]
-pub struct InMemoryStorageEngine {
-    databases: Arc<RwLock<BTreeMap<String, Database>>>,
+pub struct InMemoryStorageEngine<'a> {
+    catalog: KVDatabaseCatalog<'a>,
 }
 
-impl InMemoryStorageEngine {
-    pub fn new() -> InMemoryStorageEngine {
+impl<'a> InMemoryStorageEngine<'a> {
+    pub fn new() -> InMemoryStorageEngine<'a> {
+        let store: kv_store::InMemoryKVStore = Default::default();
         InMemoryStorageEngine {
-            databases: Arc::new(RwLock::new(BTreeMap::new())),
+            catalog: KVDatabaseCatalog::new(Box::new(store)),
         }
-    }
-
-    fn list_databases(&self) -> Vec<String> {
-        let dbs = self.databases.clone();
-        let dbs = dbs.read().unwrap();
-        dbs.keys().cloned().collect()
-    }
-
-    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
-        let dbs = self.databases.clone();
-        let mut dbs = dbs.write().unwrap();
-        if dbs.contains_key(name) {
-            return Err(errors::database::CreateDatabaseError::DatabaseExists);
-        }
-
-        dbs.insert(name.to_string(), Default::default());
-        Ok(())
-    }
-
-    fn create_collection(
-        &self,
-        database: &str,
-        name: &str,
-        descriptor: &DescriptorProto,
-    ) -> Result<(), errors::collection::CreateCollectionError> {
-        let dbs = self.databases.clone();
-        let dbs = dbs.read().unwrap();
-        let db = dbs
-            .get(database)
-            .ok_or_else(|| errors::collection::CreateCollectionError::InvalidDatabase)?;
-
-        let collections = db.collections.clone();
-        let mut collections = collections.write().unwrap();
-        if collections.contains_key(name) {
-            return Err(errors::collection::CreateCollectionError::CollectionExists);
-        }
-
-        let collection = Collection::new(db.name.clone(), name.to_string(), descriptor)?;
-        collections.insert(name.to_string(), collection);
-        Ok(())
-    }
-
-    fn list_collections(
-        &self,
-        database: &str,
-    ) -> Result<Vec<String>, errors::collection::ListCollectionsError> {
-        let dbs = self.databases.clone();
-        let dbs = dbs.read().unwrap();
-        let db = dbs
-            .get(database)
-            .ok_or_else(|| errors::collection::ListCollectionsError::InvalidDatabase)?;
-
-        let collections = db.collections.clone();
-        let collections = collections.read().unwrap();
-        Ok(collections.keys().cloned().collect())
-    }
-
-    fn insert_object(
-        &self,
-        database: &str,
-        collection: &str,
-        object: &[u8],
-    ) -> Result<(), errors::collection::InsertObjectError> {
-        let dbs = self.databases.clone();
-        let dbs = dbs.read().unwrap();
-        let db = dbs
-            .get(database)
-            .ok_or_else(|| errors::collection::InsertObjectError::InvalidDatabase)?;
-
-        let collections = db.collections.clone();
-        let collections = collections.write().unwrap();
-        let collection = collections
-            .get(collection)
-            .ok_or_else(|| errors::collection::InsertObjectError::InvalidCollection)?;
-        collection.insert_object(object)
-    }
-
-    fn find_object(
-        &self,
-        database: &str,
-        collection: &str,
-        id: u64,
-    ) -> Result<Vec<u8>, errors::collection::FindObjectError> {
-        let dbs = self.databases.clone();
-        let dbs = dbs.read().unwrap();
-        let db = dbs
-            .get(database)
-            .ok_or_else(|| errors::collection::FindObjectError::InvalidDatabase)?;
-
-        let collections = db.collections.clone();
-        let collections = collections.write().unwrap();
-        let collection = collections
-            .get(collection)
-            .ok_or_else(|| errors::collection::FindObjectError::InvalidCollection)?;
-        collection.find_object(id)
     }
 }
 
-impl StorageEngine for InMemoryStorageEngine {
-    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
-        self.create_database(name)
-    }
-
-    fn list_databases(&self) -> Vec<String> {
-        self.list_databases()
-    }
-
-    fn create_collection(
-        &self,
-        database: &str,
-        name: &str,
-        schema: &DescriptorProto,
-    ) -> Result<(), errors::collection::CreateCollectionError> {
-        self.create_collection(database, name, schema)
-    }
-
-    fn list_collections(
-        &self,
-        database: &str,
-    ) -> Result<Vec<String>, errors::collection::ListCollectionsError> {
-        self.list_collections(database)
-    }
-
-    fn insert_object(
-        &self,
-        database: &str,
-        collection: &str,
-        object: &[u8],
-    ) -> Result<(), errors::collection::InsertObjectError> {
-        self.insert_object(database, collection, object)
-    }
-
-    fn find_object(
-        &self,
-        database: &str,
-        collection: &str,
-        id: u64,
-    ) -> Result<Vec<u8>, errors::collection::FindObjectError> {
-        self.find_object(database, collection, id)
+impl<'a> StorageEngine for InMemoryStorageEngine<'a> {
+    fn catalog(&self) -> Box<dyn catalog::database::DatabaseCatalog> {
+        unimplemented!()
     }
 }
