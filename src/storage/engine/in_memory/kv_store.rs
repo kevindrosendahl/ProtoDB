@@ -1,6 +1,5 @@
 use std::{
-    collections::{btree_map::Range, BTreeMap},
-    iter::Map,
+    collections::BTreeMap,
     ops::Bound,
     sync::{Arc, RwLock},
 };
@@ -13,44 +12,6 @@ type Inner = BTreeMap<Vec<u8>, Vec<u8>>;
 pub struct InMemoryKVStore {
     inner: Arc<RwLock<Inner>>,
 }
-
-impl<'a> InMemoryKVStore {
-    //    #[inline(always)]
-    //    fn get_locked(store: &'a Inner, key: KVStoreKey) -> Option<KVStoreValue<'a>> {
-    //
-    //    }
-
-    //    #[inline(always)]
-    //    fn prefix_iter_locked<'a, T>(store: &'a Inner, prefix: KVStoreKey) -> T where T: Iterator + 'a
-    //    {
-    //        store
-    //            .range((Bound::Included(prefix), Bound::Unbounded))
-    //            .map(|(k, v)| (k.clone(), v.clone()))
-    //    }
-
-    //    #[inline(always)]
-    //    fn write_locked(store: &'a mut Inner, batch: KVStoreWriteBatch<'a>) {
-    //
-    //    }
-}
-
-//pub struct InMemoryKVStorePrefixIterator<T>
-//where
-//    T: Iterator<Item = KVStoreBytes>,
-//{
-//    inner: T,
-//}
-//
-//impl<T> Iterator for InMemoryKVStorePrefixIterator<T>
-//where
-//    T: Iterator<Item = KVStoreBytes>,
-//{
-//    type Item = KVStoreBytes;
-//
-//    fn next(&mut self) -> Option<Self::Item> {
-//        self.inner.next()
-//    }
-//}
 
 impl KVStore for InMemoryKVStore {
     fn get(&self, key: &[u8]) -> Option<Box<[u8]>> {

@@ -1,7 +1,7 @@
 mod collection;
 mod database;
 
-use std::{clone::Clone, sync::Arc, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 use super::generated::{
     protodb,

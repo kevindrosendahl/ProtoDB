@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::super::store::{KVStore, KVStoreWriteBatch};
+use super::super::store::{KVStore};
 use crate::storage::{
     catalog::collection::CollectionCatalogEntry,
     errors,

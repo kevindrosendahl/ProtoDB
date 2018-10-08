@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 pub trait KVStore {
     fn get(&self, key: &[u8]) -> Option<Box<[u8]>>;
 

@@ -3,7 +3,6 @@ pub mod kv_store;
 use std::sync::Arc;
 
 use super::kv::catalog::database::KVDatabaseCatalog;
-use crate::storage;
 use crate::storage::{catalog, StorageEngine};
 
 pub struct InMemoryStorageEngine {
