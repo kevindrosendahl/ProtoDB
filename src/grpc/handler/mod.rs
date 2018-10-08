@@ -1,7 +1,7 @@
 mod collection;
 mod database;
 
-use std::{clone::Clone, sync::Arc};
+use std::{clone::Clone, sync::Arc, time::Instant};
 
 use super::generated::{
     protodb,
@@ -32,8 +32,13 @@ macro_rules! method_handler {
         type $future = future::FutureResult<Response<$response>, tower_grpc::Error>;
 
         fn $method(&mut self, request: Request<$request>) -> Self::$future {
+            let start = Instant::now();
+
             debug!("received {} request", $desc);
-            future::ok(Response::new(self.$handler(&request)))
+            let response = self.$handler(&request);
+            debug!("{} request took {:?}", $desc, start.elapsed());
+
+            future::ok(Response::new(response))
         }
     }
 }

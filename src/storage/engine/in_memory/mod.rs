@@ -7,22 +7,20 @@ use crate::storage;
 use crate::storage::{catalog, StorageEngine};
 
 pub struct InMemoryStorageEngine {
-    store: Arc<kv_store::InMemoryKVStore>,
-    catalog: KVDatabaseCatalog,
+    catalog: Arc<KVDatabaseCatalog>,
 }
 
 impl InMemoryStorageEngine {
     pub fn new() -> InMemoryStorageEngine {
         let store: Arc<kv_store::InMemoryKVStore> = Arc::new(Default::default());
         InMemoryStorageEngine {
-            store: store.clone(),
-            catalog: KVDatabaseCatalog::new(store),
+            catalog: Arc::new(KVDatabaseCatalog::new(store)),
         }
     }
 }
 
 impl StorageEngine for InMemoryStorageEngine {
     fn catalog(&self) -> Arc<dyn catalog::database::DatabaseCatalog> {
-        unimplemented!()
+        self.catalog.clone() as Arc<dyn catalog::database::DatabaseCatalog>
     }
 }

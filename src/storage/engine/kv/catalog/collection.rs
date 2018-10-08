@@ -1,10 +1,14 @@
 use std::sync::Arc;
 
-use super::super::store::KVStore;
+use super::super::store::{KVStore, KVStoreWriteBatch};
 use crate::storage::{
     catalog::collection::CollectionCatalogEntry,
     errors,
-    schema::{errors::SchemaError, Schema},
+    schema::{
+        encoding::{FieldInfo, FieldValue},
+        errors::{ObjectError, SchemaError},
+        Schema,
+    },
 };
 
 use prost_types::DescriptorProto;
@@ -87,10 +91,95 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
     }
 
     fn find_object(&self, id: u64) -> Result<Vec<u8>, errors::collection::FindObjectError> {
-        Ok(vec![])
+        let start = self.object_key_prefix(id);
+
+        // add 1 to the byte value of the last byte in the prefix
+        // this should make the range span over all keys with the prefix
+        // and no more
+        let end = start.clone();
+        let mut end = end.into_bytes();
+        let last = end.pop().unwrap();
+        end.push(last + 1);
+
+        let start = start.into_bytes();
+
+        // allocate the buffer that we'll be encoding the message into
+        let mut buf = Vec::new();
+
+        let store = self.kv_store.clone();
+        for (key, value) in store.bounded_prefix_iterator(&start, &end) {
+            // FIXME: handle this error
+            let tag = self.tag_from_key(String::from_utf8(key.to_vec()).unwrap(), id);
+            let wire_type = match self.schema.wire_type(tag) {
+                Some(wire_type) => wire_type,
+                // this indicates there's a field in the cache that isn't in the schema
+                // this shouldn't currently be possible
+                None => continue,
+            };
+
+            Schema::encode_field(tag, wire_type, &value, &mut buf);
+        }
+
+        Ok(buf)
     }
 
     fn insert_object(&self, object: &[u8]) -> Result<(), errors::collection::InsertObjectError> {
+        let mut id = None;
+        let fields = self
+            .schema
+            .decode_object(object)
+            .map(|f| {
+                // check to see if this field is the id field. if it is,
+                // ensure that the value is a Uint64 (for now) and set id
+                // to it
+                if f.is_err() {
+                    return f;
+                }
+
+                let f = f.unwrap();
+                if f.tag != self.schema.id_field {
+                    return Ok(f);
+                }
+
+                match f.value {
+                    FieldValue::Uint64(val) => {
+                        id = Some(val);
+                        Ok(f)
+                    }
+                    _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
+                        format!("{:?}", f.value),
+                    ))),
+                }
+            }).collect::<Result<Vec<FieldInfo>, ObjectError>>()?;
+
+        if id.is_none() {
+            return Err(errors::collection::InsertObjectError::ObjectError(
+                ObjectError::SchemaError(SchemaError::MissingIdField),
+            ));
+        }
+
+        let store = self.kv_store.clone();
+
+        let id = id.unwrap();
+        let id_key = self.field_key(id, self.schema.id_field).as_bytes().to_vec();
+        if store.get(&id_key).is_some() {
+            return Err(errors::collection::InsertObjectError::ObjectExists);
+        }
+
+        let mut batch = Vec::new();
+        for field in fields {
+            batch.push((
+                self.field_key(id, field.tag),
+                Schema::encode_value(field.value),
+            ));
+        }
+
+        store.write(
+            batch
+                .iter()
+                .map(|(k, v)| (k.as_bytes(), v.as_slice()))
+                .collect(),
+        );
         Ok(())
     }
 }

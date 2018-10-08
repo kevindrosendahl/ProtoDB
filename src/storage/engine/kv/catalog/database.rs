@@ -1,8 +1,8 @@
 use std::{
     //    clone::Clone,
     collections::BTreeMap,
-    sync::{Arc, RwLock},
     ops::Deref,
+    sync::{Arc, RwLock},
 };
 
 use super::super::store::KVStore;
@@ -40,7 +40,10 @@ impl DatabaseCatalog for KVDatabaseCatalog {
 
         dbs.insert(
             name.to_string(),
-            Arc::new(KVDatabaseCatalogEntry::new(name.to_string(), self.kv_store.clone())),
+            Arc::new(KVDatabaseCatalogEntry::new(
+                name.to_string(),
+                self.kv_store.clone(),
+            )),
         );
         Ok(())
     }
@@ -65,7 +68,7 @@ pub struct KVDatabaseCatalogEntry {
     kv_store: Arc<dyn KVStore>,
 
     name: String,
-    collections: Arc<RwLock<BTreeMap<String, KVCollectionCatalogEntry>>>,
+    collections: Arc<RwLock<BTreeMap<String, Arc<KVCollectionCatalogEntry>>>>,
 }
 
 impl<'a> KVDatabaseCatalogEntry {
@@ -107,11 +110,17 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
             name.to_string(),
             descriptor,
         )?;
+        let collection = Arc::new(collection);
         collections.insert(name.to_string(), collection);
         Ok(())
     }
 
     fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry>> {
-        unimplemented!()
+        let collections = self.collections.clone();
+        let collections = collections.read().unwrap();
+        collections
+            .get(name)
+            .cloned()
+            .map(|e| e as Arc<dyn CollectionCatalogEntry>)
     }
 }

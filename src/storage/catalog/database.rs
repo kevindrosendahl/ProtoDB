@@ -21,7 +21,7 @@ pub trait DatabaseCatalogEntry {
     fn create_collection(
         &self,
         name: &str,
-        schema: &DescriptorProto,
+        descriptor: &DescriptorProto,
     ) -> Result<(), errors::collection::CreateCollectionError>;
 
     fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry>>;
