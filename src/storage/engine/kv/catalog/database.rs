@@ -30,7 +30,7 @@ impl KVDatabaseCatalog {
     }
 }
 
-impl<'a> DatabaseCatalog<'a> for KVDatabaseCatalog {
+impl DatabaseCatalog for KVDatabaseCatalog {
     fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
         let dbs = self.databases.clone();
         let mut dbs = dbs.write().unwrap();
@@ -51,12 +51,12 @@ impl<'a> DatabaseCatalog<'a> for KVDatabaseCatalog {
         dbs.keys().cloned().collect()
     }
 
-    fn get_database_entry(&self, name: &str) -> Option<Arc<dyn DatabaseCatalogEntry<'a> + 'a>> {
+    fn get_database_entry(&self, name: &str) -> Option<Arc<dyn DatabaseCatalogEntry>> {
         let dbs = self.databases.clone();
         let dbs = dbs.read().unwrap();
         dbs.get(name)
             .cloned()
-            .map(|e| e as Arc<dyn DatabaseCatalogEntry<'a> + 'a>)
+            .map(|e| e as Arc<dyn DatabaseCatalogEntry>)
     }
 }
 
@@ -79,7 +79,7 @@ impl<'a> KVDatabaseCatalogEntry {
     }
 }
 
-impl<'a> DatabaseCatalogEntry<'a> for KVDatabaseCatalogEntry {
+impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
     fn name(&self) -> &str {
         &self.name
     }
@@ -111,7 +111,7 @@ impl<'a> DatabaseCatalogEntry<'a> for KVDatabaseCatalogEntry {
         Ok(())
     }
 
-    fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry + 'a>> {
+    fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry>> {
         unimplemented!()
     }
 }
