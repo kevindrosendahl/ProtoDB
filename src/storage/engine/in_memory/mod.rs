@@ -1,24 +1,28 @@
 pub mod kv_store;
 
+use std::sync::Arc;
+
 use super::kv::catalog::database::KVDatabaseCatalog;
 use crate::storage;
 use crate::storage::{catalog, StorageEngine};
 
-pub struct InMemoryStorageEngine<'a> {
-    catalog: KVDatabaseCatalog<'a>,
+pub struct InMemoryStorageEngine {
+    store: Arc<kv_store::InMemoryKVStore>,
+    catalog: KVDatabaseCatalog,
 }
 
-impl<'a> InMemoryStorageEngine<'a> {
-    pub fn new() -> InMemoryStorageEngine<'a> {
-        let store: kv_store::InMemoryKVStore = Default::default();
+impl InMemoryStorageEngine {
+    pub fn new() -> InMemoryStorageEngine {
+        let store: Arc<kv_store::InMemoryKVStore> = Arc::new(Default::default());
         InMemoryStorageEngine {
-            catalog: KVDatabaseCatalog::new(Box::new(store)),
+            store: store.clone(),
+            catalog: KVDatabaseCatalog::new(store),
         }
     }
 }
 
-impl<'a> StorageEngine for InMemoryStorageEngine<'a> {
-    fn catalog(&self) -> Box<dyn catalog::database::DatabaseCatalog> {
+impl StorageEngine for InMemoryStorageEngine {
+    fn catalog(&self) -> Arc<dyn catalog::database::DatabaseCatalog> {
         unimplemented!()
     }
 }

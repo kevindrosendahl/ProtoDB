@@ -3,8 +3,8 @@ pub mod engine;
 pub mod errors;
 pub mod schema;
 
-use std::clone::Clone;
+use std::sync::Arc;
 
 pub trait StorageEngine {
-    fn catalog(&self) -> Box<dyn catalog::database::DatabaseCatalog>;
+    fn catalog(&self) -> Arc<dyn catalog::database::DatabaseCatalog>;
 }

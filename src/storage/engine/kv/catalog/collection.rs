@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::super::store::KVStore;
 use crate::storage::{
     catalog::collection::CollectionCatalogEntry,
@@ -10,26 +12,28 @@ use prost_types::DescriptorProto;
 const KEY_DELIMITER: &str = "/";
 
 #[derive(Clone)]
-pub struct KVCollectionCatalogEntry<'a> {
+pub struct KVCollectionCatalogEntry {
+    kv_store: Arc<dyn KVStore>,
+
     database: String,
     name: String,
     schema: Schema,
-    kv_store: &'a KVStore,
 }
 
-impl<'a> KVCollectionCatalogEntry<'a> {
+impl KVCollectionCatalogEntry {
     pub fn new(
+        kv_store: Arc<dyn KVStore>,
         database: String,
         name: String,
         descriptor: &DescriptorProto,
-        kv_store: &'a KVStore,
-    ) -> Result<KVCollectionCatalogEntry<'a>, SchemaError> {
+    ) -> Result<KVCollectionCatalogEntry, SchemaError> {
         let schema = Schema::new(descriptor)?;
         Ok(KVCollectionCatalogEntry {
+            kv_store,
+
             database,
             name,
             schema,
-            kv_store,
         })
     }
 
@@ -73,7 +77,7 @@ impl<'a> KVCollectionCatalogEntry<'a> {
     }
 }
 
-impl<'a> CollectionCatalogEntry for KVCollectionCatalogEntry<'a> {
+impl CollectionCatalogEntry for KVCollectionCatalogEntry {
     fn name(&self) -> &str {
         &self.name
     }
