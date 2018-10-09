@@ -1,4 +1,7 @@
-use crate::storage::{errors, schema::Schema};
+use crate::{
+    schema::Schema,
+    storage::errors
+};
 
 pub trait CollectionCatalogEntry {
     fn name(&self) -> &str;

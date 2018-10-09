@@ -1,6 +1,6 @@
 use std::{error, fmt};
 
-use super::super::schema::errors::{ObjectError, SchemaError};
+use crate::schema::errors::{ObjectError, SchemaError};
 
 #[derive(Debug)]
 pub enum ListCollectionsError {

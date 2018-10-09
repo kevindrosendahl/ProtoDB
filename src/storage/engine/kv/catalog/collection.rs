@@ -1,14 +1,14 @@
 use std::sync::Arc;
 
 use super::super::store::KVStore;
-use crate::storage::{
+use crate::{
     catalog::collection::CollectionCatalogEntry,
-    errors,
     schema::{
         encoding::{FieldInfo, FieldValue},
         errors::{ObjectError, SchemaError},
         Schema,
     },
+    storage::errors,
 };
 
 use prost_types::DescriptorProto;

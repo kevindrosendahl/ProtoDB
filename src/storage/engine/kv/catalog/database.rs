@@ -5,10 +5,12 @@ use std::{
 
 use super::super::store::KVStore;
 use super::collection::KVCollectionCatalogEntry;
-use crate::storage::{
-    catalog::collection::CollectionCatalogEntry,
-    catalog::database::{DatabaseCatalog, DatabaseCatalogEntry},
-    errors,
+use crate::{
+    catalog::{
+        collection::CollectionCatalogEntry,
+        database::{DatabaseCatalog, DatabaseCatalogEntry},
+    },
+    storage::errors,
 };
 
 use prost_types::DescriptorProto;

@@ -3,10 +3,10 @@ use std::{error::Error, sync::Arc};
 use super::super::generated::protodb::collection;
 use super::Handler;
 
-use crate::storage::{
+use crate::{
     catalog::{collection::CollectionCatalogEntry, database::DatabaseCatalogEntry},
-    errors,
     schema::errors::SchemaError,
+    storage::errors,
 };
 
 use tower_grpc::Request;
