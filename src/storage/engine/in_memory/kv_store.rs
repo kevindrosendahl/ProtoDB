@@ -25,7 +25,6 @@ impl KVStore for InMemoryKVStore {
     fn prefix_iterator(&self, prefix: &[u8]) -> Box<dyn Iterator<Item = KVStoreBytes>> {
         let store = self.inner.clone();
         let store = store.read().unwrap();
-        let store = store.clone();
         Box::new(PrefixIterator {
             inner: store
                 .range((Bound::Included(prefix.to_vec()), Bound::Unbounded))

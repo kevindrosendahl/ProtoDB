@@ -326,6 +326,12 @@ impl MultiGranularLock {
     }
 }
 
+impl Default for MultiGranularLock {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::{HashMap, HashSet};

@@ -15,7 +15,7 @@ use crate::{
 
 use prost_types::DescriptorProto;
 
-const KEY_DELIMITER: &str = "/";
+const KEY_DELIMITER: char = '/';
 
 #[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
@@ -44,24 +44,24 @@ impl KVCollectionCatalogEntry {
     }
 
     #[inline(always)]
-    fn tag_from_key(&self, key: String, id: u64) -> i32 {
+    fn tag_from_key(&self, key: &str, id: u64) -> i32 {
         let prefix = self.object_key_prefix(id);
         let mut key_parts = key.split(&prefix);
         key_parts
             .next()
-            .expect(&format!("corrupted key for id {}: {}", id, key));
+            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
 
         let suffix = key_parts
             .next()
-            .expect(&format!("corrupted key for id {}: {}", id, key));
+            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
         let mut suffix_parts = suffix.split(KEY_DELIMITER);
         suffix_parts
             .next()
-            .expect(&format!("corrupted key for id {}: {}", id, key));
+            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
 
         let tag = suffix_parts
             .next()
-            .expect(&format!("corrupted key for id {}: {}", id, key));
+            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
         tag.parse().unwrap()
     }
 
@@ -115,7 +115,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         let store = self.kv_store.clone();
         for (key, value) in store.bounded_prefix_iterator(&start, &end) {
             // FIXME: handle this error
-            let tag = self.tag_from_key(String::from_utf8(key.to_vec()).unwrap(), id);
+            let tag = self.tag_from_key(&String::from_utf8(key.to_vec()).unwrap(), id);
             let wire_type = match self.schema.wire_type(tag) {
                 Some(wire_type) => wire_type,
                 // this indicates there's a field in the cache that isn't in the schema
@@ -179,7 +179,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         for field in fields {
             batch.push((
                 self.field_key(id, field.tag),
-                Schema::encode_value(field.value),
+                Schema::encode_value(&field.value),
             ));
         }
 

@@ -23,3 +23,9 @@ impl StorageEngine for InMemoryStorageEngine {
         self.catalog.clone() as Arc<dyn catalog::database::DatabaseCatalog>
     }
 }
+
+impl Default for InMemoryStorageEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}

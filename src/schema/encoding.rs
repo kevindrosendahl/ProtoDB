@@ -96,9 +96,9 @@ impl Schema {
         buf.put(value);
     }
 
-    pub fn encode_value(value: FieldValue) -> Vec<u8> {
+    pub fn encode_value(value: &FieldValue) -> Vec<u8> {
         // TODO: can probably macro this out a bit more
-        match value {
+        match *value {
             FieldValue::Int32(val) => varint_encoder!(val),
             FieldValue::Int64(val) => varint_encoder!(val),
             FieldValue::Uint32(val) => varint_encoder!(val),
@@ -124,7 +124,7 @@ impl Schema {
     }
 
     #[allow(dead_code)]
-    fn decode_value(type_: Type, value: &Vec<u8>) -> FieldValue {
+    fn decode_value(type_: Type, value: &[u8]) -> FieldValue {
         // TODO: can probably macro this out a bit more
         match type_ {
             Type::Int32 => varint_decoder!(value, i32, FieldValue::Int32),
