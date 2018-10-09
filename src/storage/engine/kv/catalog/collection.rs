@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use super::super::store::{KVStore};
+use super::super::store::KVStore;
 use crate::storage::{
     catalog::collection::CollectionCatalogEntry,
     errors,
@@ -44,18 +44,22 @@ impl KVCollectionCatalogEntry {
     #[inline(always)]
     fn tag_from_key(&self, key: String, id: u64) -> i32 {
         let prefix = self.object_key_prefix(id);
-        let parts: Vec<&str> = key.split(&prefix).collect();
-        if parts.len() != 2 {
-            panic!("corrupted key for id {}: {}", id, key)
-        }
+        let mut key_parts = key.split(&prefix);
+        key_parts
+            .next()
+            .expect(&format!("corrupted key for id {}: {}", id, key));
 
-        let suffix = parts[1];
-        let parts: Vec<&str> = suffix.split(KEY_DELIMITER).collect();
-        if parts.len() != 2 {
-            panic!("corrupted key for id {}: {}", id, key)
-        }
+        let suffix = key_parts
+            .next()
+            .expect(&format!("corrupted key for id {}: {}", id, key));
+        let mut suffix_parts = suffix.split(KEY_DELIMITER);
+        suffix_parts
+            .next()
+            .expect(&format!("corrupted key for id {}: {}", id, key));
 
-        let tag = parts[1];
+        let tag = suffix_parts
+            .next()
+            .expect(&format!("corrupted key for id {}: {}", id, key));
         tag.parse().unwrap()
     }
 
@@ -90,7 +94,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         &self.schema
     }
 
-    fn find_object(&self, id: u64) -> Result<Vec<u8>, errors::collection::FindObjectError> {
+    fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, errors::collection::FindObjectError> {
         let start = self.object_key_prefix(id);
 
         // add 1 to the byte value of the last byte in the prefix
@@ -120,7 +124,10 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
             Schema::encode_field(tag, wire_type, &value, &mut buf);
         }
 
-        Ok(buf)
+        match buf.len() {
+            0 => Ok(None),
+            _ => Ok(Some(buf)),
+        }
     }
 
     fn insert_object(&self, object: &[u8]) -> Result<(), errors::collection::InsertObjectError> {

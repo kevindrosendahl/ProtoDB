@@ -29,7 +29,6 @@ impl error::Error for ListCollectionsError {
 
 #[derive(Debug)]
 pub enum CreateCollectionError {
-    InvalidDatabase,
     CollectionExists,
     SchemaError(SchemaError),
 }
@@ -43,7 +42,6 @@ impl fmt::Display for CreateCollectionError {
 impl error::Error for CreateCollectionError {
     fn description(&self) -> &str {
         match self {
-            CreateCollectionError::InvalidDatabase => "invalid database",
             CreateCollectionError::CollectionExists => "collection exists",
             CreateCollectionError::SchemaError(err) => err.description(),
         }
@@ -51,7 +49,6 @@ impl error::Error for CreateCollectionError {
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            CreateCollectionError::InvalidDatabase => None,
             CreateCollectionError::CollectionExists => None,
             CreateCollectionError::SchemaError(err) => err.cause(),
         }
@@ -66,8 +63,6 @@ impl From<SchemaError> for CreateCollectionError {
 
 #[derive(Debug)]
 pub enum InsertObjectError {
-    InvalidDatabase,
-    InvalidCollection,
     ObjectExists,
     ObjectError(ObjectError),
 }
@@ -81,8 +76,6 @@ impl fmt::Display for InsertObjectError {
 impl error::Error for InsertObjectError {
     fn description(&self) -> &str {
         match self {
-            InsertObjectError::InvalidDatabase => "invalid database",
-            InsertObjectError::InvalidCollection => "invalid collection",
             InsertObjectError::ObjectExists => "object exists",
             InsertObjectError::ObjectError(err) => err.description(),
         }
@@ -90,8 +83,6 @@ impl error::Error for InsertObjectError {
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            InsertObjectError::InvalidDatabase => None,
-            InsertObjectError::InvalidCollection => None,
             InsertObjectError::ObjectExists => None,
             InsertObjectError::ObjectError(err) => err.cause(),
         }
@@ -106,9 +97,6 @@ impl From<ObjectError> for InsertObjectError {
 
 #[derive(Debug)]
 pub enum FindObjectError {
-    InvalidDatabase,
-    InvalidCollection,
-    InvalidId,
     ObjectError(ObjectError),
 }
 
@@ -121,18 +109,12 @@ impl fmt::Display for FindObjectError {
 impl error::Error for FindObjectError {
     fn description(&self) -> &str {
         match self {
-            FindObjectError::InvalidDatabase => "invalid database",
-            FindObjectError::InvalidCollection => "invalid collection",
-            FindObjectError::InvalidId => "invalid id",
             FindObjectError::ObjectError(err) => err.description(),
         }
     }
 
     fn cause(&self) -> Option<&error::Error> {
         match self {
-            FindObjectError::InvalidDatabase => None,
-            FindObjectError::InvalidCollection => None,
-            FindObjectError::InvalidId => None,
             FindObjectError::ObjectError(err) => err.cause(),
         }
     }

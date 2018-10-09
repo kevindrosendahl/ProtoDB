@@ -5,7 +5,7 @@ pub trait CollectionCatalogEntry {
 
     fn schema(&self) -> &Schema;
 
-    fn find_object(&self, id: u64) -> Result<Vec<u8>, errors::collection::FindObjectError>;
+    fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, errors::collection::FindObjectError>;
 
     fn insert_object(&self, object: &[u8]) -> Result<(), errors::collection::InsertObjectError>;
 }
