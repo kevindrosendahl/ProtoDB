@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use super::collection::CollectionCatalogEntry;
-use crate::storage::errors;
+use super::errors::database::{CreateCollectionError, CreateDatabaseError};
 
 use prost_types::DescriptorProto;
 
 pub trait DatabaseCatalog {
-    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError>;
+    fn create_database(&self, name: &str) -> Result<(), CreateDatabaseError>;
 
     fn list_databases(&self) -> Vec<String>;
 
@@ -22,7 +22,7 @@ pub trait DatabaseCatalogEntry {
         &self,
         name: &str,
         descriptor: &DescriptorProto,
-    ) -> Result<(), errors::collection::CreateCollectionError>;
+    ) -> Result<(), CreateCollectionError>;
 
     fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry>>;
 }

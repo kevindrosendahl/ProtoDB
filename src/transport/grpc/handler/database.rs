@@ -1,7 +1,7 @@
 use super::super::generated::protodb::database;
 use super::Handler;
 
-use crate::storage::errors;
+use crate::catalog::errors;
 
 use tower_grpc::Request;
 

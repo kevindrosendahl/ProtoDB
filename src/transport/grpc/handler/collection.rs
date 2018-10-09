@@ -4,9 +4,8 @@ use super::super::generated::protodb::collection;
 use super::Handler;
 
 use crate::{
-    catalog::{collection::CollectionCatalogEntry, database::DatabaseCatalogEntry},
+    catalog::{collection::CollectionCatalogEntry, database::DatabaseCatalogEntry, errors},
     schema::errors::SchemaError,
-    storage::errors,
 };
 
 use tower_grpc::Request;
@@ -48,10 +47,10 @@ impl Handler {
                     &request.get_ref().name,
                     &request.get_ref().schema.clone().unwrap(),
                 ).map_err(|err| match err {
-                    errors::collection::CreateCollectionError::CollectionExists => {
+                    errors::database::CreateCollectionError::CollectionExists => {
                         create_collection_err!(CollectionExists, None)
                     }
-                    errors::collection::CreateCollectionError::SchemaError(err) => match err {
+                    errors::database::CreateCollectionError::SchemaError(err) => match err {
                         SchemaError::InvalidFieldType((field, label, type_)) => {
                             create_collection_schema_err!(
                                 InvalidFieldType,

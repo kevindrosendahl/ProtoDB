@@ -2,13 +2,15 @@ use std::sync::Arc;
 
 use super::super::store::KVStore;
 use crate::{
-    catalog::collection::CollectionCatalogEntry,
+    catalog::{
+        collection::CollectionCatalogEntry,
+        errors::collection::{FindObjectError, InsertObjectError},
+    },
     schema::{
         encoding::{FieldInfo, FieldValue},
         errors::{ObjectError, SchemaError},
         Schema,
     },
-    storage::errors,
 };
 
 use prost_types::DescriptorProto;
@@ -94,7 +96,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         &self.schema
     }
 
-    fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, errors::collection::FindObjectError> {
+    fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
         let start = self.object_key_prefix(id);
 
         // add 1 to the byte value of the last byte in the prefix
@@ -130,7 +132,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         }
     }
 
-    fn insert_object(&self, object: &[u8]) -> Result<(), errors::collection::InsertObjectError> {
+    fn insert_object(&self, object: &[u8]) -> Result<(), InsertObjectError> {
         let mut id = None;
         let fields = self
             .schema
@@ -160,9 +162,9 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
             }).collect::<Result<Vec<FieldInfo>, ObjectError>>()?;
 
         if id.is_none() {
-            return Err(errors::collection::InsertObjectError::ObjectError(
-                ObjectError::SchemaError(SchemaError::MissingIdField),
-            ));
+            return Err(InsertObjectError::ObjectError(ObjectError::SchemaError(
+                SchemaError::MissingIdField,
+            )));
         }
 
         let store = self.kv_store.clone();
@@ -170,7 +172,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         let id = id.unwrap();
         let id_key = self.field_key(id, self.schema.id_field).as_bytes().to_vec();
         if store.get(&id_key).is_some() {
-            return Err(errors::collection::InsertObjectError::ObjectExists);
+            return Err(InsertObjectError::ObjectExists);
         }
 
         let mut batch = Vec::new();

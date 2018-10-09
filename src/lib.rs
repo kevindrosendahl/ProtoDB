@@ -1,7 +1,7 @@
 pub mod catalog;
-pub mod transport;
-pub mod storage;
 pub mod schema;
+pub mod storage;
+pub mod transport;
 pub mod util;
 
 #[macro_use]

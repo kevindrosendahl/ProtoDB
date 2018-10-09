@@ -5,12 +5,10 @@ use std::{
 
 use super::super::store::KVStore;
 use super::collection::KVCollectionCatalogEntry;
-use crate::{
-    catalog::{
-        collection::CollectionCatalogEntry,
-        database::{DatabaseCatalog, DatabaseCatalogEntry},
-    },
-    storage::errors,
+use crate::catalog::{
+    collection::CollectionCatalogEntry,
+    database::{DatabaseCatalog, DatabaseCatalogEntry},
+    errors::database::{CreateCollectionError, CreateDatabaseError},
 };
 
 use prost_types::DescriptorProto;
@@ -31,11 +29,11 @@ impl KVDatabaseCatalog {
 }
 
 impl DatabaseCatalog for KVDatabaseCatalog {
-    fn create_database(&self, name: &str) -> Result<(), errors::database::CreateDatabaseError> {
+    fn create_database(&self, name: &str) -> Result<(), CreateDatabaseError> {
         let dbs = self.databases.clone();
         let mut dbs = dbs.write().unwrap();
         if dbs.contains_key(name) {
-            return Err(errors::database::CreateDatabaseError::DatabaseExists);
+            return Err(CreateDatabaseError::DatabaseExists);
         }
 
         dbs.insert(
@@ -97,11 +95,11 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
         &self,
         name: &str,
         descriptor: &DescriptorProto,
-    ) -> Result<(), errors::collection::CreateCollectionError> {
+    ) -> Result<(), CreateCollectionError> {
         let collections = self.collections.clone();
         let mut collections = collections.write().unwrap();
         if collections.contains_key(name) {
-            return Err(errors::collection::CreateCollectionError::CollectionExists);
+            return Err(CreateCollectionError::CollectionExists);
         }
 
         let collection = KVCollectionCatalogEntry::new(
