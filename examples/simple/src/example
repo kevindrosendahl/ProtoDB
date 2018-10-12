@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+
+from protodb.database.create_pb2 import _CREATEDATABASERESPONSE_FAILURECODE
+from protodb.collection.create_pb2 import _CREATECOLLECTIONRESPONSE_FAILURECODE
+from protodb.collection.list_pb2 import _LISTCOLLECTIONSRESPONSE_FAILURECODE
+from protodb.collection.insert_object_pb2 import InsertObjectRequest, InsertObjectResponse
+from protodb.collection.insert_object_pb2 import _INSERTOBJECTRESPONSE_FAILURECODE
+
+from client import Client
+from user_pb2 import User
+
+
+DATABASE_NAME = 'dev'
+COLLECTION_NAME = 'users'
+
+
+def main():
+    client = Client()
+
+    create_database(client)
+    list_databases(client)
+
+    create_users_collection(client)
+    list_collections(client)
+
+    insert_user(client, 1, 'john', 'doe', 40)
+    insert_user(client, 2, 'jane', 'doe', 40)
+    insert_user(client, 2, 'jane', 'doe', 40)
+
+    find_user(client, 1)
+    find_user(client, 2)
+    find_user(client, 3)
+
+
+def create_database(client):
+    print('creating database')
+    response = client.create_database(DATABASE_NAME)
+
+    if response.success:
+        print('create database succeeded!')
+        return
+
+    failure_code_str = _CREATEDATABASERESPONSE_FAILURECODE.values_by_number[
+         response.failure_code].name
+    print('create database failed: {}'.format(failure_code_str))
+
+
+def list_databases(client):
+    print('\nlisting databases')
+    response = client.list_databases()
+
+    print('databases:')
+    for database in response.databases:
+        print ('  {}'.format(database))
+
+
+def create_users_collection(client):
+    print('\ncreating users collection')
+    response = client.create_collection(DATABASE_NAME, COLLECTION_NAME, User.DESCRIPTOR)
+
+    if response.success:
+        print('create collection succeeded!')
+        return
+
+    failure_code_str = _CREATECOLLECTIONRESPONSE_FAILURECODE.values_by_number[
+        response.failure_code].name
+    print('create collection failed: {}'.format(failure_code_str))
+    print(response.schema_error)
+
+
+def list_collections(client):
+    print('listing collections')
+    response = client.list_collections(DATABASE_NAME)
+
+    if response.success:
+        print('collections:')
+        for collection in response.collections:
+            print('  {}'.format(collection))
+        return
+
+    failure_code_str = _LISTCOLLECTIONSRESPONSE_FAILURECODE.values_by_number[
+        response.failure_code].name
+    print('list collections failed: ' + failure_code_str)
+
+
+def insert_user(client, id, first_name, last_name, age):
+    print('\ninserting user {}'.format(id))
+    user = User()
+    user.id = id
+    user.first_name = first_name
+    user.last_name = last_name
+    user.age = age
+
+    response = client.insert_user(DATABASE_NAME, COLLECTION_NAME, user)
+
+    if response.success:
+        print("user {} successfully inserted".format(id))
+        return
+
+    if response.failure_code != InsertObjectResponse.OBJECT_ERROR:
+        failure_code_str = _INSERTOBJECTRESPONSE_FAILURECODE.values_by_number[
+            response.failure_code].name
+        print('insert failed: ' + failure_code_str)
+        return
+
+    print("user {} already exists".format(id))
+
+def find_user(client, id):
+    print('\nfinding user {}'.format(id))
+    response = client.find_user(DATABASE_NAME, COLLECTION_NAME, id)
+
+    if response.success:
+        user = User()
+        user.ParseFromString(response.object)
+        print("found user {}:".format(id))
+        print("  id: {}".format(user.id))
+        print("  first name: {}".format(user.first_name))
+        print("  last name: {}".format(user.last_name))
+        print("  age: {}".format(user.age))
+        return
+
+    print("find user failed: {}".format(response))
+
+
+if __name__ == '__main__':
+    main()
