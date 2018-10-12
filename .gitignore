@@ -1,5 +1,6 @@
 # intellij
 .idea
+ProtoDB.iml
 
 # Rust
 target

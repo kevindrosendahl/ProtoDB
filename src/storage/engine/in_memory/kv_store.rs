@@ -14,12 +14,10 @@ pub struct InMemoryKVStore {
 }
 
 impl KVStore for InMemoryKVStore {
-    fn get(&self, key: &[u8]) -> Option<Box<[u8]>> {
+    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
         let store = self.inner.clone();
         let store = store.read().unwrap();
-        store
-            .get(&key.to_vec())
-            .map(|v| v.clone().into_boxed_slice())
+        store.get(&key.to_vec()).cloned()
     }
 
     fn prefix_iterator(&self, prefix: &[u8]) -> Box<dyn Iterator<Item = KVStoreBytes>> {
@@ -28,7 +26,7 @@ impl KVStore for InMemoryKVStore {
         Box::new(PrefixIterator {
             inner: store
                 .range((Bound::Included(prefix.to_vec()), Bound::Unbounded))
-                .map(|(k, v)| (k.clone().into_boxed_slice(), v.clone().into_boxed_slice()))
+                .map(|(k, v)| (k.clone(), v.clone()))
                 .collect(),
             pos: 0,
         })

@@ -1,5 +1,5 @@
 pub trait KVStore {
-    fn get(&self, key: &[u8]) -> Option<Box<[u8]>>;
+    fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
 
     fn prefix_iterator(&self, prefix: &[u8]) -> Box<dyn Iterator<Item = KVStoreBytes>>;
 
@@ -18,7 +18,7 @@ pub trait KVStore {
     fn write(&self, batch: KVStoreWriteBatch);
 }
 
-pub type KVStoreBytes = (Box<[u8]>, Box<[u8]>);
+pub type KVStoreBytes = (Vec<u8>, Vec<u8>);
 pub type KVStoreWriteBatch<'a> = Vec<(&'a [u8], &'a [u8])>;
 
 pub struct KVStoreBoundedPrefixIterator {

@@ -2,8 +2,8 @@ pub mod engine;
 
 use std::sync::Arc;
 
-use crate::catalog;
+use crate::catalog::database::DatabaseCatalog;
 
 pub trait StorageEngine {
-    fn catalog(&self) -> Arc<dyn catalog::database::DatabaseCatalog>;
+    fn catalog(&self) -> Arc<dyn DatabaseCatalog>;
 }
