@@ -19,14 +19,14 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/database/list.proto',
   package='protodb.database',
   syntax='proto3',
-  serialized_pb=_b('\n\x1bprotodb/database/list.proto\x12\x10protodb.database\"\x16\n\x14ListDatabasesRequest\"\xa6\x01\n\x15ListDatabasesResponse\x12I\n\x0c\x66\x61ilure_code\x18\x01 \x01(\x0e\x32\x33.protodb.database.ListDatabasesResponse.FailureCode\x12\x11\n\tdatabases\x18\x02 \x03(\t\"/\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x1bprotodb/database/list.proto\x12\x10protodb.database\"\x16\n\x14ListDatabasesRequest\"\xa0\x01\n\x15ListDatabasesResponse\x12\x45\n\nerror_code\x18\x01 \x01(\x0e\x32\x31.protodb.database.ListDatabasesResponse.ErrorCode\x12\x11\n\tdatabases\x18\x02 \x03(\t\"-\n\tErrorCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x62\x06proto3')
 )
 
 
 
-_LISTDATABASESRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
-  name='FailureCode',
-  full_name='protodb.database.ListDatabasesResponse.FailureCode',
+_LISTDATABASESRESPONSE_ERRORCODE = _descriptor.EnumDescriptor(
+  name='ErrorCode',
+  full_name='protodb.database.ListDatabasesResponse.ErrorCode',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -41,10 +41,10 @@ _LISTDATABASESRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=193,
-  serialized_end=240,
+  serialized_start=189,
+  serialized_end=234,
 )
-_sym_db.RegisterEnumDescriptor(_LISTDATABASESRESPONSE_FAILURECODE)
+_sym_db.RegisterEnumDescriptor(_LISTDATABASESRESPONSE_ERRORCODE)
 
 
 _LISTDATABASESREQUEST = _descriptor.Descriptor(
@@ -79,7 +79,7 @@ _LISTDATABASESRESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='failure_code', full_name='protodb.database.ListDatabasesResponse.failure_code', index=0,
+      name='error_code', full_name='protodb.database.ListDatabasesResponse.error_code', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -97,7 +97,7 @@ _LISTDATABASESRESPONSE = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _LISTDATABASESRESPONSE_FAILURECODE,
+    _LISTDATABASESRESPONSE_ERRORCODE,
   ],
   options=None,
   is_extendable=False,
@@ -106,11 +106,11 @@ _LISTDATABASESRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=74,
-  serialized_end=240,
+  serialized_end=234,
 )
 
-_LISTDATABASESRESPONSE.fields_by_name['failure_code'].enum_type = _LISTDATABASESRESPONSE_FAILURECODE
-_LISTDATABASESRESPONSE_FAILURECODE.containing_type = _LISTDATABASESRESPONSE
+_LISTDATABASESRESPONSE.fields_by_name['error_code'].enum_type = _LISTDATABASESRESPONSE_ERRORCODE
+_LISTDATABASESRESPONSE_ERRORCODE.containing_type = _LISTDATABASESRESPONSE
 DESCRIPTOR.message_types_by_name['ListDatabasesRequest'] = _LISTDATABASESREQUEST
 DESCRIPTOR.message_types_by_name['ListDatabasesResponse'] = _LISTDATABASESRESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)

@@ -11,7 +11,7 @@ message InsertObjectRequest {
 }
 
 message InsertObjectResponse {
-    enum FailureCode {
+    enum ErrorCode {
         NO_ERROR = 0;
         INTERNAL_ERROR = 1;
         INVALID_DATABASE = 2;
@@ -19,7 +19,7 @@ message InsertObjectResponse {
         OBJECT_EXISTS = 4;
         OBJECT_ERROR = 5;
     }
-    FailureCode failure_code = 1;
+    ErrorCode error_code = 1;
 
     message ObjectError {
         enum ObjectErrorCode {

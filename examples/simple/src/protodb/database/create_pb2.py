@@ -19,14 +19,14 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/database/create.proto',
   package='protodb.database',
   syntax='proto3',
-  serialized_pb=_b('\n\x1dprotodb/database/create.proto\x12\x10protodb.database\"%\n\x15\x43reateDatabaseRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xaa\x01\n\x16\x43reateDatabaseResponse\x12J\n\x0c\x66\x61ilure_code\x18\x01 \x01(\x0e\x32\x34.protodb.database.CreateDatabaseResponse.FailureCode\"D\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x13\n\x0f\x44\x41TABASE_EXISTS\x10\x02\x62\x06proto3')
+  serialized_pb=_b('\n\x1dprotodb/database/create.proto\x12\x10protodb.database\"%\n\x15\x43reateDatabaseRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\"\xa4\x01\n\x16\x43reateDatabaseResponse\x12\x46\n\nerror_code\x18\x01 \x01(\x0e\x32\x32.protodb.database.CreateDatabaseResponse.ErrorCode\"B\n\tErrorCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x13\n\x0f\x44\x41TABASE_EXISTS\x10\x02\x62\x06proto3')
 )
 
 
 
-_CREATEDATABASERESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
-  name='FailureCode',
-  full_name='protodb.database.CreateDatabaseResponse.FailureCode',
+_CREATEDATABASERESPONSE_ERRORCODE = _descriptor.EnumDescriptor(
+  name='ErrorCode',
+  full_name='protodb.database.CreateDatabaseResponse.ErrorCode',
   filename=None,
   file=DESCRIPTOR,
   values=[
@@ -45,10 +45,10 @@ _CREATEDATABASERESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=193,
-  serialized_end=261,
+  serialized_start=189,
+  serialized_end=255,
 )
-_sym_db.RegisterEnumDescriptor(_CREATEDATABASERESPONSE_FAILURECODE)
+_sym_db.RegisterEnumDescriptor(_CREATEDATABASERESPONSE_ERRORCODE)
 
 
 _CREATEDATABASEREQUEST = _descriptor.Descriptor(
@@ -90,7 +90,7 @@ _CREATEDATABASERESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='failure_code', full_name='protodb.database.CreateDatabaseResponse.failure_code', index=0,
+      name='error_code', full_name='protodb.database.CreateDatabaseResponse.error_code', index=0,
       number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -101,7 +101,7 @@ _CREATEDATABASERESPONSE = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _CREATEDATABASERESPONSE_FAILURECODE,
+    _CREATEDATABASERESPONSE_ERRORCODE,
   ],
   options=None,
   is_extendable=False,
@@ -110,11 +110,11 @@ _CREATEDATABASERESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=91,
-  serialized_end=261,
+  serialized_end=255,
 )
 
-_CREATEDATABASERESPONSE.fields_by_name['failure_code'].enum_type = _CREATEDATABASERESPONSE_FAILURECODE
-_CREATEDATABASERESPONSE_FAILURECODE.containing_type = _CREATEDATABASERESPONSE
+_CREATEDATABASERESPONSE.fields_by_name['error_code'].enum_type = _CREATEDATABASERESPONSE_ERRORCODE
+_CREATEDATABASERESPONSE_ERRORCODE.containing_type = _CREATEDATABASERESPONSE
 DESCRIPTOR.message_types_by_name['CreateDatabaseRequest'] = _CREATEDATABASEREQUEST
 DESCRIPTOR.message_types_by_name['CreateDatabaseResponse'] = _CREATEDATABASERESPONSE
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)

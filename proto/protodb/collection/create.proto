@@ -11,14 +11,14 @@ message CreateCollectionRequest {
 }
 
 message CreateCollectionResponse {
-    enum FailureCode {
+    enum ErrorCode {
         NO_ERROR = 0;
         INTERNAL_ERROR = 1;
         INVALID_DATABASE = 2;
         COLLECTION_EXISTS = 3;
         SCHEMA_ERROR = 4;
     }
-    FailureCode failure_code = 1;
+    ErrorCode error_code = 1;
 
     message SchemaError {
         enum SchemaErrorCode {

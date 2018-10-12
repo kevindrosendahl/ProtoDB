@@ -15,18 +15,18 @@ impl Handler {
             .catalog()
             .create_database(&request.get_ref().name)
             .and(Ok(database::CreateDatabaseResponse {
-                failure_code: database::create_database_response::FailureCode::NoError as i32,
+                error_code: database::create_database_response::ErrorCode::NoError as i32,
             })).unwrap_or_else(|err| {
-                let failure_code = match err {
+                let error_code = match err {
                     errors::database::CreateDatabaseError::DatabaseExists => {
-                        database::create_database_response::FailureCode::DatabaseExists
+                        database::create_database_response::ErrorCode::DatabaseExists
                     }
                     errors::database::CreateDatabaseError::InternalStorageEngineError(_) => {
-                        database::create_database_response::FailureCode::InternalError
+                        database::create_database_response::ErrorCode::InternalError
                     }
                 };
                 database::CreateDatabaseResponse {
-                    failure_code: failure_code as i32,
+                    error_code: error_code as i32,
                 }
             })
     }
@@ -36,7 +36,7 @@ impl Handler {
         _: &Request<database::ListDatabasesRequest>,
     ) -> database::ListDatabasesResponse {
         database::ListDatabasesResponse {
-            failure_code: database::list_databases_response::FailureCode::NoError as i32,
+            error_code: database::list_databases_response::ErrorCode::NoError as i32,
             databases: self.storage_engine.clone().catalog().list_databases(),
         }
     }

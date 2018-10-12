@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from protodb.database.create_pb2 import _CREATEDATABASERESPONSE_FAILURECODE, CreateDatabaseResponse
-from protodb.database.list_pb2 import _LISTDATABASESRESPONSE_FAILURECODE, ListDatabasesResponse
-from protodb.collection.create_pb2 import _CREATECOLLECTIONRESPONSE_FAILURECODE, CreateCollectionResponse
-from protodb.collection.list_pb2 import _LISTCOLLECTIONSRESPONSE_FAILURECODE, ListCollectionsResponse
-from protodb.collection.insert_object_pb2 import _INSERTOBJECTRESPONSE_FAILURECODE, InsertObjectResponse
-from protodb.collection.find_object_pb2 import _FINDOBJECTRESPONSE_FAILURECODE, FindObjectResponse
+from protodb.database.create_pb2 import _CREATEDATABASERESPONSE_ERRORCODE, CreateDatabaseResponse
+from protodb.database.list_pb2 import _LISTDATABASESRESPONSE_ERRORCODE, ListDatabasesResponse
+from protodb.collection.create_pb2 import _CREATECOLLECTIONRESPONSE_ERRORCODE, CreateCollectionResponse
+from protodb.collection.list_pb2 import _LISTCOLLECTIONSRESPONSE_ERRORCODE, ListCollectionsResponse
+from protodb.collection.insert_object_pb2 import _INSERTOBJECTRESPONSE_ERRORCODE, InsertObjectResponse
+from protodb.collection.find_object_pb2 import _FINDOBJECTRESPONSE_ERRORCODE, FindObjectResponse
 
 from client import Client
 from user_pb2 import User
@@ -37,42 +37,42 @@ def create_database(client):
     print('creating database')
     response = client.create_database(DATABASE_NAME)
 
-    if response.failure_code == CreateDatabaseResponse.NO_ERROR:
+    if response.error_code == CreateDatabaseResponse.NO_ERROR:
         print('create database succeeded!')
         return
 
-    failure_code_str = _CREATEDATABASERESPONSE_FAILURECODE.values_by_number[
-         response.failure_code].name
-    print('create database failed: {}'.format(failure_code_str))
+    error_code_str = _CREATEDATABASERESPONSE_ERRORCODE.values_by_number[
+         response.error_code].name
+    print('create database failed: {}'.format(error_code_str))
 
 
 def list_databases(client):
     print('\nlisting databases')
     response = client.list_databases()
 
-    if response.failure_code == ListDatabasesResponse.NO_ERROR:
+    if response.error_code == ListDatabasesResponse.NO_ERROR:
         print('databases:')
         for database in response.databases:
             print ('  {}'.format(database))
 
         return
 
-    failure_code_str = _LISTDATABASESRESPONSE_FAILURECODE.values_by_number[
-        response.failure_code].name
-    print('list database failed: {}'.format(failure_code_str))
+    error_code_str = _LISTDATABASESRESPONSE_ERRORCODE.values_by_number[
+        response.error_code].name
+    print('list database failed: {}'.format(error_code_str))
 
 
 def create_users_collection(client):
     print('\ncreating users collection')
     response = client.create_collection(DATABASE_NAME, COLLECTION_NAME, User.DESCRIPTOR)
 
-    if response.failure_code == CreateCollectionResponse.NO_ERROR:
+    if response.error_code == CreateCollectionResponse.NO_ERROR:
         print('create collection succeeded!')
         return
 
-    failure_code_str = _CREATECOLLECTIONRESPONSE_FAILURECODE.values_by_number[
-        response.failure_code].name
-    print('create collection failed: {}'.format(failure_code_str))
+    error_code_str = _CREATECOLLECTIONRESPONSE_ERRORCODE.values_by_number[
+        response.error_code].name
+    print('create collection failed: {}'.format(error_code_str))
     print(response.schema_error)
 
 
@@ -80,15 +80,15 @@ def list_collections(client):
     print('listing collections')
     response = client.list_collections(DATABASE_NAME)
 
-    if response.failure_code == ListCollectionsResponse.NO_ERROR:
+    if response.error_code == ListCollectionsResponse.NO_ERROR:
         print('collections:')
         for collection in response.collections:
             print('  {}'.format(collection))
         return
 
-    failure_code_str = _LISTCOLLECTIONSRESPONSE_FAILURECODE.values_by_number[
-        response.failure_code].name
-    print('list collections failed: ' + failure_code_str)
+    error_code_str = _LISTCOLLECTIONSRESPONSE_ERRORCODE.values_by_number[
+        response.error_code].name
+    print('list collections failed: ' + error_code_str)
 
 
 def insert_user(client, **user_kwargs):
@@ -98,14 +98,14 @@ def insert_user(client, **user_kwargs):
 
     response = client.insert_user(DATABASE_NAME, COLLECTION_NAME, user)
 
-    if response.failure_code == InsertObjectResponse.NO_ERROR:
+    if response.error_code == InsertObjectResponse.NO_ERROR:
         print("user {} successfully inserted".format(id))
         return
 
-    if response.failure_code != InsertObjectResponse.OBJECT_ERROR:
-        failure_code_str = _INSERTOBJECTRESPONSE_FAILURECODE.values_by_number[
-            response.failure_code].name
-        print('insert failed: ' + failure_code_str)
+    if response.error_code != InsertObjectResponse.OBJECT_ERROR:
+        error_code_str = _INSERTOBJECTRESPONSE_ERRORCODE.values_by_number[
+            response.error_code].name
+        print('insert failed: ' + error_code_str)
         return
 
     print("user {} already exists".format(id))
@@ -115,7 +115,7 @@ def find_user(client, id):
     print('\nfinding user {}'.format(id))
     response = client.find_user(DATABASE_NAME, COLLECTION_NAME, id)
 
-    if response.failure_code == FindObjectResponse.NO_ERROR:
+    if response.error_code == FindObjectResponse.NO_ERROR:
         user = User()
         user.ParseFromString(response.object)
         print("found user {}:".format(id))
@@ -125,9 +125,9 @@ def find_user(client, id):
         print("  age: {}".format(user.age))
         return
 
-    failure_code_str = _FINDOBJECTRESPONSE_FAILURECODE.values_by_number[
-        response.failure_code].name
-    print('find user failed: ' + failure_code_str)
+    error_code_str = _FINDOBJECTRESPONSE_ERRORCODE.values_by_number[
+        response.error_code].name
+    print('find user failed: ' + error_code_str)
 
 
 if __name__ == '__main__':
