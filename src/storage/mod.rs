@@ -1,4 +1,5 @@
 pub mod engine;
+pub mod errors;
 
 use std::sync::Arc;
 

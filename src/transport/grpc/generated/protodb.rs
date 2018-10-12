@@ -530,14 +530,12 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct CreateCollectionResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
         #[prost(
             enumeration = "create_collection_response::FailureCode",
-            tag = "2"
+            tag = "1"
         )]
         pub failure_code: i32,
-        #[prost(message, optional, tag = "3")]
+        #[prost(message, optional, tag = "2")]
         pub schema_error: ::std::option::Option<create_collection_response::SchemaError>,
     }
     pub mod create_collection_response {
@@ -559,10 +557,11 @@ pub mod collection {
         }
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
         pub enum FailureCode {
-            NoFailure = 0,
-            InvalidDatabase = 1,
-            CollectionExists = 2,
-            SchemaError = 3,
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            CollectionExists = 3,
+            SchemaError = 4,
         }
     }
     #[derive(Clone, PartialEq, Message)]
@@ -576,20 +575,19 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct FindObjectResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
-        #[prost(enumeration = "find_object_response::FailureCode", tag = "2")]
+        #[prost(enumeration = "find_object_response::FailureCode", tag = "1")]
         pub failure_code: i32,
-        #[prost(bytes, tag = "3")]
+        #[prost(bytes, tag = "2")]
         pub object: Vec<u8>,
     }
     pub mod find_object_response {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
         pub enum FailureCode {
-            NoFailure = 0,
-            InvalidDatabase = 1,
-            InvalidCollection = 2,
-            InvalidId = 3,
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            InvalidId = 4,
         }
     }
     #[derive(Clone, PartialEq, Message)]
@@ -603,14 +601,12 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct InsertObjectResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
         #[prost(
             enumeration = "insert_object_response::FailureCode",
-            tag = "2"
+            tag = "1"
         )]
         pub failure_code: i32,
-        #[prost(message, optional, tag = "3")]
+        #[prost(message, optional, tag = "2")]
         pub object_error: ::std::option::Option<insert_object_response::ObjectError>,
     }
     pub mod insert_object_response {
@@ -630,11 +626,12 @@ pub mod collection {
         }
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
         pub enum FailureCode {
-            NoFailure = 0,
-            InvalidDatabase = 1,
-            InvalidCollection = 2,
-            ObjectExists = 3,
-            ObjectError = 4,
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            ObjectExists = 4,
+            ObjectError = 5,
         }
     }
     #[derive(Clone, PartialEq, Message)]
@@ -644,21 +641,20 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct ListCollectionsResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
         #[prost(
             enumeration = "list_collections_response::FailureCode",
-            tag = "2"
+            tag = "1"
         )]
         pub failure_code: i32,
-        #[prost(string, repeated, tag = "3")]
+        #[prost(string, repeated, tag = "2")]
         pub collections: ::std::vec::Vec<String>,
     }
     pub mod list_collections_response {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
         pub enum FailureCode {
             NoError = 0,
-            InvalidDatabase = 1,
+            InternalError = 1,
+            InvalidDatabase = 2,
         }
     }
 
@@ -671,11 +667,9 @@ pub mod database {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct CreateDatabaseResponse {
-        #[prost(bool, tag = "1")]
-        pub success: bool,
         #[prost(
             enumeration = "create_database_response::FailureCode",
-            tag = "2"
+            tag = "1"
         )]
         pub failure_code: i32,
     }
@@ -683,15 +677,28 @@ pub mod database {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
         pub enum FailureCode {
             NoError = 0,
-            DatabaseExists = 1,
+            InternalError = 1,
+            DatabaseExists = 2,
         }
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct ListDatabasesRequest {}
     #[derive(Clone, PartialEq, Message)]
     pub struct ListDatabasesResponse {
-        #[prost(string, repeated, tag = "1")]
+        #[prost(
+            enumeration = "list_databases_response::FailureCode",
+            tag = "1"
+        )]
+        pub failure_code: i32,
+        #[prost(string, repeated, tag = "2")]
         pub databases: ::std::vec::Vec<String>,
+    }
+    pub mod list_databases_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum FailureCode {
+            NoError = 0,
+            InternalError = 1,
+        }
     }
 
 }

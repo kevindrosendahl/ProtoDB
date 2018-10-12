@@ -1,5 +1,7 @@
+use crate::storage::errors::InternalStorageEngineError;
+
 pub trait KVStore {
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>>;
+    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, InternalStorageEngineError>;
 
     fn prefix_iterator(&self, prefix: &[u8]) -> Box<dyn Iterator<Item = KVStoreBytes>>;
 
@@ -14,8 +16,7 @@ pub trait KVStore {
         })
     }
 
-    // TODO: return Result
-    fn write(&self, batch: KVStoreWriteBatch);
+    fn write(&self, batch: KVStoreWriteBatch) -> Result<(), InternalStorageEngineError>;
 }
 
 pub type KVStoreBytes = (Vec<u8>, Vec<u8>);

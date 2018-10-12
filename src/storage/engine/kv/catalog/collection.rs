@@ -171,7 +171,8 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 
         let id = id.unwrap();
         let id_key = self.field_key(id, self.schema.id_field).as_bytes().to_vec();
-        if store.get(&id_key).is_some() {
+        let id_field = store.get(&id_key)?;
+        if id_field.is_some() {
             return Err(InsertObjectError::ObjectExists);
         }
 
@@ -183,12 +184,12 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
             ));
         }
 
-        store.write(
-            batch
-                .iter()
-                .map(|(k, v)| (k.as_bytes(), v.as_slice()))
-                .collect(),
-        );
-        Ok(())
+        store
+            .write(
+                batch
+                    .iter()
+                    .map(|(k, v)| (k.as_bytes(), v.as_slice()))
+                    .collect(),
+            ).map_err(|err| err.into())
     }
 }

@@ -11,15 +11,15 @@ message InsertObjectRequest {
 }
 
 message InsertObjectResponse {
-    bool success = 1;
     enum FailureCode {
-        NO_FAILURE = 0;
-        INVALID_DATABASE = 1;
-        INVALID_COLLECTION = 2;
-        OBJECT_EXISTS = 3;
-        OBJECT_ERROR = 4;
+        NO_ERROR = 0;
+        INTERNAL_ERROR = 1;
+        INVALID_DATABASE = 2;
+        INVALID_COLLECTION = 3;
+        OBJECT_EXISTS = 4;
+        OBJECT_ERROR = 5;
     }
-    FailureCode failure_code = 2;
+    FailureCode failure_code = 1;
 
     message ObjectError {
         enum ObjectErrorCode {
@@ -29,5 +29,5 @@ message InsertObjectResponse {
         ObjectErrorCode code = 1;
         string message = 2;
     }
-    ObjectError object_error = 3;
+    ObjectError object_error = 2;
 }

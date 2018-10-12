@@ -6,5 +6,11 @@ message ListDatabasesRequest {
 }
 
 message ListDatabasesResponse {
-    repeated string databases = 1;
+    enum FailureCode {
+        NO_ERROR = 0;
+        INTERNAL_ERROR = 1;
+    }
+    FailureCode failure_code = 1;
+
+    repeated string databases = 2;
 }

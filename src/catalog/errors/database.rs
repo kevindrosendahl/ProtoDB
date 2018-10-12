@@ -1,10 +1,11 @@
 use std::{error, fmt};
 
-use crate::schema::errors::SchemaError;
+use crate::{schema::errors::SchemaError, storage::errors::InternalStorageEngineError};
 
 #[derive(Debug)]
 pub enum CreateDatabaseError {
     DatabaseExists,
+    InternalStorageEngineError(InternalStorageEngineError),
 }
 
 impl fmt::Display for CreateDatabaseError {
@@ -13,23 +14,12 @@ impl fmt::Display for CreateDatabaseError {
     }
 }
 
-impl error::Error for CreateDatabaseError {
-    fn description(&self) -> &str {
-        match self {
-            CreateDatabaseError::DatabaseExists => "database already exists",
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            CreateDatabaseError::DatabaseExists => None,
-        }
-    }
-}
+impl error::Error for CreateDatabaseError {}
 
 #[derive(Debug)]
 pub enum CreateCollectionError {
     CollectionExists,
+    InternalStorageEngineError(InternalStorageEngineError),
     SchemaError(SchemaError),
 }
 
@@ -39,19 +29,11 @@ impl fmt::Display for CreateCollectionError {
     }
 }
 
-impl error::Error for CreateCollectionError {
-    fn description(&self) -> &str {
-        match self {
-            CreateCollectionError::CollectionExists => "collection exists",
-            CreateCollectionError::SchemaError(err) => err.description(),
-        }
-    }
+impl error::Error for CreateCollectionError {}
 
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            CreateCollectionError::CollectionExists => None,
-            CreateCollectionError::SchemaError(err) => err.cause(),
-        }
+impl From<InternalStorageEngineError> for CreateCollectionError {
+    fn from(err: InternalStorageEngineError) -> CreateCollectionError {
+        CreateCollectionError::InternalStorageEngineError(err)
     }
 }
 

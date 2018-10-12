@@ -7,10 +7,10 @@ message CreateDatabaseRequest {
 }
 
 message CreateDatabaseResponse {
-    bool success = 1;
     enum FailureCode {
         NO_ERROR = 0;
-        DATABASE_EXISTS = 1;
+        INTERNAL_ERROR = 1;
+        DATABASE_EXISTS = 2;
     }
-    FailureCode failure_code = 2;
+    FailureCode failure_code = 1;
 }

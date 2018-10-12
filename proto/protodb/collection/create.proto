@@ -11,14 +11,14 @@ message CreateCollectionRequest {
 }
 
 message CreateCollectionResponse {
-    bool success = 1;
     enum FailureCode {
-        NO_FAILURE = 0;
-        INVALID_DATABASE = 1;
-        COLLECTION_EXISTS = 2;
-        SCHEMA_ERROR = 3;
+        NO_ERROR = 0;
+        INTERNAL_ERROR = 1;
+        INVALID_DATABASE = 2;
+        COLLECTION_EXISTS = 3;
+        SCHEMA_ERROR = 4;
     }
-    FailureCode failure_code = 2;
+    FailureCode failure_code = 1;
 
     message SchemaError {
         enum SchemaErrorCode {
@@ -30,5 +30,5 @@ message CreateCollectionResponse {
         SchemaErrorCode code = 1;
         string message = 2;
     }
-    SchemaError schema_error = 3;
+    SchemaError schema_error = 2;
 }

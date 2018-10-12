@@ -50,6 +50,9 @@ impl Handler {
                     errors::database::CreateCollectionError::CollectionExists => {
                         create_collection_err!(CollectionExists, None)
                     }
+                    errors::database::CreateCollectionError::InternalStorageEngineError(_) => {
+                        create_collection_err!(InternalError, None)
+                    }
                     errors::database::CreateCollectionError::SchemaError(err) => match err {
                         SchemaError::InvalidFieldType((field, label, type_)) => {
                             create_collection_schema_err!(
@@ -70,12 +73,10 @@ impl Handler {
                     },
                 })
             }).and(Ok(collection::CreateCollectionResponse {
-                success: true,
-                failure_code: collection::create_collection_response::FailureCode::NoFailure as i32,
+                failure_code: collection::create_collection_response::FailureCode::NoError as i32,
                 schema_error: None,
             })).unwrap_or_else(
                 |(failure_code, schema_error)| collection::CreateCollectionResponse {
-                    success: false,
                     failure_code: failure_code as i32,
                     schema_error,
                 },
@@ -93,13 +94,11 @@ impl Handler {
             .ok_or(collection::list_collections_response::FailureCode::InvalidDatabase)
             .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
                 Ok(collection::ListCollectionsResponse {
-                    success: true,
                     failure_code: collection::list_collections_response::FailureCode::NoError
                         as i32,
                     collections: db.list_collections(),
                 })
             }).unwrap_or_else(|failure_code| collection::ListCollectionsResponse {
-                success: false,
                 failure_code: failure_code as i32,
                 collections: Vec::new(),
             })
@@ -122,6 +121,9 @@ impl Handler {
             .and_then(|collection: Arc<dyn CollectionCatalogEntry>| {
                 collection.insert_object(&request.get_ref().object)
                     .map_err(|err| match err {
+                        errors::collection::InsertObjectError::InternalStorageEngineError(_) => {
+                            (collection::insert_object_response::FailureCode::InternalError, None)
+                        }
                         errors::collection::InsertObjectError::ObjectExists => {
                             (collection::insert_object_response::FailureCode::ObjectExists, None)
                         }
@@ -137,15 +139,13 @@ impl Handler {
             })
             .and(
                 Ok(collection::InsertObjectResponse {
-                    success: true,
-                    failure_code: collection::insert_object_response::FailureCode::NoFailure
+                    failure_code: collection::insert_object_response::FailureCode::NoError
                         as i32,
                     object_error: None,
                 })
             )
             .unwrap_or_else(|(failure_code, object_error)| {
                 collection::InsertObjectResponse {
-                    success: false,
                     failure_code: failure_code as i32,
                     object_error,
                 }
@@ -170,20 +170,17 @@ impl Handler {
             }).and_then(|object: Option<Vec<u8>>| {
                 Ok(match object {
                     Some(object) => collection::FindObjectResponse {
-                        success: true,
-                        failure_code: collection::find_object_response::FailureCode::NoFailure
+                        failure_code: collection::find_object_response::FailureCode::NoError
                             as i32,
                         object,
                     },
                     None => collection::FindObjectResponse {
-                        success: false,
                         failure_code: collection::find_object_response::FailureCode::InvalidId
                             as i32,
                         object: vec![],
                     },
                 })
             }).unwrap_or_else(|failure_code| collection::FindObjectResponse {
-                success: false,
                 failure_code: failure_code as i32,
                 object: vec![],
             })

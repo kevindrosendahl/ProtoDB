@@ -1,9 +1,10 @@
 use std::{error, fmt};
 
-use crate::schema::errors::ObjectError;
+use crate::{schema::errors::ObjectError, storage::errors::InternalStorageEngineError};
 
 #[derive(Debug)]
 pub enum InsertObjectError {
+    InternalStorageEngineError(InternalStorageEngineError),
     ObjectExists,
     ObjectError(ObjectError),
 }
@@ -14,21 +15,7 @@ impl fmt::Display for InsertObjectError {
     }
 }
 
-impl error::Error for InsertObjectError {
-    fn description(&self) -> &str {
-        match self {
-            InsertObjectError::ObjectExists => "object exists",
-            InsertObjectError::ObjectError(err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            InsertObjectError::ObjectExists => None,
-            InsertObjectError::ObjectError(err) => err.cause(),
-        }
-    }
-}
+impl error::Error for InsertObjectError {}
 
 impl From<ObjectError> for InsertObjectError {
     fn from(err: ObjectError) -> InsertObjectError {
@@ -36,8 +23,15 @@ impl From<ObjectError> for InsertObjectError {
     }
 }
 
+impl From<InternalStorageEngineError> for InsertObjectError {
+    fn from(err: InternalStorageEngineError) -> InsertObjectError {
+        InsertObjectError::InternalStorageEngineError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum FindObjectError {
+    InternalStorageEngineError(InternalStorageEngineError),
     ObjectError(ObjectError),
 }
 
@@ -47,22 +41,16 @@ impl fmt::Display for FindObjectError {
     }
 }
 
-impl error::Error for FindObjectError {
-    fn description(&self) -> &str {
-        match self {
-            FindObjectError::ObjectError(err) => err.description(),
-        }
-    }
-
-    fn cause(&self) -> Option<&error::Error> {
-        match self {
-            FindObjectError::ObjectError(err) => err.cause(),
-        }
-    }
-}
+impl error::Error for FindObjectError {}
 
 impl From<ObjectError> for FindObjectError {
     fn from(err: ObjectError) -> FindObjectError {
         FindObjectError::ObjectError(err)
+    }
+}
+
+impl From<InternalStorageEngineError> for FindObjectError {
+    fn from(err: InternalStorageEngineError) -> FindObjectError {
+        FindObjectError::InternalStorageEngineError(err)
     }
 }

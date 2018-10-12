@@ -4,7 +4,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use crate::storage::engine::kv::store::{KVStore, KVStoreBytes, KVStoreWriteBatch};
+use crate::storage::{
+    engine::kv::store::{KVStore, KVStoreBytes, KVStoreWriteBatch},
+    errors::InternalStorageEngineError,
+};
 
 type Inner = BTreeMap<Vec<u8>, Vec<u8>>;
 
@@ -14,10 +17,10 @@ pub struct InMemoryKVStore {
 }
 
 impl KVStore for InMemoryKVStore {
-    fn get(&self, key: &[u8]) -> Option<Vec<u8>> {
+    fn get(&self, key: &[u8]) -> Result<Option<Vec<u8>>, InternalStorageEngineError> {
         let store = self.inner.clone();
         let store = store.read().unwrap();
-        store.get(&key.to_vec()).cloned()
+        Ok(store.get(&key.to_vec()).cloned())
     }
 
     fn prefix_iterator(&self, prefix: &[u8]) -> Box<dyn Iterator<Item = KVStoreBytes>> {
@@ -32,7 +35,7 @@ impl KVStore for InMemoryKVStore {
         })
     }
 
-    fn write(&self, batch: KVStoreWriteBatch) {
+    fn write(&self, batch: KVStoreWriteBatch) -> Result<(), InternalStorageEngineError> {
         let store = self.inner.clone();
         let mut store = store.write().unwrap();
 
@@ -41,6 +44,8 @@ impl KVStore for InMemoryKVStore {
             let value = value.to_vec();
             store.insert(key, value);
         }
+
+        Ok(())
     }
 }
 
