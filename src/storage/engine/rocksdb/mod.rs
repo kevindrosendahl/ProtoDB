@@ -13,10 +13,11 @@ pub struct RocksDBStorageEngine {
 }
 
 impl RocksDBStorageEngine {
-    pub fn new(path: &str) -> Result<RocksDBStorageEngine, rocksdb::Error> {
-        let store = Arc::new(kv_store::RocksDBKVStore::new(path)?);
+    pub fn new(path: &str) -> Result<RocksDBStorageEngine, InternalStorageEngineError> {
+        let store = kv_store::RocksDBKVStore::new(path).map_err(|err| err.into())?;
+        let catalog = KVDatabaseCatalog::new(Arc::new(store))?;
         Ok(RocksDBStorageEngine {
-            catalog: Arc::new(KVDatabaseCatalog::new(store)),
+            catalog: Arc::new(catalog),
         })
     }
 }

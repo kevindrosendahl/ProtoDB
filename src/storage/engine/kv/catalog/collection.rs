@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use super::KEY_DELIMITER;
 use super::super::store::KVStore;
 use crate::{
     catalog::{
@@ -14,8 +15,6 @@ use crate::{
 };
 
 use prost_types::DescriptorProto;
-
-const KEY_DELIMITER: char = '/';
 
 #[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
