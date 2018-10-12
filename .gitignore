@@ -1,3 +1,7 @@
+# intellij
+.idea
+ProtoDB.iml
+
 # Rust
 target
 
@@ -92,3 +96,6 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+/target
+**/*.rs.bk

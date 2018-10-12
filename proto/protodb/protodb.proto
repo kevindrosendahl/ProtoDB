@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package protodb;
+
+import "protodb/collection/create.proto";
+import "protodb/collection/find_object.proto";
+import "protodb/collection/insert_object.proto";
+import "protodb/collection/list.proto";
+import "protodb/database/create.proto";
+import "protodb/database/list.proto";
+
+service ProtoDB {
+    rpc CreateDatabase (protodb.database.CreateDatabaseRequest) returns (protodb.database.CreateDatabaseResponse);
+    rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
+
+    rpc CreateCollection (protodb.collection.CreateCollectionRequest) returns (protodb.collection.CreateCollectionResponse);
+    rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
+    rpc InsertObject (protodb.collection.InsertObjectRequest) returns (protodb.collection.InsertObjectResponse);
+    rpc FindObject (protodb.collection.FindObjectRequest) returns (protodb.collection.FindObjectResponse);
+}

@@ -1,15 +1,15 @@
-extern crate libprotodb;
-use libprotodb::server::Server;
-use libprotodb::server::protos::server_grpc::ProtoDBServer;
+use libprotodb::{
+    storage::engine::rocksdb::RocksDBStorageEngine,
+//    storage::engine::in_memory::InMemoryStorageEngine,
+    transport::grpc::{handler::Handler, server::Server},
+};
 
-use std::path::Path;
-use std::thread;
+pub fn main() {
+    pretty_env_logger::init();
 
-fn main() {
-    println!("starting");
-    let _server = ProtoDBServer::new(8888, Server::new(Path::new("/tmp/protodb.lmdb")));
-    println!("started");
-    loop {
-        thread::park();
-    }
+//    let storage_engine = InMemoryStorageEngine::default();
+    let storage_engine = RocksDBStorageEngine::new("/tmp/protodb/data");
+    let handler = Handler::new(Box::new(storage_engine));
+    let server = Server::new("127.0.0.1:10000".parse().unwrap(), handler);
+    server.run();
 }

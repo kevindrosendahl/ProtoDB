@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package protodb.collection;
+
+import "google/protobuf/descriptor.proto";
+
+message InsertObjectRequest {
+    string database = 1;
+    string collection = 2;
+    bytes object = 3;
+}
+
+message InsertObjectResponse {
+    bool success = 1;
+    enum FailureCode {
+        NO_FAILURE = 0;
+        INVALID_DATABASE = 1;
+        INVALID_COLLECTION = 2;
+        OBJECT_EXISTS = 3;
+        OBJECT_ERROR = 4;
+    }
+    FailureCode failure_code = 2;
+
+    message ObjectError {
+        enum ObjectErrorCode {
+            NO_OBJECT_ERROR = 0;
+            DECODE_ERROR = 1;
+        }
+        ObjectErrorCode code = 1;
+        string message = 2;
+    }
+    ObjectError object_error = 3;
+}

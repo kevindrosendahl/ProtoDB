@@ -1,0 +1,15 @@
+language: rust
+
+rust:
+- stable
+- beta
+- nightly
+
+cache: cargo
+
+matrix:
+  allow_failures:
+  # using 2018 edition, should be able to remove this with 1.31.0 release in December 2018
+  - rust: stable
+  - rust: nightly
+  fast_finish: true

@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package protodb.collection;
+
+import "google/protobuf/descriptor.proto";
+
+message FindObjectRequest {
+    string database = 1;
+    string collection = 2;
+    uint64 id = 3;
+}
+
+message FindObjectResponse {
+    bool success = 1;
+    enum FailureCode {
+        NO_FAILURE = 0;
+        INVALID_DATABASE = 1;
+        INVALID_COLLECTION = 2;
+        INVALID_ID = 3;
+    }
+    FailureCode failure_code = 2;
+
+    bytes object = 3;
+}

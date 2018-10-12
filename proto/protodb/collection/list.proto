@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package protodb.collection;
+
+message ListCollectionsRequest {
+    string database = 1;
+}
+
+message ListCollectionsResponse {
+    bool success = 1;
+    enum FailureCode {
+        NO_ERROR = 0;
+        INVALID_DATABASE = 1;
+    }
+    FailureCode failure_code = 2;
+
+    repeated string collections = 3;
+}
