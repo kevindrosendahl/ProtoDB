@@ -16,7 +16,7 @@ Currently, ProtoDB supports simple insertion and find by `id`, backed by either 
 
 Currently schemas may only include [scalar types](https://developers.google.com/protocol-buffers/docs/proto3#scalar) or [enumerations](https://developers.google.com/protocol-buffers/docs/proto3#enum).
 
-Please see the [example](examples/simple).
+Please see the [example](examples/python/simple).
 
 ## Roadmap
 
