@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/collection/insert_object.proto',
   package='protodb.collection',
   syntax='proto3',
-  serialized_pb=_b('\n&protodb/collection/insert_object.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"K\n\x13InsertObjectRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\ncollection\x18\x02 \x01(\t\x12\x0e\n\x06object\x18\x03 \x01(\x0c\"\xe0\x03\n\x14InsertObjectResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12J\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x34.protodb.collection.InsertObjectResponse.FailureCode\x12J\n\x0cobject_error\x18\x03 \x01(\x0b\x32\x34.protodb.collection.InsertObjectResponse.ObjectError\x1a\xac\x01\n\x0bObjectError\x12R\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x44.protodb.collection.InsertObjectResponse.ObjectError.ObjectErrorCode\x12\x0f\n\x07message\x18\x02 \x01(\t\"8\n\x0fObjectErrorCode\x12\x13\n\x0fNO_OBJECT_ERROR\x10\x00\x12\x10\n\x0c\x44\x45\x43ODE_ERROR\x10\x01\"p\n\x0b\x46\x61ilureCode\x12\x0e\n\nNO_FAILURE\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x12\x16\n\x12INVALID_COLLECTION\x10\x02\x12\x11\n\rOBJECT_EXISTS\x10\x03\x12\x10\n\x0cOBJECT_ERROR\x10\x04\x62\x06proto3')
+  serialized_pb=_b('\n&protodb/collection/insert_object.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"K\n\x13InsertObjectRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\ncollection\x18\x02 \x01(\t\x12\x0e\n\x06object\x18\x03 \x01(\x0c\"\xe2\x03\n\x14InsertObjectResponse\x12J\n\x0c\x66\x61ilure_code\x18\x01 \x01(\x0e\x32\x34.protodb.collection.InsertObjectResponse.FailureCode\x12J\n\x0cobject_error\x18\x02 \x01(\x0b\x32\x34.protodb.collection.InsertObjectResponse.ObjectError\x1a\xac\x01\n\x0bObjectError\x12R\n\x04\x63ode\x18\x01 \x01(\x0e\x32\x44.protodb.collection.InsertObjectResponse.ObjectError.ObjectErrorCode\x12\x0f\n\x07message\x18\x02 \x01(\t\"8\n\x0fObjectErrorCode\x12\x13\n\x0fNO_OBJECT_ERROR\x10\x00\x12\x10\n\x0c\x44\x45\x43ODE_ERROR\x10\x01\"\x82\x01\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x14\n\x10INVALID_DATABASE\x10\x02\x12\x16\n\x12INVALID_COLLECTION\x10\x03\x12\x11\n\rOBJECT_EXISTS\x10\x04\x12\x10\n\x0cOBJECT_ERROR\x10\x05\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -43,8 +43,8 @@ _INSERTOBJECTRESPONSE_OBJECTERROR_OBJECTERRORCODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=484,
-  serialized_end=540,
+  serialized_start=467,
+  serialized_end=523,
 )
 _sym_db.RegisterEnumDescriptor(_INSERTOBJECTRESPONSE_OBJECTERROR_OBJECTERRORCODE)
 
@@ -55,30 +55,34 @@ _INSERTOBJECTRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='NO_FAILURE', index=0, number=0,
+      name='NO_ERROR', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_DATABASE', index=1, number=1,
+      name='INTERNAL_ERROR', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_COLLECTION', index=2, number=2,
+      name='INVALID_DATABASE', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='OBJECT_EXISTS', index=3, number=3,
+      name='INVALID_COLLECTION', index=3, number=3,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='OBJECT_ERROR', index=4, number=4,
+      name='OBJECT_EXISTS', index=4, number=4,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='OBJECT_ERROR', index=5, number=5,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=542,
-  serialized_end=654,
+  serialized_start=526,
+  serialized_end=656,
 )
 _sym_db.RegisterEnumDescriptor(_INSERTOBJECTRESPONSE_FAILURECODE)
 
@@ -162,8 +166,8 @@ _INSERTOBJECTRESPONSE_OBJECTERROR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=368,
-  serialized_end=540,
+  serialized_start=351,
+  serialized_end=523,
 )
 
 _INSERTOBJECTRESPONSE = _descriptor.Descriptor(
@@ -174,22 +178,15 @@ _INSERTOBJECTRESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='success', full_name='protodb.collection.InsertObjectResponse.success', index=0,
-      number=1, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='failure_code', full_name='protodb.collection.InsertObjectResponse.failure_code', index=1,
-      number=2, type=14, cpp_type=8, label=1,
+      name='failure_code', full_name='protodb.collection.InsertObjectResponse.failure_code', index=0,
+      number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='object_error', full_name='protodb.collection.InsertObjectResponse.object_error', index=2,
-      number=3, type=11, cpp_type=10, label=1,
+      name='object_error', full_name='protodb.collection.InsertObjectResponse.object_error', index=1,
+      number=2, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -208,7 +205,7 @@ _INSERTOBJECTRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=174,
-  serialized_end=654,
+  serialized_end=656,
 )
 
 _INSERTOBJECTRESPONSE_OBJECTERROR.fields_by_name['code'].enum_type = _INSERTOBJECTRESPONSE_OBJECTERROR_OBJECTERRORCODE

@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/collection/find_object.proto',
   package='protodb.collection',
   syntax='proto3',
-  serialized_pb=_b('\n$protodb/collection/find_object.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"E\n\x11\x46indObjectRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\ncollection\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\x04\"\xdc\x01\n\x12\x46indObjectResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12H\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x32.protodb.collection.FindObjectResponse.FailureCode\x12\x0e\n\x06object\x18\x03 \x01(\x0c\"[\n\x0b\x46\x61ilureCode\x12\x0e\n\nNO_FAILURE\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x12\x16\n\x12INVALID_COLLECTION\x10\x02\x12\x0e\n\nINVALID_ID\x10\x03\x62\x06proto3')
+  serialized_pb=_b('\n$protodb/collection/find_object.proto\x12\x12protodb.collection\x1a google/protobuf/descriptor.proto\"E\n\x11\x46indObjectRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x12\n\ncollection\x18\x02 \x01(\t\x12\n\n\x02id\x18\x03 \x01(\x04\"\xdd\x01\n\x12\x46indObjectResponse\x12H\n\x0c\x66\x61ilure_code\x18\x01 \x01(\x0e\x32\x32.protodb.collection.FindObjectResponse.FailureCode\x12\x0e\n\x06object\x18\x02 \x01(\x0c\"m\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x14\n\x10INVALID_DATABASE\x10\x02\x12\x16\n\x12INVALID_COLLECTION\x10\x03\x12\x0e\n\nINVALID_ID\x10\x04\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -33,26 +33,30 @@ _FINDOBJECTRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='NO_FAILURE', index=0, number=0,
+      name='NO_ERROR', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_DATABASE', index=1, number=1,
+      name='INTERNAL_ERROR', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_COLLECTION', index=2, number=2,
+      name='INVALID_DATABASE', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_ID', index=3, number=3,
+      name='INVALID_COLLECTION', index=3, number=3,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='INVALID_ID', index=4, number=4,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=295,
-  serialized_end=386,
+  serialized_start=278,
+  serialized_end=387,
 )
 _sym_db.RegisterEnumDescriptor(_FINDOBJECTRESPONSE_FAILURECODE)
 
@@ -110,22 +114,15 @@ _FINDOBJECTRESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='success', full_name='protodb.collection.FindObjectResponse.success', index=0,
-      number=1, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='failure_code', full_name='protodb.collection.FindObjectResponse.failure_code', index=1,
-      number=2, type=14, cpp_type=8, label=1,
+      name='failure_code', full_name='protodb.collection.FindObjectResponse.failure_code', index=0,
+      number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='object', full_name='protodb.collection.FindObjectResponse.object', index=2,
-      number=3, type=12, cpp_type=9, label=1,
+      name='object', full_name='protodb.collection.FindObjectResponse.object', index=1,
+      number=2, type=12, cpp_type=9, label=1,
       has_default_value=False, default_value=_b(""),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -144,7 +141,7 @@ _FINDOBJECTRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=166,
-  serialized_end=386,
+  serialized_end=387,
 )
 
 _FINDOBJECTRESPONSE.fields_by_name['failure_code'].enum_type = _FINDOBJECTRESPONSE_FAILURECODE

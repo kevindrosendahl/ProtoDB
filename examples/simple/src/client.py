@@ -3,15 +3,12 @@ import grpc
 from google.protobuf.descriptor_pb2 import DescriptorProto
 
 from protodb import protodb_pb2_grpc
-
-from protodb.database.create_pb2 import CreateDatabaseRequest, CreateDatabaseResponse
-
+from protodb.database.create_pb2 import CreateDatabaseRequest
+from protodb.database.list_pb2 import ListDatabasesRequest
 from protodb.collection.create_pb2 import CreateCollectionRequest
-
-from protodb.database.list_pb2 import ListDatabasesRequest, ListDatabasesResponse
-from protodb.collection.list_pb2 import ListCollectionsRequest, ListCollectionsResponse
-from protodb.collection.insert_object_pb2 import InsertObjectRequest, InsertObjectResponse
-from protodb.collection.find_object_pb2 import FindObjectRequest, FindObjectResponse
+from protodb.collection.list_pb2 import ListCollectionsRequest
+from protodb.collection.insert_object_pb2 import InsertObjectRequest
+from protodb.collection.find_object_pb2 import FindObjectRequest
 
 
 class Client:
@@ -21,8 +18,7 @@ class Client:
         self.stub = protodb_pb2_grpc.ProtoDBStub(channel)
 
     def create_database(self, name):
-        request = CreateDatabaseRequest()
-        request.name = name
+        request = CreateDatabaseRequest(name=name)
         return self.stub.CreateDatabase(request)
 
     def list_databases(self):
@@ -30,34 +26,26 @@ class Client:
         return self.stub.ListDatabases(request)
 
     def create_collection(self, database, name, descriptor):
-        request = CreateCollectionRequest()
-        request.database = database
-        request.name = name
-
         descriptor_proto = DescriptorProto()
         descriptor.CopyToProto(descriptor_proto)
+
+        request = CreateCollectionRequest(database=database, name=name)
         request.schema.MergeFrom(descriptor_proto)
 
         return self.stub.CreateCollection(request)
 
     def list_collections(self, database):
-        request = ListCollectionsRequest()
-        request.database = database
+        request = ListCollectionsRequest(database=database)
         return self.stub.ListCollections(request)
 
     def insert_user(self, database, collection, user):
-        request = InsertObjectRequest()
-        request.database = database
-        request.collection = collection
-        request.object = user.SerializeToString()
-
+        request = InsertObjectRequest(
+            database=database,
+            collection=collection,
+            object=user.SerializeToString())
         return self.stub.InsertObject(request)
 
     def find_user(self, database, collection, id):
-        request = FindObjectRequest()
-        request.database = database
-        request.collection = collection
-        request.id = id
-
+        request = FindObjectRequest(database=database, collection=collection, id=id)
         return self.stub.FindObject(request)
 

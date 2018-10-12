@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/collection/list.proto',
   package='protodb.collection',
   syntax='proto3',
-  serialized_pb=_b('\n\x1dprotodb/collection/list.proto\x12\x12protodb.collection\"*\n\x16ListCollectionsRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\"\xc1\x01\n\x17ListCollectionsResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12M\n\x0c\x66\x61ilure_code\x18\x02 \x01(\x0e\x32\x37.protodb.collection.ListCollectionsResponse.FailureCode\x12\x13\n\x0b\x63ollections\x18\x03 \x03(\t\"1\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x14\n\x10INVALID_DATABASE\x10\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x1dprotodb/collection/list.proto\x12\x12protodb.collection\"*\n\x16ListCollectionsRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\"\xc4\x01\n\x17ListCollectionsResponse\x12M\n\x0c\x66\x61ilure_code\x18\x01 \x01(\x0e\x32\x37.protodb.collection.ListCollectionsResponse.FailureCode\x12\x13\n\x0b\x63ollections\x18\x02 \x03(\t\"E\n\x0b\x46\x61ilureCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x14\n\x10INVALID_DATABASE\x10\x02\x62\x06proto3')
 )
 
 
@@ -35,14 +35,18 @@ _LISTCOLLECTIONSRESPONSE_FAILURECODE = _descriptor.EnumDescriptor(
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='INVALID_DATABASE', index=1, number=1,
+      name='INTERNAL_ERROR', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='INVALID_DATABASE', index=2, number=2,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=242,
-  serialized_end=291,
+  serialized_start=225,
+  serialized_end=294,
 )
 _sym_db.RegisterEnumDescriptor(_LISTCOLLECTIONSRESPONSE_FAILURECODE)
 
@@ -86,22 +90,15 @@ _LISTCOLLECTIONSRESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='success', full_name='protodb.collection.ListCollectionsResponse.success', index=0,
-      number=1, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='failure_code', full_name='protodb.collection.ListCollectionsResponse.failure_code', index=1,
-      number=2, type=14, cpp_type=8, label=1,
+      name='failure_code', full_name='protodb.collection.ListCollectionsResponse.failure_code', index=0,
+      number=1, type=14, cpp_type=8, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='collections', full_name='protodb.collection.ListCollectionsResponse.collections', index=2,
-      number=3, type=9, cpp_type=9, label=3,
+      name='collections', full_name='protodb.collection.ListCollectionsResponse.collections', index=1,
+      number=2, type=9, cpp_type=9, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -120,7 +117,7 @@ _LISTCOLLECTIONSRESPONSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=98,
-  serialized_end=291,
+  serialized_end=294,
 )
 
 _LISTCOLLECTIONSRESPONSE.fields_by_name['failure_code'].enum_type = _LISTCOLLECTIONSRESPONSE_FAILURECODE
