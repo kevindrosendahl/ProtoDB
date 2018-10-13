@@ -8,7 +8,7 @@ fn delimiter_prefix_bound(start: String) -> (Vec<u8>, Vec<u8>) {
     // add 1 to the byte value of the last byte in the prefix
     // this should make the range span over all keys with the prefix
     // and no more
-    let end = String::from(start.clone());
+    let end = start.clone();
     let mut end = end.into_bytes();
     let last = end.pop().unwrap();
     end.push(last + 1);

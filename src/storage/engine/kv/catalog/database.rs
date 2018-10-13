@@ -60,10 +60,7 @@ impl KVDatabaseCatalog {
 
         let databases = self.databases.clone();
         let mut databases = databases.write().unwrap();
-        databases.insert(
-            name.clone(),
-            Arc::new(entry),
-        );
+        databases.insert(name, Arc::new(entry));
         Ok(())
     }
 }
@@ -175,7 +172,7 @@ impl<'a> KVDatabaseCatalogEntry {
 
         let collections = self.collections.clone();
         let mut collections = collections.write().unwrap();
-        collections.insert(name.to_string(), Arc::new(entry));
+        collections.insert(name, Arc::new(entry));
         Ok(())
     }
 }
@@ -226,7 +223,6 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
         descriptor
             .encode(&mut buf)
             .map_err(|err| SchemaError::EncodingError(err.to_string()))?;
-
 
         // write the descriptor buffer into the catalog
         let descriptor_key = descriptor_key(&self.name, &name);
