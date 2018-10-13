@@ -21,7 +21,6 @@ Please see the [example](examples/python/simple).
 ## Roadmap
 
 The current short term goals are:
-- finish RocksDB integration (currently database/collection info is not persisted, but objects are)
 - add `Index` trait and implement for scalar types
 
 From there, the next area of focus will be attempting to allow users to write Rust code that can consume an `Index`, compile it to WebAssembly, register it with the database, and run it from within the database in a VM.

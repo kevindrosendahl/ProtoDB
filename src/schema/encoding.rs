@@ -1,6 +1,9 @@
 use std::io::Cursor;
 
-use super::{errors::ObjectError, Schema};
+use super::{
+    errors::{ObjectError, SchemaError},
+    Schema,
+};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut};
@@ -199,18 +202,22 @@ macro_rules! iter_err {
 
 macro_rules! wire_type_mismatch_err {
     (  $tag:ident, $type:ident, $wire_type:ident ) => {
-        iter_err!(ObjectError::SchemaDecodeError(format!(
-            "error decoding field {} (type {:?}): unexpected wire_type {:?}",
-            $tag, $type, $wire_type
+        iter_err!(ObjectError::SchemaError(SchemaError::EncodingError(
+            format!(
+                "error decoding field {} (type {:?}): unexpected wire_type {:?}",
+                $tag, $type, $wire_type
+            )
         )))
     };
 }
 
 macro_rules! decode_err {
     (  $tag:ident, $type:ident, $err:ident ) => {
-        iter_err!(ObjectError::SchemaDecodeError(format!(
-            "error decoding field {} (type {:?}): {:?}",
-            $tag, $type, $err
+        iter_err!(ObjectError::SchemaError(SchemaError::EncodingError(
+            format!(
+                "error decoding field {} (type {:?}): {:?}",
+                $tag, $type, $err
+            )
         )))
     };
 }

@@ -553,6 +553,7 @@ pub mod collection {
                 MissingIdField = 1,
                 InvalidIdType = 2,
                 InvalidFieldType = 3,
+                EncodingError = 4,
             }
         }
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use super::KEY_DELIMITER;
 use super::super::store::KVStore;
+use super::{delimiter_prefix_bound, key_suffix, KEY_DELIMITER};
 use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
@@ -44,23 +44,8 @@ impl KVCollectionCatalogEntry {
 
     #[inline(always)]
     fn tag_from_key(&self, key: &str, id: u64) -> i32 {
-        let prefix = self.object_key_prefix(id);
-        let mut key_parts = key.split(&prefix);
-        key_parts
-            .next()
-            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
-
-        let suffix = key_parts
-            .next()
-            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
-        let mut suffix_parts = suffix.split(KEY_DELIMITER);
-        suffix_parts
-            .next()
-            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
-
-        let tag = suffix_parts
-            .next()
-            .unwrap_or_else(|| panic!("corrupted key for id {}: {}", id, key));
+        let prefix = self.field_key_prefix(id);
+        let tag = key_suffix(&prefix, &key);
         tag.parse().unwrap()
     }
 
@@ -76,11 +61,19 @@ impl KVCollectionCatalogEntry {
     }
 
     #[inline(always)]
-    fn field_key(&self, id: u64, tag: i32) -> String {
+    fn field_key_prefix(&self, id: u64) -> String {
         format!(
-            "{prefix}{delimiter}{tag}",
+            "{prefix}{delimiter}",
             prefix = self.object_key_prefix(id),
             delimiter = KEY_DELIMITER,
+        )
+    }
+
+    #[inline(always)]
+    fn field_key(&self, id: u64, tag: i32) -> String {
+        format!(
+            "{prefix}{tag}",
+            prefix = self.field_key_prefix(id),
             tag = tag,
         )
     }
@@ -96,23 +89,16 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
     }
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
-        let start = self.object_key_prefix(id);
-
-        // add 1 to the byte value of the last byte in the prefix
-        // this should make the range span over all keys with the prefix
-        // and no more
-        let end = start.clone();
-        let mut end = end.into_bytes();
-        let last = end.pop().unwrap();
-        end.push(last + 1);
-
-        let start = start.into_bytes();
+        // get the key bounds for the object
+        let (start, end) = delimiter_prefix_bound(self.object_key_prefix(id));
 
         // allocate the buffer that we'll be encoding the message into
         let mut buf = Vec::new();
 
-        let store = self.kv_store.clone();
-        for (key, value) in store.bounded_prefix_iterator(&start, &end) {
+        // iterate through the key/value pairs that are within the object's key range,
+        // encoding the values into the buffer if the tag for the field is found in
+        // the schema
+        for (key, value) in self.kv_store.clone().bounded_prefix_iterator(&start, &end) {
             // FIXME: handle this error
             let tag = self.tag_from_key(&String::from_utf8(key.to_vec()).unwrap(), id);
             let wire_type = match self.schema.wire_type(tag) {

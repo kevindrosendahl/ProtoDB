@@ -17,6 +17,8 @@ pub trait KVStore {
     }
 
     fn write(&self, batch: KVStoreWriteBatch) -> Result<(), InternalStorageEngineError>;
+
+    fn delete(&self, key: &[u8]) -> Result<(), InternalStorageEngineError>;
 }
 
 pub type KVStoreBytes = (Vec<u8>, Vec<u8>);

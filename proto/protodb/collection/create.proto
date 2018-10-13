@@ -26,6 +26,7 @@ message CreateCollectionResponse {
             MISSING_ID_FIELD = 1;
             INVALID_ID_TYPE = 2;
             INVALID_FIELD_TYPE = 3;
+            ENCODING_ERROR = 4;
         }
         SchemaErrorCode code = 1;
         string message = 2;

@@ -47,4 +47,8 @@ impl KVStore for RocksDBKVStore {
             .write(rocksdb_batch)
             .map_err(|err| err.into())
     }
+
+    fn delete(&self, key: &[u8]) -> Result<(), InternalStorageEngineError> {
+        self.inner.clone().delete(key).map_err(|err| err.into())
+    }
 }

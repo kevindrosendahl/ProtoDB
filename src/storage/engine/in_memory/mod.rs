@@ -4,7 +4,9 @@ use std::sync::Arc;
 
 use super::kv::catalog::database::KVDatabaseCatalog;
 use crate::{
-    catalog::database::DatabaseCatalog, storage::{errors::InternalStorageEngineError, StorageEngine}};
+    catalog::database::DatabaseCatalog,
+    storage::{errors::InternalStorageEngineError, StorageEngine},
+};
 
 pub struct InMemoryStorageEngine {
     catalog: Arc<KVDatabaseCatalog>,
@@ -25,4 +27,3 @@ impl StorageEngine for InMemoryStorageEngine {
         self.catalog.clone() as Arc<dyn DatabaseCatalog>
     }
 }
-

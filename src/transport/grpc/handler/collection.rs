@@ -54,6 +54,9 @@ impl Handler {
                         create_collection_err!(InternalError, None)
                     }
                     errors::database::CreateCollectionError::SchemaError(err) => match err {
+                        SchemaError::EncodingError(msg) => {
+                            create_collection_schema_err!(EncodingError, msg)
+                        }
                         SchemaError::InvalidFieldType((field, label, type_)) => {
                             create_collection_schema_err!(
                                 InvalidFieldType,
@@ -94,8 +97,7 @@ impl Handler {
             .ok_or(collection::list_collections_response::ErrorCode::InvalidDatabase)
             .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
                 Ok(collection::ListCollectionsResponse {
-                    error_code: collection::list_collections_response::ErrorCode::NoError
-                        as i32,
+                    error_code: collection::list_collections_response::ErrorCode::NoError as i32,
                     collections: db.list_collections(),
                 })
             }).unwrap_or_else(|error_code| collection::ListCollectionsResponse {
@@ -170,13 +172,11 @@ impl Handler {
             }).and_then(|object: Option<Vec<u8>>| {
                 Ok(match object {
                     Some(object) => collection::FindObjectResponse {
-                        error_code: collection::find_object_response::ErrorCode::NoError
-                            as i32,
+                        error_code: collection::find_object_response::ErrorCode::NoError as i32,
                         object,
                     },
                     None => collection::FindObjectResponse {
-                        error_code: collection::find_object_response::ErrorCode::InvalidId
-                            as i32,
+                        error_code: collection::find_object_response::ErrorCode::InvalidId as i32,
                         object: vec![],
                     },
                 })

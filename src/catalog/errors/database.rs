@@ -16,6 +16,12 @@ impl fmt::Display for CreateDatabaseError {
 
 impl error::Error for CreateDatabaseError {}
 
+impl From<InternalStorageEngineError> for CreateDatabaseError {
+    fn from(err: InternalStorageEngineError) -> CreateDatabaseError {
+        CreateDatabaseError::InternalStorageEngineError(err)
+    }
+}
+
 #[derive(Debug)]
 pub enum CreateCollectionError {
     CollectionExists,

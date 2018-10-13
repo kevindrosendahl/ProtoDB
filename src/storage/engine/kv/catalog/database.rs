@@ -3,20 +3,21 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use super::super::store::{KVStore, KVStoreWriteBatch};
 use super::{
-    KEY_DELIMITER,
-    collection::KVCollectionCatalogEntry,
+    collection::KVCollectionCatalogEntry, delimiter_prefix_bound, key_suffix, KEY_DELIMITER,
 };
-use super::super::store::KVStore;
 use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
         database::{DatabaseCatalog, DatabaseCatalogEntry},
         errors::database::{CreateCollectionError, CreateDatabaseError},
     },
+    schema::errors::SchemaError,
     storage::errors::InternalStorageEngineError,
 };
 
+use prost::Message;
 use prost_types::DescriptorProto;
 
 const SYSTEM_KEY_PREFIX: &str = "__system";
@@ -30,15 +31,39 @@ pub struct KVDatabaseCatalog {
 }
 
 impl KVDatabaseCatalog {
-    pub fn new(kv_store: Arc<dyn KVStore>) -> Result<KVDatabaseCatalog, InternalStorageEngineError> {
+    pub fn new(
+        kv_store: Arc<dyn KVStore>,
+    ) -> Result<KVDatabaseCatalog, InternalStorageEngineError> {
         let catalog = KVDatabaseCatalog {
             kv_store,
             databases: Default::default(),
         };
+
         catalog.init().and(Ok(catalog))
     }
 
     fn init(&self) -> Result<(), InternalStorageEngineError> {
+        // iterate over the database keyspace and initialize a database catalog entry for each
+        let (start, end) = delimiter_prefix_bound(databases_key_prefix());
+        for (key, _) in self.kv_store.clone().bounded_prefix_iterator(&start, &end) {
+            // FIXME: handle this error
+            let database = database_from_key(&String::from_utf8(key.to_vec()).unwrap());
+            self.init_database(database)?;
+        }
+
+        Ok(())
+    }
+
+    fn init_database(&self, name: String) -> Result<(), InternalStorageEngineError> {
+        let entry = KVDatabaseCatalogEntry::new(name.clone(), self.kv_store.clone());
+        entry.init()?;
+
+        let databases = self.databases.clone();
+        let mut databases = databases.write().unwrap();
+        databases.insert(
+            name.clone(),
+            Arc::new(entry),
+        );
         Ok(())
     }
 }
@@ -50,6 +75,18 @@ impl DatabaseCatalog for KVDatabaseCatalog {
         if dbs.contains_key(name) {
             return Err(CreateDatabaseError::DatabaseExists);
         }
+
+        // write the database into the kv store
+        let database_key = database_key(&name);
+        let mut batch = KVStoreWriteBatch::new();
+        let empty = vec![];
+        batch.push((database_key.as_bytes(), &empty));
+        self.kv_store.clone().write(batch).map_err(|err| {
+            // not really sure what can be done if this fails besides log it
+            // return the original error that made this fail
+            let _ = self.kv_store.clone().delete(database_key.as_bytes());
+            err
+        })?;
 
         dbs.insert(
             name.to_string(),
@@ -93,6 +130,54 @@ impl<'a> KVDatabaseCatalogEntry {
             collections: Arc::new(RwLock::new(BTreeMap::new())),
         }
     }
+
+    fn init(&self) -> Result<(), InternalStorageEngineError> {
+        // iterate over the collection keyspace and initialize a collection catalog entry for each
+        let (start, end) = delimiter_prefix_bound(collections_key_prefix(&self.name));
+        for (key, _) in self.kv_store.clone().bounded_prefix_iterator(&start, &end) {
+            // FIXME: handle this error
+            let collection =
+                collection_from_key(&self.name, &String::from_utf8(key.to_vec()).unwrap());
+            self.init_collection(collection)?;
+        }
+
+        Ok(())
+    }
+
+    fn init_collection(&self, name: String) -> Result<(), InternalStorageEngineError> {
+        let descriptor_key = descriptor_key(&self.name, &name);
+        let descriptor_bytes = self.kv_store.clone().get(descriptor_key.as_bytes())?;
+        let descriptor_bytes = descriptor_bytes.unwrap_or_else(|| {
+            panic!(format!(
+                "missing schema descriptor for {}/{}",
+                &self.name, &name
+            ))
+        });
+
+        let descriptor = DescriptorProto::decode(&descriptor_bytes).unwrap_or_else(|err| {
+            panic!(format!(
+                "error decoding schema descriptor for {}/{}: {}",
+                &self.name, &name, err,
+            ))
+        });
+
+        let entry = KVCollectionCatalogEntry::new(
+            self.kv_store.clone(),
+            self.name.clone(),
+            name.clone(),
+            &descriptor,
+        ).unwrap_or_else(|err| {
+            panic!(format!(
+                "error creating collection catalog entry for {}/{}: {}",
+                &self.name, &name, err,
+            ))
+        });
+
+        let collections = self.collections.clone();
+        let mut collections = collections.write().unwrap();
+        collections.insert(name.to_string(), Arc::new(entry));
+        Ok(())
+    }
 }
 
 impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
@@ -117,14 +202,45 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
             return Err(CreateCollectionError::CollectionExists);
         }
 
-        let collection = KVCollectionCatalogEntry::new(
+        let entry = KVCollectionCatalogEntry::new(
             self.kv_store.clone(),
             self.name.clone(),
             name.to_string(),
             descriptor,
         )?;
-        let collection = Arc::new(collection);
-        collections.insert(name.to_string(), collection);
+
+        // write the collection into the kv store
+        let collection_key = collection_key(&self.name, &name);
+        let mut batch = KVStoreWriteBatch::new();
+        let empty = vec![];
+        batch.push((collection_key.as_bytes(), &empty));
+        self.kv_store.clone().write(batch).map_err(|err| {
+            // not really sure what can be done if this fails besides log it
+            // return the original error that made this fail
+            let _ = self.kv_store.clone().delete(collection_key.as_bytes());
+            err
+        })?;
+
+        // encode the descriptor into a buffer
+        let mut buf = Vec::new();
+        descriptor
+            .encode(&mut buf)
+            .map_err(|err| SchemaError::EncodingError(err.to_string()))?;
+
+
+        // write the descriptor buffer into the catalog
+        let descriptor_key = descriptor_key(&self.name, &name);
+        let mut batch = KVStoreWriteBatch::new();
+        batch.push((descriptor_key.as_bytes(), &buf));
+        self.kv_store.clone().write(batch).map_err(|err| {
+            // not really sure what can be done if these fail besides log it
+            // return the original error that made this fail
+            let _ = self.kv_store.clone().delete(collection_key.as_bytes());
+            let _ = self.kv_store.clone().delete(descriptor_key.as_bytes());
+            err
+        })?;
+
+        collections.insert(name.to_string(), Arc::new(entry));
         Ok(())
     }
 
@@ -158,6 +274,12 @@ fn database_key(name: &str) -> String {
 }
 
 #[inline(always)]
+fn database_from_key(key: &str) -> String {
+    let prefix = databases_key_prefix();
+    key_suffix(&prefix, key)
+}
+
+#[inline(always)]
 fn database_key_prefix(name: &str) -> String {
     format!(
         "{system_prefix}{delimiter}database{delimiter}{name}{delimiter}",
@@ -170,19 +292,25 @@ fn database_key_prefix(name: &str) -> String {
 #[inline(always)]
 fn collections_key_prefix(database: &str) -> String {
     format!(
-        "{database_prefix}collections",
+        "{database_prefix}collections{delimiter}",
         database_prefix = database_key_prefix(database),
+        delimiter = KEY_DELIMITER,
     )
 }
 
 #[inline(always)]
 fn collection_key(database: &str, name: &str) -> String {
     format!(
-        "{collections_prefix}{delimiter}{name}",
+        "{collections_prefix}{name}",
         collections_prefix = collections_key_prefix(database),
-        delimiter = KEY_DELIMITER,
         name = name,
     )
+}
+
+#[inline(always)]
+fn collection_from_key(database: &str, key: &str) -> String {
+    let prefix = collections_key_prefix(database);
+    key_suffix(&prefix, key)
 }
 
 #[inline(always)]

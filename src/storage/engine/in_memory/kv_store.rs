@@ -47,6 +47,14 @@ impl KVStore for InMemoryKVStore {
 
         Ok(())
     }
+
+    fn delete(&self, key: &[u8]) -> Result<(), InternalStorageEngineError> {
+        let store = self.inner.clone();
+        let mut store = store.write().unwrap();
+
+        store.remove(key);
+        Ok(())
+    }
 }
 
 pub struct PrefixIterator {
