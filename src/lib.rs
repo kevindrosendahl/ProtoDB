@@ -1,4 +1,5 @@
 pub mod catalog;
+pub mod index;
 pub mod schema;
 pub mod storage;
 pub mod transport;

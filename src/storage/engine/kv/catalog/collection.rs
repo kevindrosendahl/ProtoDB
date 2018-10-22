@@ -1,4 +1,7 @@
-use std::sync::Arc;
+use std::{
+    collections::HashMap,
+    sync::Arc,
+};
 
 use super::super::store::KVStore;
 use super::{delimiter_prefix_bound, key_suffix, KEY_DELIMITER};
@@ -8,7 +11,7 @@ use crate::{
         errors::collection::{FindObjectError, InsertObjectError},
     },
     schema::{
-        encoding::{FieldInfo, FieldValue},
+        encoding::FieldValue,
         errors::{ObjectError, SchemaError},
         Schema,
     },
@@ -119,32 +122,41 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 
     fn insert_object(&self, object: &[u8]) -> Result<(), InsertObjectError> {
         let mut id = None;
-        let fields = self
+        let mut fields = HashMap::with_capacity(self.schema.fields.len());
+        self
             .schema
             .decode_object(object)
-            .map(|f| {
+            .try_for_each(|f| {
+                // if the value is an error, simply return it
+                if f.is_err() {
+                    // try_for_each expects you to return an Ok(()) or an Err
+                    // so we need to show the compiler here that we're definitely
+                    // returning an Err and not an Ok(FieldInfo), so need
+                    // to do this unwrapping.
+                    return Err(f.err().unwrap());
+                }
+
+                // add the field to our fields map
+                let f = f.unwrap();
+                fields.insert(f.tag, f.value.clone());
+
                 // check to see if this field is the id field. if it is,
                 // ensure that the value is a Uint64 (for now) and set id
                 // to it
-                if f.is_err() {
-                    return f;
-                }
-
-                let f = f.unwrap();
                 if f.tag != self.schema.id_field {
-                    return Ok(f);
+                    return Ok(());
                 }
 
                 match f.value {
                     FieldValue::Uint64(val) => {
                         id = Some(val);
-                        Ok(f)
+                        Ok(())
                     }
                     _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
                         format!("{:?}", f.value),
                     ))),
                 }
-            }).collect::<Result<Vec<FieldInfo>, ObjectError>>()?;
+            })?;
 
         if id.is_none() {
             return Err(InsertObjectError::ObjectError(ObjectError::SchemaError(
@@ -162,10 +174,10 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         }
 
         let mut batch = Vec::new();
-        for field in fields {
+        for (tag, value) in fields {
             batch.push((
-                self.field_key(id, field.tag),
-                Schema::encode_value(&field.value),
+                self.field_key(id, tag),
+                Schema::encode_value(&value),
             ));
         }
 

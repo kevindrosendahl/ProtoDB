@@ -174,7 +174,7 @@ pub struct FieldInfo<'a> {
     pub value: FieldValue<'a>,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum FieldValue<'a> {
     Float(f32),
     Double(f64),
