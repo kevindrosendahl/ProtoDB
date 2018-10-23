@@ -6,11 +6,9 @@ use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
         errors::collection::{FindObjectError, InsertObjectError},
+        index::IndexCatalog,
     },
-    schema::{
-        errors::SchemaError,
-        Schema,
-    },
+    schema::{errors::SchemaError, Schema},
 };
 
 use prost_types::DescriptorProto;
@@ -85,6 +83,10 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 
     fn schema(&self) -> &Schema {
         &self.schema
+    }
+
+    fn indexes(&self) -> &IndexCatalog {
+        unimplemented!()
     }
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {

@@ -4,7 +4,6 @@ use crate::storage::errors::InternalStorageEngineError;
 
 #[derive(Debug)]
 pub enum IndexInsertError {
-    DuplicateKeyError(String),
     InternalStorageEngineError(InternalStorageEngineError),
 }
 

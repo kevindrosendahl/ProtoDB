@@ -10,7 +10,15 @@ ProtoDB is an ***experimental*** database exploring:
 - using grpc as the transport layer
 - exposing some database internals via WebAssembly
 
-## Status
+## Why is this?
+
+While some of the above mentioned features are interesting, the main purpose of ProtoDB is as a learning tool.
+
+One of the best ways to learn is to try to implement a solution yourself, and ProtoDB is an attempt to do so.
+
+## How is this?
+
+### Current Status
 
 Currently, ProtoDB supports simple insertion and find by `id`, backed by either an in-memory storage engine or `RocksDB`.
 
@@ -18,7 +26,7 @@ Currently schemas may only include [scalar types](https://developers.google.com/
 
 Please see the [example](examples/python/simple).
 
-## Roadmap
+### Roadmap
 
 The current short term goals are:
 - add `Index` trait and implement for scalar types

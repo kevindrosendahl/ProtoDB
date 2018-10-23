@@ -237,7 +237,6 @@ pub enum FieldValue<'a> {
     Enum(u64),
 }
 
-
 pub struct DecodeObject<'a> {
     object_buf: Cursor<&'a [u8]>,
     object_bytes: &'a [u8],
