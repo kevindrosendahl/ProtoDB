@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use std::sync::Arc;
 
 use super::super::store::KVStore;
 use super::{delimiter_prefix_bound, key_suffix, KEY_DELIMITER};
@@ -11,8 +8,7 @@ use crate::{
         errors::collection::{FindObjectError, InsertObjectError},
     },
     schema::{
-        encoding::FieldValue,
-        errors::{ObjectError, SchemaError},
+        errors::SchemaError,
         Schema,
     },
 };
@@ -121,68 +117,34 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
     }
 
     fn insert_object(&self, object: &[u8]) -> Result<(), InsertObjectError> {
-        let mut id = None;
-        let mut fields = HashMap::with_capacity(self.schema.fields.len());
-        self
-            .schema
-            .decode_object(object)
-            .try_for_each(|f| {
-                // if the value is an error, simply return it
-                if f.is_err() {
-                    // try_for_each expects you to return an Ok(()) or an Err
-                    // so we need to show the compiler here that we're definitely
-                    // returning an Err and not an Ok(FieldInfo), so need
-                    // to do this unwrapping.
-                    return Err(f.err().unwrap());
-                }
+        // decode the object and retrieve the key for this object's id
+        let decoded = self.schema.decoded_object(object)?;
+        let id_key = self
+            .field_key(decoded.id, self.schema.id_field)
+            .as_bytes()
+            .to_vec();
 
-                // add the field to our fields map
-                let f = f.unwrap();
-                fields.insert(f.tag, f.value.clone());
-
-                // check to see if this field is the id field. if it is,
-                // ensure that the value is a Uint64 (for now) and set id
-                // to it
-                if f.tag != self.schema.id_field {
-                    return Ok(());
-                }
-
-                match f.value {
-                    FieldValue::Uint64(val) => {
-                        id = Some(val);
-                        Ok(())
-                    }
-                    _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
-                        format!("{:?}", f.value),
-                    ))),
-                }
-            })?;
-
-        if id.is_none() {
-            return Err(InsertObjectError::ObjectError(ObjectError::SchemaError(
-                SchemaError::MissingIdField,
-            )));
-        }
-
+        // check to see if an object with this id already exists in the store
         let store = self.kv_store.clone();
-
-        let id = id.unwrap();
-        let id_key = self.field_key(id, self.schema.id_field).as_bytes().to_vec();
         let id_field = store.get(&id_key)?;
         if id_field.is_some() {
             return Err(InsertObjectError::ObjectExists);
         }
 
+        // batch up all of the fields' writes to the store
         let mut batch = Vec::new();
-        for (tag, value) in fields {
+        for (tag, value) in decoded.fields_iter() {
             batch.push((
-                self.field_key(id, tag),
+                self.field_key(decoded.id, *tag),
                 Schema::encode_value(&value),
             ));
         }
 
+        // write the batch
         store
             .write(
+                // FIXME: pretty silly to allocate the batch vec above then have to map it
+                //        to grab the proper references
                 batch
                     .iter()
                     .map(|(k, v)| (k.as_bytes(), v.as_slice()))

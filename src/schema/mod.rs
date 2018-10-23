@@ -8,6 +8,8 @@ use prost_types::{
 pub mod encoding;
 pub mod errors;
 
+pub use self::encoding::DecodedObject;
+
 const ID_FIELD: &str = "id";
 
 #[derive(Clone, Debug)]

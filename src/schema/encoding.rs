@@ -1,4 +1,4 @@
-use std::io::Cursor;
+use std::{collections::HashMap, io::Cursor};
 
 use super::{
     errors::{ObjectError, SchemaError},
@@ -94,6 +94,55 @@ impl Schema {
         }
     }
 
+    pub fn decoded_object<'a>(
+        &'a self,
+        object: &'a [u8],
+    ) -> Result<DecodedObject<'a>, ObjectError> {
+        let mut id = None;
+        let mut fields = HashMap::with_capacity(self.fields.len());
+
+        self.decode_object(object).try_for_each(|f| {
+            // if the value is an error, simply return it
+            if f.is_err() {
+                // try_for_each expects you to return an Ok(()) or an Err
+                // so we need to show the compiler here that we're definitely
+                // returning an Err and not an Ok(FieldInfo), so need
+                // to do this unwrapping.
+                return Err(f.err().unwrap());
+            }
+
+            // add the field to our fields map
+            let f = f.unwrap();
+            fields.insert(f.tag, f.value.clone());
+
+            // check to see if this field is the id field. if it is,
+            // ensure that the value is a Uint64 (for now) and set id
+            // to it
+            if f.tag != self.id_field {
+                return Ok(());
+            }
+
+            match f.value {
+                FieldValue::Uint64(val) => {
+                    id = Some(val);
+                    Ok(())
+                }
+                _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
+                    format!("{:?}", f.value),
+                ))),
+            }
+        })?;
+
+        if id.is_none() {
+            return Err(ObjectError::SchemaError(SchemaError::MissingIdField));
+        }
+
+        Ok(DecodedObject {
+            id: id.unwrap(),
+            inner: fields,
+        })
+    }
+
     pub fn encode_field(tag: i32, wire_type: WireType, value: &[u8], buf: &mut impl BufMut) {
         encoding::encode_key(tag as u32, wire_type, buf);
         buf.put(value);
@@ -161,12 +210,6 @@ impl Schema {
     }
 }
 
-pub struct DecodeObject<'a> {
-    object_buf: Cursor<&'a [u8]>,
-    object_bytes: &'a [u8],
-    schema: &'a Schema,
-}
-
 #[derive(Debug)]
 pub struct FieldInfo<'a> {
     pub tag: i32,
@@ -192,6 +235,28 @@ pub enum FieldValue<'a> {
     String(&'a [u8]),
     Bytes(&'a [u8]),
     Enum(u64),
+}
+
+
+pub struct DecodeObject<'a> {
+    object_buf: Cursor<&'a [u8]>,
+    object_bytes: &'a [u8],
+    schema: &'a Schema,
+}
+
+pub struct DecodedObject<'a> {
+    pub id: u64,
+    inner: HashMap<i32, FieldValue<'a>>,
+}
+
+impl<'a> DecodedObject<'a> {
+    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue<'a>)> {
+        self.inner.iter()
+    }
+
+    pub fn field(&self, tag: i32) -> Option<&FieldValue<'a>> {
+        self.inner.get(&tag)
+    }
 }
 
 macro_rules! iter_err {
