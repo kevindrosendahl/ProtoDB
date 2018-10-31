@@ -3,6 +3,8 @@ pub mod errors;
 use crate::schema::DecodedObject;
 
 pub trait IndexAccessMethod {
+    fn build(&self) -> Result<(), errors::BuildIndexError>;
+
     fn insert(&self, id: u64, obj: DecodedObject) -> Result<(), errors::IndexInsertError>;
 
     fn iter(&self) -> Box<dyn IndexAccessMethodIterator<Item = u64>>;

@@ -22,7 +22,7 @@ macro_rules! length_delimited_encoder {
     ( $val:ident ) => {{
         let mut writer = vec![];
         encoding::encode_varint($val.len() as u64, &mut writer);
-        writer.put_slice($val);
+        writer.put_slice(&$val);
         writer
     }};
 }
@@ -52,7 +52,7 @@ macro_rules! length_delimited_decoder {
         let len = encoding::decode_varint(&mut reader).unwrap() as usize;
         // FIXME: check for {over/under}flow
         let position = reader.position() as usize;
-        $ty(&$buf[position..position + len])
+        $ty($buf[position..position + len].to_vec())
     }};
 }
 
@@ -94,13 +94,8 @@ impl Schema {
         }
     }
 
-    pub fn decoded_object<'a>(
-        &'a self,
-        object: &'a [u8],
-    ) -> Result<DecodedObject<'a>, ObjectError> {
-        let mut id = None;
-        let mut fields = HashMap::with_capacity(self.fields.len());
-
+    pub fn decoded_object<'a>(&'a self, object: &'a [u8]) -> Result<DecodedObject, ObjectError> {
+        let mut decoded_builder = self.decoded_object_builder();
         self.decode_object(object).try_for_each(|f| {
             // if the value is an error, simply return it
             if f.is_err() {
@@ -113,34 +108,20 @@ impl Schema {
 
             // add the field to our fields map
             let f = f.unwrap();
-            fields.insert(f.tag, f.value.clone());
-
-            // check to see if this field is the id field. if it is,
-            // ensure that the value is a Uint64 (for now) and set id
-            // to it
-            if f.tag != self.id_field {
-                return Ok(());
-            }
-
-            match f.value {
-                FieldValue::Uint64(val) => {
-                    id = Some(val);
-                    Ok(())
-                }
-                _ => Err(ObjectError::SchemaError(SchemaError::InvalidIdType(
-                    format!("{:?}", f.value),
-                ))),
-            }
+            decoded_builder
+                .field(f.tag, f.value.clone())
+                .map_err(|err| ObjectError::SchemaError(err))
         })?;
 
-        if id.is_none() {
-            return Err(ObjectError::SchemaError(SchemaError::MissingIdField));
+        let decoded = decoded_builder.build();
+        match decoded.id {
+            0 => Err(ObjectError::SchemaError(SchemaError::MissingIdField)),
+            _ => Ok(decoded),
         }
+    }
 
-        Ok(DecodedObject {
-            id: id.unwrap(),
-            inner: fields,
-        })
+    pub fn decoded_object_builder(&self) -> DecodedObjectBuilder {
+        DecodedObjectBuilder::with_capacity(self.id_field, self.fields.len())
     }
 
     pub fn encode_field(tag: i32, wire_type: WireType, value: &[u8], buf: &mut impl BufMut) {
@@ -148,9 +129,9 @@ impl Schema {
         buf.put(value);
     }
 
-    pub fn encode_value(value: &FieldValue) -> Vec<u8> {
+    pub fn encode_value(value: FieldValue) -> Vec<u8> {
         // TODO: can probably macro this out a bit more
-        match *value {
+        match value {
             FieldValue::Int32(val) => varint_encoder!(val),
             FieldValue::Int64(val) => varint_encoder!(val),
             FieldValue::Uint32(val) => varint_encoder!(val),
@@ -176,7 +157,7 @@ impl Schema {
     }
 
     #[allow(dead_code)]
-    fn decode_value(type_: Type, value: &[u8]) -> FieldValue {
+    pub fn decode_value(type_: Type, value: &[u8]) -> FieldValue {
         // TODO: can probably macro this out a bit more
         match type_ {
             Type::Int32 => varint_decoder!(value, i32, FieldValue::Int32),
@@ -211,14 +192,14 @@ impl Schema {
 }
 
 #[derive(Debug)]
-pub struct FieldInfo<'a> {
+pub struct FieldInfo {
     pub tag: i32,
     pub wire_type: encoding::WireType,
-    pub value: FieldValue<'a>,
+    pub value: FieldValue,
 }
 
 #[derive(Clone, Debug)]
-pub enum FieldValue<'a> {
+pub enum FieldValue {
     Float(f32),
     Double(f64),
     Int32(i32),
@@ -232,8 +213,8 @@ pub enum FieldValue<'a> {
     Sfixed32(i32),
     Sfixed64(i64),
     Bool(bool),
-    String(&'a [u8]),
-    Bytes(&'a [u8]),
+    String(Vec<u8>),
+    Bytes(Vec<u8>),
     Enum(u64),
 }
 
@@ -243,17 +224,66 @@ pub struct DecodeObject<'a> {
     schema: &'a Schema,
 }
 
-pub struct DecodedObject<'a> {
-    pub id: u64,
-    inner: HashMap<i32, FieldValue<'a>>,
+#[derive(Clone)]
+pub struct DecodedObjectBuilder {
+    id_field: i32,
+    inner: DecodedObject,
 }
 
-impl<'a> DecodedObject<'a> {
-    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue<'a>)> {
+impl DecodedObjectBuilder {
+    pub fn new(id_field: i32) -> DecodedObjectBuilder {
+        DecodedObjectBuilder {
+            id_field,
+            inner: DecodedObject {
+                id: 0,
+                inner: HashMap::new(),
+            },
+        }
+    }
+
+    pub fn with_capacity(id_field: i32, capacity: usize) -> DecodedObjectBuilder {
+        DecodedObjectBuilder {
+            id_field,
+            inner: DecodedObject {
+                id: 0,
+                inner: HashMap::with_capacity(capacity),
+            },
+        }
+    }
+
+    pub fn build(self) -> DecodedObject {
+        self.inner
+    }
+
+    pub fn id(&mut self, id: u64) {
+        self.inner.id = id;
+    }
+
+    pub fn field(&mut self, tag: i32, value: FieldValue) -> Result<(), SchemaError> {
+        if tag == self.id_field {
+            match value {
+                FieldValue::Uint64(id) => self.id(id),
+                // FIXME: should handle this better
+                _ => return Err(SchemaError::InvalidIdType("non-u64".into())),
+            }
+        }
+        self.inner.inner.insert(tag, value);
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct DecodedObject {
+    pub id: u64,
+    inner: HashMap<i32, FieldValue>,
+}
+
+impl DecodedObject {
+    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue)> {
         self.inner.iter()
     }
 
-    pub fn field(&self, tag: i32) -> Option<&FieldValue<'a>> {
+    pub fn field(&self, tag: i32) -> Option<&FieldValue> {
         self.inner.get(&tag)
     }
 }
@@ -287,7 +317,7 @@ macro_rules! decode_err {
 }
 
 impl<'a> Iterator for DecodeObject<'a> {
-    type Item = Result<FieldInfo<'a>, ObjectError>;
+    type Item = Result<FieldInfo, ObjectError>;
 
     fn next(&mut self) -> Option<Self::Item> {
         // decode fields until we are done, hit an error, or find a field
@@ -413,8 +443,8 @@ impl<'a> Iterator for DecodeObject<'a> {
                             let type_ = type_.unwrap();
                             let bytes = &self.object_bytes[offset..offset + len as usize];
                             match type_ {
-                                Type::String => FieldValue::String(bytes),
-                                Type::Bytes => FieldValue::Bytes(bytes),
+                                Type::String => FieldValue::String(bytes.to_vec()),
+                                Type::Bytes => FieldValue::Bytes(bytes.to_vec()),
                                 _ => return wire_type_mismatch_err!(tag, type_, wire_type),
                             }
                         }

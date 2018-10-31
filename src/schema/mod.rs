@@ -8,7 +8,7 @@ use prost_types::{
 pub mod encoding;
 pub mod errors;
 
-pub use self::encoding::DecodedObject;
+pub use self::encoding::{DecodedObject, DecodedObjectBuilder};
 
 const ID_FIELD: &str = "id";
 
