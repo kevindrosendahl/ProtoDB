@@ -3,6 +3,7 @@ extern crate wasm_bindgen;
 
 use protodb_wasm::prelude::*;
 use protodb_wasm::{protodb_wasm_module, Module, ProtoDB};
+use protodb_wasm::log;
 
 struct MyModule;
 

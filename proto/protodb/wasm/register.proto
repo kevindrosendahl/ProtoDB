@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package protodb.wasm;
+
+message RegisterModuleRequest {
+    string database = 1;
+    string name = 2;
+    bytes wasm = 3;
+}
+
+message RegisterModuleResponse {
+    enum ErrorCode {
+        NO_ERROR = 0;
+        INTERNAL_ERROR = 1;
+        INVALID_DATABASE = 2;
+        MODULE_EXISTS = 3;
+    }
+    ErrorCode error_code = 1;
+}

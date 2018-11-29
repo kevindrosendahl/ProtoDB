@@ -7,7 +7,8 @@ from protodb.collection import insert_object_pb2 as protodb_dot_collection_dot_i
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
-from protodb.database import run_wasm_pb2 as protodb_dot_database_dot_run__wasm__pb2
+from protodb.wasm import register_pb2 as protodb_dot_wasm_dot_register__pb2
+from protodb.wasm import run_pb2 as protodb_dot_wasm_dot_run__pb2
 
 
 class ProtoDBStub(object):
@@ -50,10 +51,15 @@ class ProtoDBStub(object):
         request_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.FromString,
         )
-    self.RunWasm = channel.unary_unary(
-        '/protodb.ProtoDB/RunWasm',
-        request_serializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmRequest.SerializeToString,
-        response_deserializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmResponse.FromString,
+    self.RegisterWasmModule = channel.unary_unary(
+        '/protodb.ProtoDB/RegisterWasmModule',
+        request_serializer=protodb_dot_wasm_dot_register__pb2.RegisterModuleRequest.SerializeToString,
+        response_deserializer=protodb_dot_wasm_dot_register__pb2.RegisterModuleResponse.FromString,
+        )
+    self.RunWasmModule = channel.unary_unary(
+        '/protodb.ProtoDB/RunWasmModule',
+        request_serializer=protodb_dot_wasm_dot_run__pb2.RunModuleRequest.SerializeToString,
+        response_deserializer=protodb_dot_wasm_dot_run__pb2.RunModuleResponse.FromString,
         )
 
 
@@ -103,7 +109,14 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def RunWasm(self, request, context):
+  def RegisterWasmModule(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def RunWasmModule(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -143,10 +156,15 @@ def add_ProtoDBServicer_to_server(servicer, server):
           request_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.FromString,
           response_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.SerializeToString,
       ),
-      'RunWasm': grpc.unary_unary_rpc_method_handler(
-          servicer.RunWasm,
-          request_deserializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmRequest.FromString,
-          response_serializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmResponse.SerializeToString,
+      'RegisterWasmModule': grpc.unary_unary_rpc_method_handler(
+          servicer.RegisterWasmModule,
+          request_deserializer=protodb_dot_wasm_dot_register__pb2.RegisterModuleRequest.FromString,
+          response_serializer=protodb_dot_wasm_dot_register__pb2.RegisterModuleResponse.SerializeToString,
+      ),
+      'RunWasmModule': grpc.unary_unary_rpc_method_handler(
+          servicer.RunWasmModule,
+          request_deserializer=protodb_dot_wasm_dot_run__pb2.RunModuleRequest.FromString,
+          response_serializer=protodb_dot_wasm_dot_run__pb2.RunModuleResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

@@ -3,6 +3,8 @@ use std::sync::Arc;
 use super::collection::CollectionCatalogEntry;
 use super::errors::database::{CreateCollectionError, CreateDatabaseError};
 
+use crate::wasm::ProtoDBModule;
+
 use prost_types::DescriptorProto;
 
 pub trait DatabaseCatalog {
@@ -25,4 +27,10 @@ pub trait DatabaseCatalogEntry {
     ) -> Result<(), CreateCollectionError>;
 
     fn get_collection_entry(&self, name: &str) -> Option<Arc<dyn CollectionCatalogEntry>>;
+
+    fn list_wasm_modules(&self) -> Vec<String>;
+
+    fn create_wasm_module(&self, name: &str, module: ProtoDBModule);
+
+    fn get_wasm_module(&self, name: &str) -> Option<Arc<ProtoDBModule>>;
 }

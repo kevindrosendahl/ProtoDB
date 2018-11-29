@@ -4,6 +4,8 @@ from protodb.collection.create_pb2 import CreateCollectionResponse
 from protodb.collection.list_pb2 import ListCollectionsResponse
 from protodb.collection.insert_object_pb2 import InsertObjectResponse
 from protodb.collection.find_object_pb2 import FindObjectResponse
+from protodb.wasm.register_pb2 import RegisterModuleResponse
+from protodb.wasm.run_pb2 import RunModuleResponse
 
 from client import Client
 from user_pb2 import User
@@ -30,7 +32,8 @@ def main():
     find_user(client, 2)
     find_user(client, 3)
 
-    run_wasm(client)
+    register_wasm_module(client, 'test')
+    run_wasm_module(client, 'test')
 
 
 def create_database(client):
@@ -124,11 +127,27 @@ def find_user(client, id):
     print('find user failed: ' + error_code_str)
 
 
-def run_wasm(client):
-    print('\nrunning wasm')
-    response = client.run_wasm()
+def register_wasm_module(client, name):
+    print('\nregistering wasm module')
+    response = client.register_wasm_module(DATABASE_NAME, name)
 
-    print('got response: {}'.format(response))
+    if response.error_code == RegisterModuleResponse.NO_ERROR:
+        print('successfully registered wasm module')
+        return
+
+    error_code_str = RegisterModuleResponse.ErrorCode.Name(response.error_code)
+    print('register wasm module failed: ' + error_code_str)
+
+
+def run_wasm_module(client, name):
+    print('\nrunning wasm module')
+    response = client.run_wasm_module(DATABASE_NAME, name)
+    if response.error_code == RunModuleResponse.NO_ERROR:
+        print('got response: {}'.format(response.result))
+        return
+
+    error_code_str = RunModuleResponse.ErrorCode.Name(response.error_code)
+    print('register wasm module failed: ' + error_code_str)
 
 
 if __name__ == '__main__':

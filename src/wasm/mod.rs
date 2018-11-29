@@ -16,7 +16,7 @@ static MEMORY_EXPORT: &'static str = "memory";
 static RUN_EXPORT: &'static str = "run";
 
 // TODO: for some reason the match in the import resolver would always match THROW_IMPORT
-//static THROW_IMPORT: &'static str = "__wbindgen_throw";
+static THROW_IMPORT: &'static str = "__wbindgen_throw";
 const THROW_IMPORT_INDEX: usize = 0;
 static GET_OBJECT_IMPORT_PREFIX: &'static str = "__wbg_getobject_";
 const GET_OBJECT_IMPORT_INDEX: usize = 1;
@@ -24,7 +24,7 @@ static LOG_IMPORT_PREFIX: &'static str = "__wbg_log_";
 const LOG_IMPORT_INDEX: usize = 2;
 
 pub struct ProtoDBModule {
-    wasm_binary: Vec<u8>,
+    wasm_module: Module,
     name: String,
     hashes: ProtoDBModuleImportHashes,
 }
@@ -32,7 +32,7 @@ pub struct ProtoDBModule {
 impl ProtoDBModule {
     pub fn new(wasm_binary: Vec<u8>, name: String, hashes: ProtoDBModuleImportHashes) -> Self {
         ProtoDBModule {
-            wasm_binary,
+            wasm_module: Module::from_buffer(wasm_binary).expect("failed to load_wasm"),
             name,
             hashes,
         }
@@ -45,11 +45,17 @@ pub struct ProtoDBModuleImportHashes {
     pub get_object: String,
 }
 
-pub struct Interpreter;
+pub struct Interpreter {
+    storage_engine: Arc<dyn StorageEngine>,
+}
 
 impl Interpreter {
-    pub fn run(&self, module: &ProtoDBModule, storage_engine: Arc<dyn StorageEngine>) -> Vec<u8> {
-        let mut instance = ProtoDBModuleInstance::new(module, storage_engine);
+    pub fn new(storage_engine: Arc<dyn StorageEngine>) -> Self {
+        Interpreter { storage_engine }
+    }
+
+    pub fn run(&self, module: &ProtoDBModule) -> Vec<u8> {
+        let mut instance = ProtoDBModuleInstance::new(module, self.storage_engine.clone());
         instance.invoke_run()
     }
 }
@@ -63,15 +69,13 @@ struct ProtoDBModuleInstance {
 
 impl ProtoDBModuleInstance {
     pub fn new(module: &ProtoDBModule, storage_engine: Arc<dyn StorageEngine>) -> Self {
-        let wasm_module = Module::from_buffer(&module.wasm_binary).expect("failed to load_wasm");
-
         let resolver = ProtoDBModuleImportResolver {
             hashes: module.hashes.clone(),
         };
         let mut imports = ImportsBuilder::new();
         imports.push_resolver(module.name.clone(), &resolver);
 
-        let module_ref = ModuleInstance::new(&wasm_module, &imports)
+        let module_ref = ModuleInstance::new(&module.wasm_module, &imports)
             .expect("failed to instantiate wasm module")
             .assert_no_start();
 
@@ -113,7 +117,11 @@ impl ProtoDBModuleInstance {
         // Actually invoke the exported run function.
         let ret_val = self
             .module_ref
-            .invoke_export(RUN_EXPORT, &[RuntimeValue::I32(ret_ptr)], &mut self.externals)
+            .invoke_export(
+                RUN_EXPORT,
+                &[RuntimeValue::I32(ret_ptr)],
+                &mut self.externals,
+            )
             .expect(&format!("failed to execute {}", RUN_EXPORT));
         assert_eq!(ret_val, None);
 
@@ -186,7 +194,7 @@ impl ProtoDBExternals {
 
     fn pass_byte_array(&self, arr: &[u8]) -> u32 {
         let ptr = self.malloc(arr.len());
-        self.get_memory().set(ptr, arr);
+        self.get_memory().set(ptr, arr).unwrap();
         ptr
     }
 
@@ -243,7 +251,7 @@ impl Externals for ProtoDBExternals {
                     .unwrap();
 
                 Ok(None)
-            },
+            }
             LOG_IMPORT_INDEX => {
                 let ptr: u32 = args.nth(0);
                 let len: u32 = args.nth(1);
@@ -251,8 +259,8 @@ impl Externals for ProtoDBExternals {
                 let message = self.get_string(ptr, len as usize);
                 println!("message from wasm: {}", message);
                 Ok(None)
-            },
-            _ => panic!("unknown function index {}", ),
+            }
+            _ => panic!("unknown function index {}",),
         }
     }
 }
@@ -267,14 +275,15 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
         field_name: &str,
         _signature: &Signature,
     ) -> Result<FuncRef, InterpreterError> {
-        let get_object_import = format!("{}{}", GET_OBJECT_IMPORT_PREFIX, self.hashes.get_object);
-        let log_import = format!("{}{}", LOG_IMPORT_PREFIX, self.hashes.log);
-        let func_ref = match field_name {
-            "__wbindgen_throw" => FuncInstance::alloc_host(
+        if field_name == THROW_IMPORT {
+            return Ok(FuncInstance::alloc_host(
                 Signature::new(&[ValueType::I32, ValueType::I32][..], None),
                 THROW_IMPORT_INDEX,
-            ),
-            "__wbg_getobject_040647ba797ee833" => FuncInstance::alloc_host(
+            ));
+        }
+
+        if field_name == format!("{}{}", GET_OBJECT_IMPORT_PREFIX, self.hashes.get_object) {
+            return Ok(FuncInstance::alloc_host(
                 Signature::new(
                     &[
                         ValueType::I32,
@@ -286,33 +295,19 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
                     None,
                 ),
                 GET_OBJECT_IMPORT_INDEX,
-            ),
-            "__wbg_log_12af4e1f5b304c40" => {
-                FuncInstance::alloc_host(Signature::new(&[ValueType::I32, ValueType::I32, ][..], None), LOG_IMPORT_INDEX)
-            },
-//            get_object_import => FuncInstance::alloc_host(
-//                Signature::new(
-//                    &[
-//                        ValueType::I32,
-//                        ValueType::I32,
-//                        ValueType::I32,
-//                        ValueType::I32,
-//                        ValueType::I32,
-//                    ][..],
-//                    None,
-//                ),
-//                GET_OBJECT_IMPORT_INDEX,
-//            ),
-//            log_import => {
-//                FuncInstance::alloc_host(Signature::new(&[ValueType::I32, ValueType::I32, ][..], None), LOG_IMPORT_INDEX)
-//            },
-            _ => {
-                return Err(InterpreterError::Function(format!(
-                    "host module doesn't export function with name {}",
-                    field_name
-                )))
-            }
-        };
-        Ok(func_ref)
+            ));
+        }
+
+        if field_name == format!("{}{}", LOG_IMPORT_PREFIX, self.hashes.log) {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(&[ValueType::I32, ValueType::I32][..], None),
+                LOG_IMPORT_INDEX,
+            ));
+        }
+
+        Err(InterpreterError::Function(format!(
+            "host module doesn't export function with name {}",
+            field_name
+        )))
     }
 }

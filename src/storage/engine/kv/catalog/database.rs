@@ -15,6 +15,7 @@ use crate::{
     },
     schema::errors::SchemaError,
     storage::errors::InternalStorageEngineError,
+    wasm::ProtoDBModule,
 };
 
 use prost::Message;
@@ -116,6 +117,7 @@ pub struct KVDatabaseCatalogEntry {
 
     name: String,
     collections: Arc<RwLock<BTreeMap<String, Arc<KVCollectionCatalogEntry>>>>,
+    wasm_modules: Arc<RwLock<BTreeMap<String, Arc<ProtoDBModule>>>>,
 }
 
 impl<'a> KVDatabaseCatalogEntry {
@@ -124,7 +126,8 @@ impl<'a> KVDatabaseCatalogEntry {
             kv_store,
 
             name,
-            collections: Arc::new(RwLock::new(BTreeMap::new())),
+            collections: Default::default(),
+            wasm_modules: Default::default(),
         }
     }
 
@@ -248,6 +251,24 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
             .get(name)
             .cloned()
             .map(|e| e as Arc<dyn CollectionCatalogEntry>)
+    }
+
+    fn list_wasm_modules(&self) -> Vec<String> {
+        let modules = self.wasm_modules.clone();
+        let modules = modules.read().unwrap();
+        modules.keys().cloned().collect()
+    }
+
+    fn create_wasm_module(&self, name: &str, module: ProtoDBModule) {
+        let modules = self.wasm_modules.clone();
+        let mut modules = modules.write().unwrap();
+        modules.insert(name.to_string(), Arc::new(module));
+    }
+
+    fn get_wasm_module(&self, name: &str) -> Option<Arc<ProtoDBModule>> {
+        let modules = self.wasm_modules.clone();
+        let modules = modules.read().unwrap();
+        modules.get(name).cloned()
     }
 }
 

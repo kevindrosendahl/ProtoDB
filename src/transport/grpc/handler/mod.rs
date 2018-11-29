@@ -1,14 +1,17 @@
 mod collection;
 mod database;
+mod wasm;
 
 use std::{sync::Arc, time::Instant};
 
 use super::generated::{
     protodb,
-    protodb::{collection as protodb_collection, database as protodb_database},
+    protodb::{
+        collection as protodb_collection, database as protodb_database, wasm as protodb_wasm,
+    },
 };
 
-use crate::storage::StorageEngine;
+use crate::{storage::StorageEngine, wasm::Interpreter};
 
 use futures::future;
 use tower_grpc;
@@ -17,11 +20,15 @@ use tower_grpc::{Request, Response};
 #[derive(Clone)]
 pub struct Handler {
     storage_engine: Arc<dyn StorageEngine>,
+    wasm_interpreter: Arc<Interpreter>,
 }
 
 impl Handler {
     pub fn new(storage_engine: Arc<dyn StorageEngine>) -> Handler {
-        Handler { storage_engine }
+        Handler {
+            storage_engine: storage_engine.clone(),
+            wasm_interpreter: Arc::new(Interpreter::new(storage_engine)),
+        }
     }
 }
 
@@ -97,11 +104,20 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
-        "run wasm",
-        run_wasm,
-        handle_run_wasm,
-        RunWasmFuture,
-        protodb_database::RunWasmRequest,
-        protodb_database::RunWasmResponse
+        "register wasm module",
+        register_wasm_module,
+        handle_register_wasm_module,
+        RegisterWasmModuleFuture,
+        protodb_wasm::RegisterModuleRequest,
+        protodb_wasm::RegisterModuleResponse
+    );
+
+    method_handler!(
+        "run wasm module",
+        run_wasm_module,
+        handle_run_wasm_module,
+        RunWasmModuleFuture,
+        protodb_wasm::RunModuleRequest,
+        protodb_wasm::RunModuleResponse
     );
 }

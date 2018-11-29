@@ -10,6 +10,8 @@ from protodb.collection.create_pb2 import CreateCollectionRequest
 from protodb.collection.list_pb2 import ListCollectionsRequest
 from protodb.collection.insert_object_pb2 import InsertObjectRequest
 from protodb.collection.find_object_pb2 import FindObjectRequest
+from protodb.wasm.register_pb2 import RegisterModuleRequest
+from protodb.wasm.run_pb2 import RunModuleRequest
 
 
 class Client:
@@ -50,7 +52,11 @@ class Client:
         request = FindObjectRequest(database=database, collection=collection, id=id)
         return self.stub.FindObject(request)
 
-    def run_wasm(self):
+    def register_wasm_module(self, database, name):
         with open("/home/kevin/src/github.com/kevindrosendahl/ProtoDB/examples/wasm/wasm_bg.wasm", "rb") as f:
-            request = RunWasmRequest(wasm=bytes(f.read()))
-            return self.stub.RunWasm(request)
+            request = RegisterModuleRequest(database=database, name=name, wasm=bytes(f.read()))
+            return self.stub.RegisterWasmModule(request)
+
+    def run_wasm_module(self, database, name):
+        request = RunModuleRequest(database=database, name=name)
+        return self.stub.RunWasmModule(request)

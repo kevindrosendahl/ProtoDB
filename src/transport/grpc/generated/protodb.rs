@@ -7,7 +7,10 @@ pub mod server {
     use super::database;
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
-        RunWasmRequest, RunWasmResponse,
+    };
+    use super::wasm;
+    use super::wasm::{
+        RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
     };
     use tower_grpc::codegen::server::*;
 
@@ -48,8 +51,12 @@ pub mod server {
             Item = grpc::Response<collection::FindObjectResponse>,
             Error = grpc::Error,
         >;
-        type RunWasmFuture: futures::Future<
-            Item = grpc::Response<database::RunWasmResponse>,
+        type RegisterWasmModuleFuture: futures::Future<
+            Item = grpc::Response<wasm::RegisterModuleResponse>,
+            Error = grpc::Error,
+        >;
+        type RunWasmModuleFuture: futures::Future<
+            Item = grpc::Response<wasm::RunModuleResponse>,
             Error = grpc::Error,
         >;
 
@@ -83,10 +90,15 @@ pub mod server {
             request: grpc::Request<collection::FindObjectRequest>,
         ) -> Self::FindObjectFuture;
 
-        fn run_wasm(
+        fn register_wasm_module(
             &mut self,
-            request: grpc::Request<database::RunWasmRequest>,
-        ) -> Self::RunWasmFuture;
+            request: grpc::Request<wasm::RegisterModuleRequest>,
+        ) -> Self::RegisterWasmModuleFuture;
+
+        fn run_wasm_module(
+            &mut self,
+            request: grpc::Request<wasm::RunModuleRequest>,
+        ) -> Self::RunWasmModuleFuture;
     }
 
     #[derive(Debug, Clone)]
@@ -162,11 +174,18 @@ pub mod server {
                         kind: Ok(FindObject(response)),
                     }
                 }
-                "/protodb.ProtoDB/RunWasm" => {
-                    let service = proto_db::methods::RunWasm(self.proto_db.clone());
+                "/protodb.ProtoDB/RegisterWasmModule" => {
+                    let service = proto_db::methods::RegisterWasmModule(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
                     proto_db::ResponseFuture {
-                        kind: Ok(RunWasm(response)),
+                        kind: Ok(RegisterWasmModule(response)),
+                    }
+                }
+                "/protodb.ProtoDB/RunWasmModule" => {
+                    let service = proto_db::methods::RunWasmModule(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(RunWasmModule(response)),
                     }
                 }
                 _ => proto_db::ResponseFuture {
@@ -208,7 +227,8 @@ pub mod server {
                     grpc::unary::ResponseFuture<methods::ListCollections<T>, tower_h2::RecvBody>,
                     grpc::unary::ResponseFuture<methods::InsertObject<T>, tower_h2::RecvBody>,
                     grpc::unary::ResponseFuture<methods::FindObject<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::RunWasm<T>, tower_h2::RecvBody>,
+                    grpc::unary::ResponseFuture<methods::RegisterWasmModule<T>, tower_h2::RecvBody>,
+                    grpc::unary::ResponseFuture<methods::RunWasmModule<T>, tower_h2::RecvBody>,
                 >,
                 grpc::Status,
             >,
@@ -279,11 +299,20 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
-                    Ok(RunWasm(ref mut fut)) => {
+                    Ok(RegisterWasmModule(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
                         let body = ResponseBody {
-                            kind: Ok(RunWasm(body)),
+                            kind: Ok(RegisterWasmModule(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(RunWasmModule(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(RunWasmModule(body)),
                         };
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
@@ -333,7 +362,14 @@ pub mod server {
                         grpc::unary::Once<<methods::FindObject<T> as grpc::UnaryService>::Response>,
                     >,
                     grpc::Encode<
-                        grpc::unary::Once<<methods::RunWasm<T> as grpc::UnaryService>::Response>,
+                        grpc::unary::Once<
+                            <methods::RegisterWasmModule<T> as grpc::UnaryService>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::RunWasmModule<T> as grpc::UnaryService>::Response,
+                        >,
                     >,
                 >,
                 grpc::Status,
@@ -356,7 +392,8 @@ pub mod server {
                     Ok(ListCollections(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
-                    Ok(RunWasm(ref v)) => v.is_end_stream(),
+                    Ok(RegisterWasmModule(ref v)) => v.is_end_stream(),
+                    Ok(RunWasmModule(ref v)) => v.is_end_stream(),
                     Err(_) => true,
                 }
             }
@@ -371,7 +408,8 @@ pub mod server {
                     Ok(ListCollections(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
-                    Ok(RunWasm(ref mut v)) => v.poll_data(),
+                    Ok(RegisterWasmModule(ref mut v)) => v.poll_data(),
+                    Ok(RunWasmModule(ref mut v)) => v.poll_data(),
                     Err(_) => Ok(None.into()),
                 }
             }
@@ -386,7 +424,8 @@ pub mod server {
                     Ok(ListCollections(ref mut v)) => v.poll_trailers(),
                     Ok(InsertObject(ref mut v)) => v.poll_trailers(),
                     Ok(FindObject(ref mut v)) => v.poll_trailers(),
-                    Ok(RunWasm(ref mut v)) => v.poll_trailers(),
+                    Ok(RegisterWasmModule(ref mut v)) => v.poll_trailers(),
+                    Ok(RunWasmModule(ref mut v)) => v.poll_trailers(),
                     Err(ref status) => {
                         let mut map = http::HeaderMap::new();
                         map.insert("grpc-status", status.to_header_value());
@@ -404,7 +443,8 @@ pub mod server {
             ListCollections,
             InsertObject,
             FindObject,
-            RunWasm,
+            RegisterWasmModule,
+            RunWasmModule,
         > {
             CreateDatabase(CreateDatabase),
             ListDatabases(ListDatabases),
@@ -412,7 +452,8 @@ pub mod server {
             ListCollections(ListCollections),
             InsertObject(InsertObject),
             FindObject(FindObject),
-            RunWasm(RunWasm),
+            RegisterWasmModule(RegisterWasmModule),
+            RunWasmModule(RunWasmModule),
         }
 
         pub mod methods {
@@ -425,7 +466,11 @@ pub mod server {
             use super::super::database;
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
-                ListDatabasesResponse, RunWasmRequest, RunWasmResponse,
+                ListDatabasesResponse,
+            };
+            use super::super::wasm;
+            use super::super::wasm::{
+                RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
             };
             use super::super::ProtoDb;
             use tower_grpc::codegen::server::*;
@@ -550,23 +595,43 @@ pub mod server {
                 }
             }
 
-            pub struct RunWasm<T>(pub T);
+            pub struct RegisterWasmModule<T>(pub T);
 
-            impl<T> tower::Service for RunWasm<T>
+            impl<T> tower::Service for RegisterWasmModule<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<database::RunWasmRequest>;
-                type Response = grpc::Response<database::RunWasmResponse>;
+                type Request = grpc::Request<wasm::RegisterModuleRequest>;
+                type Response = grpc::Response<wasm::RegisterModuleResponse>;
                 type Error = grpc::Error;
-                type Future = T::RunWasmFuture;
+                type Future = T::RegisterWasmModuleFuture;
 
                 fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
                     Ok(futures::Async::Ready(()))
                 }
 
                 fn call(&mut self, request: Self::Request) -> Self::Future {
-                    self.0.run_wasm(request)
+                    self.0.register_wasm_module(request)
+                }
+            }
+
+            pub struct RunWasmModule<T>(pub T);
+
+            impl<T> tower::Service for RunWasmModule<T>
+            where
+                T: ProtoDb,
+            {
+                type Request = grpc::Request<wasm::RunModuleRequest>;
+                type Response = grpc::Response<wasm::RunModuleResponse>;
+                type Error = grpc::Error;
+                type Future = T::RunWasmModuleFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(&mut self, request: Self::Request) -> Self::Future {
+                    self.0.run_wasm_module(request)
                 }
             }
         }
@@ -741,25 +806,54 @@ pub mod database {
             InternalError = 1,
         }
     }
+
+}
+pub mod wasm {
     #[derive(Clone, PartialEq, Message)]
-    pub struct RunWasmRequest {
-        #[prost(bytes, tag = "1")]
+    pub struct RegisterModuleRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub name: String,
+        #[prost(bytes, tag = "3")]
         pub wasm: Vec<u8>,
     }
     #[derive(Clone, PartialEq, Message)]
-    pub struct RunWasmResponse {
-        #[prost(bytes, tag = "1")]
-        pub result: Vec<u8>,
+    pub struct RegisterModuleResponse {
+        #[prost(enumeration = "register_module_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+    }
+    pub mod register_module_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            ModuleExists = 3,
+        }
     }
     #[derive(Clone, PartialEq, Message)]
-    pub struct RegisterWasmModuleRequest {
-        #[prost(bytes, tag = "1")]
-        pub wasm: Vec<u8>,
+    pub struct RunModuleRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub name: String,
     }
     #[derive(Clone, PartialEq, Message)]
-    pub struct RegisterWasmModuleResponse {
-        #[prost(bytes, tag = "1")]
+    pub struct RunModuleResponse {
+        #[prost(enumeration = "run_module_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(bytes, tag = "2")]
         pub result: Vec<u8>,
+    }
+    pub mod run_module_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidModule = 3,
+        }
     }
 
 }
