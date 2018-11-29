@@ -42,7 +42,8 @@ fn read_protos_dir(dir: String) -> Vec<String> {
                 dir,
                 d.path().file_name().unwrap().to_str().unwrap(),
             )
-        }).collect()
+        })
+        .collect()
 }
 
 // temporary hack to get around https://github.com/tower-rs/tower-grpc/issues/85

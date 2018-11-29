@@ -163,7 +163,8 @@ impl<'a> KVDatabaseCatalogEntry {
             self.name.clone(),
             name.clone(),
             &descriptor,
-        ).unwrap_or_else(|err| {
+        )
+        .unwrap_or_else(|err| {
             panic!(format!(
                 "error creating collection catalog entry for {}/{}: {}",
                 &self.name, &name, err,

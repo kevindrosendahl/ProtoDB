@@ -530,10 +530,7 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct CreateCollectionResponse {
-        #[prost(
-            enumeration = "create_collection_response::ErrorCode",
-            tag = "1"
-        )]
+        #[prost(enumeration = "create_collection_response::ErrorCode", tag = "1")]
         pub error_code: i32,
         #[prost(message, optional, tag = "2")]
         pub schema_error: ::std::option::Option<create_collection_response::SchemaError>,
@@ -639,10 +636,7 @@ pub mod collection {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct ListCollectionsResponse {
-        #[prost(
-            enumeration = "list_collections_response::ErrorCode",
-            tag = "1"
-        )]
+        #[prost(enumeration = "list_collections_response::ErrorCode", tag = "1")]
         pub error_code: i32,
         #[prost(string, repeated, tag = "2")]
         pub collections: ::std::vec::Vec<String>,
@@ -665,10 +659,7 @@ pub mod database {
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct CreateDatabaseResponse {
-        #[prost(
-            enumeration = "create_database_response::ErrorCode",
-            tag = "1"
-        )]
+        #[prost(enumeration = "create_database_response::ErrorCode", tag = "1")]
         pub error_code: i32,
     }
     pub mod create_database_response {
@@ -683,10 +674,7 @@ pub mod database {
     pub struct ListDatabasesRequest {}
     #[derive(Clone, PartialEq, Message)]
     pub struct ListDatabasesResponse {
-        #[prost(
-            enumeration = "list_databases_response::ErrorCode",
-            tag = "1"
-        )]
+        #[prost(enumeration = "list_databases_response::ErrorCode", tag = "1")]
         pub error_code: i32,
         #[prost(string, repeated, tag = "2")]
         pub databases: ::std::vec::Vec<String>,

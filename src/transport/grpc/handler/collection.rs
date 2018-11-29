@@ -46,7 +46,8 @@ impl Handler {
                 db.create_collection(
                     &request.get_ref().name,
                     &request.get_ref().schema.clone().unwrap(),
-                ).map_err(|err| match err {
+                )
+                .map_err(|err| match err {
                     errors::database::CreateCollectionError::CollectionExists => {
                         create_collection_err!(CollectionExists, None)
                     }
@@ -75,10 +76,12 @@ impl Handler {
                         }
                     },
                 })
-            }).and(Ok(collection::CreateCollectionResponse {
+            })
+            .and(Ok(collection::CreateCollectionResponse {
                 error_code: collection::create_collection_response::ErrorCode::NoError as i32,
                 schema_error: None,
-            })).unwrap_or_else(
+            }))
+            .unwrap_or_else(
                 |(error_code, schema_error)| collection::CreateCollectionResponse {
                     error_code: error_code as i32,
                     schema_error,
@@ -100,7 +103,8 @@ impl Handler {
                     error_code: collection::list_collections_response::ErrorCode::NoError as i32,
                     collections: db.list_collections(),
                 })
-            }).unwrap_or_else(|error_code| collection::ListCollectionsResponse {
+            })
+            .unwrap_or_else(|error_code| collection::ListCollectionsResponse {
                 error_code: error_code as i32,
                 collections: Vec::new(),
             })
@@ -166,10 +170,12 @@ impl Handler {
             .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
                 db.get_collection_entry(&request.get_ref().collection)
                     .ok_or(collection::find_object_response::ErrorCode::InvalidCollection)
-            }).and_then(|collection: Arc<dyn CollectionCatalogEntry>| {
+            })
+            .and_then(|collection: Arc<dyn CollectionCatalogEntry>| {
                 // FIXME: handle object error
                 Ok(collection.find_object(request.get_ref().id).unwrap())
-            }).and_then(|object: Option<Vec<u8>>| {
+            })
+            .and_then(|object: Option<Vec<u8>>| {
                 Ok(match object {
                     Some(object) => collection::FindObjectResponse {
                         error_code: collection::find_object_response::ErrorCode::NoError as i32,
@@ -180,7 +186,8 @@ impl Handler {
                         object: vec![],
                     },
                 })
-            }).unwrap_or_else(|error_code| collection::FindObjectResponse {
+            })
+            .unwrap_or_else(|error_code| collection::FindObjectResponse {
                 error_code: error_code as i32,
                 object: vec![],
             })

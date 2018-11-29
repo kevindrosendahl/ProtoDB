@@ -136,7 +136,8 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
                     .iter()
                     .map(|(k, v)| (k.as_bytes(), v.as_slice()))
                     .collect(),
-            ).map_err(|err| err.into())
+            )
+            .map_err(|err| err.into())
     }
 }
 
@@ -232,9 +233,12 @@ impl Iterator for FindAllDecoded {
             }
 
             let (key, value) = next.unwrap();
-            let (id, tag) = self.collection.key_generator.parts_from_key(&String::from_utf8(key).unwrap());
+            let (id, tag) = self
+                .collection
+                .key_generator
+                .parts_from_key(&String::from_utf8(key).unwrap());
 
-            let info =   self.collection.schema.fields.get(&tag);
+            let info = self.collection.schema.fields.get(&tag);
             if info.is_none() {
                 continue;
             }

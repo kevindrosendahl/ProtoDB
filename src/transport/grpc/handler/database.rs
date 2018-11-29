@@ -16,7 +16,8 @@ impl Handler {
             .create_database(&request.get_ref().name)
             .and(Ok(database::CreateDatabaseResponse {
                 error_code: database::create_database_response::ErrorCode::NoError as i32,
-            })).unwrap_or_else(|err| {
+            }))
+            .unwrap_or_else(|err| {
                 let error_code = match err {
                     errors::database::CreateDatabaseError::DatabaseExists => {
                         database::create_database_response::ErrorCode::DatabaseExists
