@@ -7,6 +7,7 @@ pub mod server {
     use super::database;
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
+        RunWasmRequest, RunWasmResponse,
     };
     use tower_grpc::codegen::server::*;
 
@@ -47,6 +48,10 @@ pub mod server {
             Item = grpc::Response<collection::FindObjectResponse>,
             Error = grpc::Error,
         >;
+        type RunWasmFuture: futures::Future<
+            Item = grpc::Response<database::RunWasmResponse>,
+            Error = grpc::Error,
+        >;
 
         fn create_database(
             &mut self,
@@ -77,6 +82,11 @@ pub mod server {
             &mut self,
             request: grpc::Request<collection::FindObjectRequest>,
         ) -> Self::FindObjectFuture;
+
+        fn run_wasm(
+            &mut self,
+            request: grpc::Request<database::RunWasmRequest>,
+        ) -> Self::RunWasmFuture;
     }
 
     #[derive(Debug, Clone)]
@@ -152,6 +162,13 @@ pub mod server {
                         kind: Ok(FindObject(response)),
                     }
                 }
+                "/protodb.ProtoDB/RunWasm" => {
+                    let service = proto_db::methods::RunWasm(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(RunWasm(response)),
+                    }
+                }
                 _ => proto_db::ResponseFuture {
                     kind: Err(grpc::Status::UNIMPLEMENTED),
                 },
@@ -191,6 +208,7 @@ pub mod server {
                     grpc::unary::ResponseFuture<methods::ListCollections<T>, tower_h2::RecvBody>,
                     grpc::unary::ResponseFuture<methods::InsertObject<T>, tower_h2::RecvBody>,
                     grpc::unary::ResponseFuture<methods::FindObject<T>, tower_h2::RecvBody>,
+                    grpc::unary::ResponseFuture<methods::RunWasm<T>, tower_h2::RecvBody>,
                 >,
                 grpc::Status,
             >,
@@ -261,6 +279,15 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
+                    Ok(RunWasm(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(RunWasm(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
                     Err(ref status) => {
                         let body = ResponseBody {
                             kind: Err(status.clone()),
@@ -305,6 +332,9 @@ pub mod server {
                     grpc::Encode<
                         grpc::unary::Once<<methods::FindObject<T> as grpc::UnaryService>::Response>,
                     >,
+                    grpc::Encode<
+                        grpc::unary::Once<<methods::RunWasm<T> as grpc::UnaryService>::Response>,
+                    >,
                 >,
                 grpc::Status,
             >,
@@ -326,6 +356,7 @@ pub mod server {
                     Ok(ListCollections(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
+                    Ok(RunWasm(ref v)) => v.is_end_stream(),
                     Err(_) => true,
                 }
             }
@@ -340,6 +371,7 @@ pub mod server {
                     Ok(ListCollections(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
+                    Ok(RunWasm(ref mut v)) => v.poll_data(),
                     Err(_) => Ok(None.into()),
                 }
             }
@@ -354,6 +386,7 @@ pub mod server {
                     Ok(ListCollections(ref mut v)) => v.poll_trailers(),
                     Ok(InsertObject(ref mut v)) => v.poll_trailers(),
                     Ok(FindObject(ref mut v)) => v.poll_trailers(),
+                    Ok(RunWasm(ref mut v)) => v.poll_trailers(),
                     Err(ref status) => {
                         let mut map = http::HeaderMap::new();
                         map.insert("grpc-status", status.to_header_value());
@@ -371,6 +404,7 @@ pub mod server {
             ListCollections,
             InsertObject,
             FindObject,
+            RunWasm,
         > {
             CreateDatabase(CreateDatabase),
             ListDatabases(ListDatabases),
@@ -378,6 +412,7 @@ pub mod server {
             ListCollections(ListCollections),
             InsertObject(InsertObject),
             FindObject(FindObject),
+            RunWasm(RunWasm),
         }
 
         pub mod methods {
@@ -390,7 +425,7 @@ pub mod server {
             use super::super::database;
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
-                ListDatabasesResponse,
+                ListDatabasesResponse, RunWasmRequest, RunWasmResponse,
             };
             use super::super::ProtoDb;
             use tower_grpc::codegen::server::*;
@@ -512,6 +547,26 @@ pub mod server {
 
                 fn call(&mut self, request: Self::Request) -> Self::Future {
                     self.0.find_object(request)
+                }
+            }
+
+            pub struct RunWasm<T>(pub T);
+
+            impl<T> tower::Service for RunWasm<T>
+            where
+                T: ProtoDb,
+            {
+                type Request = grpc::Request<database::RunWasmRequest>;
+                type Response = grpc::Response<database::RunWasmResponse>;
+                type Error = grpc::Error;
+                type Future = T::RunWasmFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(&mut self, request: Self::Request) -> Self::Future {
+                    self.0.run_wasm(request)
                 }
             }
         }
@@ -685,6 +740,26 @@ pub mod database {
             NoError = 0,
             InternalError = 1,
         }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct RunWasmRequest {
+        #[prost(bytes, tag = "1")]
+        pub wasm: Vec<u8>,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct RunWasmResponse {
+        #[prost(bytes, tag = "1")]
+        pub result: Vec<u8>,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct RegisterWasmModuleRequest {
+        #[prost(bytes, tag = "1")]
+        pub wasm: Vec<u8>,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct RegisterWasmModuleResponse {
+        #[prost(bytes, tag = "1")]
+        pub result: Vec<u8>,
     }
 
 }

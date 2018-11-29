@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from protodb.database.create_pb2 import CreateDatabaseResponse
 from protodb.database.list_pb2 import ListDatabasesResponse
 from protodb.collection.create_pb2 import CreateCollectionResponse
@@ -31,6 +29,8 @@ def main():
     find_user(client, 1)
     find_user(client, 2)
     find_user(client, 3)
+
+    run_wasm(client)
 
 
 def create_database(client):
@@ -113,15 +113,22 @@ def find_user(client, id):
     if response.error_code == FindObjectResponse.NO_ERROR:
         user = User()
         user.ParseFromString(response.object)
-        print("found user {}:".format(id))
-        print("  id: {}".format(user.id))
-        print("  first name: {}".format(user.first_name))
-        print("  last name: {}".format(user.last_name))
-        print("  age: {}".format(user.age))
+        print('found user {}:'.format(id))
+        print('  id: {}'.format(user.id))
+        print('  first name: {}'.format(user.first_name))
+        print('  last name: {}'.format(user.last_name))
+        print('  age: {}'.format(user.age))
         return
 
     error_code_str = FindObjectResponse.ErrorCode.Name(response.error_code)
     print('find user failed: ' + error_code_str)
+
+
+def run_wasm(client):
+    print('\nrunning wasm')
+    response = client.run_wasm()
+
+    print('got response: {}'.format(response))
 
 
 if __name__ == '__main__':

@@ -1,7 +1,10 @@
 use super::super::generated::protodb::database;
 use super::Handler;
 
-use crate::catalog::errors;
+use crate::{
+    catalog::errors,
+    wasm::{Interpreter, ProtoDBModule, ProtoDBModuleImportHashes},
+};
 
 use tower_grpc::Request;
 
@@ -40,5 +43,22 @@ impl Handler {
             error_code: database::list_databases_response::ErrorCode::NoError as i32,
             databases: self.storage_engine.clone().catalog().list_databases(),
         }
+    }
+
+    pub(crate) fn handle_run_wasm(
+        &mut self,
+        request: &Request<database::RunWasmRequest>,
+    ) -> database::RunWasmResponse {
+        let interpreter = Interpreter;
+        let module = ProtoDBModule::new(
+            request.get_ref().wasm.clone(),
+            "./wasm".to_string(),
+            ProtoDBModuleImportHashes {
+                log: "12af4e1f5b304c40".to_string(),
+                get_object: "040647ba797ee833".to_string(),
+            },
+        );
+        let result = interpreter.run(&module, self.storage_engine.clone());
+        database::RunWasmResponse { result }
     }
 }

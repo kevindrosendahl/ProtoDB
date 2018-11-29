@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package protodb.database;
+
+import "google/protobuf/descriptor.proto";
+
+message RunWasmRequest {
+    bytes wasm = 1;
+}
+
+message RunWasmResponse {
+    bytes result = 1;
+}

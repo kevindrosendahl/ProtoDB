@@ -8,6 +8,7 @@ import "protodb/collection/insert_object.proto";
 import "protodb/collection/list.proto";
 import "protodb/database/create.proto";
 import "protodb/database/list.proto";
+import "protodb/database/run_wasm.proto";
 
 service ProtoDB {
     rpc CreateDatabase (protodb.database.CreateDatabaseRequest) returns (protodb.database.CreateDatabaseResponse);
@@ -17,4 +18,6 @@ service ProtoDB {
     rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
     rpc InsertObject (protodb.collection.InsertObjectRequest) returns (protodb.collection.InsertObjectResponse);
     rpc FindObject (protodb.collection.FindObjectRequest) returns (protodb.collection.FindObjectResponse);
+
+    rpc RunWasm(protodb.database.RunWasmRequest) returns (protodb.database.RunWasmResponse);
 }

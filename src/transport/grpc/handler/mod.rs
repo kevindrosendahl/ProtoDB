@@ -16,14 +16,12 @@ use tower_grpc::{Request, Response};
 
 #[derive(Clone)]
 pub struct Handler {
-    storage_engine: Arc<Box<dyn StorageEngine>>,
+    storage_engine: Arc<dyn StorageEngine>,
 }
 
 impl Handler {
-    pub fn new(storage_engine: Box<dyn StorageEngine>) -> Handler {
-        Handler {
-            storage_engine: Arc::new(storage_engine),
-        }
+    pub fn new(storage_engine: Arc<dyn StorageEngine>) -> Handler {
+        Handler { storage_engine }
     }
 }
 
@@ -96,5 +94,14 @@ impl protodb::server::ProtoDb for Handler {
         FindObjectFuture,
         protodb_collection::FindObjectRequest,
         protodb_collection::FindObjectResponse
+    );
+
+    method_handler!(
+        "run wasm",
+        run_wasm,
+        handle_run_wasm,
+        RunWasmFuture,
+        protodb_database::RunWasmRequest,
+        protodb_database::RunWasmResponse
     );
 }

@@ -7,6 +7,7 @@ from protodb.collection import insert_object_pb2 as protodb_dot_collection_dot_i
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
+from protodb.database import run_wasm_pb2 as protodb_dot_database_dot_run__wasm__pb2
 
 
 class ProtoDBStub(object):
@@ -48,6 +49,11 @@ class ProtoDBStub(object):
         '/protodb.ProtoDB/FindObject',
         request_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.FromString,
+        )
+    self.RunWasm = channel.unary_unary(
+        '/protodb.ProtoDB/RunWasm',
+        request_serializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmRequest.SerializeToString,
+        response_deserializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmResponse.FromString,
         )
 
 
@@ -97,6 +103,13 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def RunWasm(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
 
 def add_ProtoDBServicer_to_server(servicer, server):
   rpc_method_handlers = {
@@ -129,6 +142,11 @@ def add_ProtoDBServicer_to_server(servicer, server):
           servicer.FindObject,
           request_deserializer=protodb_dot_collection_dot_find__object__pb2.FindObjectRequest.FromString,
           response_serializer=protodb_dot_collection_dot_find__object__pb2.FindObjectResponse.SerializeToString,
+      ),
+      'RunWasm': grpc.unary_unary_rpc_method_handler(
+          servicer.RunWasm,
+          request_deserializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmRequest.FromString,
+          response_serializer=protodb_dot_database_dot_run__wasm__pb2.RunWasmResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(
