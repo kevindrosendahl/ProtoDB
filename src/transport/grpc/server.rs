@@ -30,7 +30,7 @@ impl Server {
 
         let serve = bind
             .incoming()
-            .fold((h2, reactor), |(h2, reactor), (sock, _)| {
+            .fold((h2, reactor), |(mut h2, reactor), (sock, _)| {
                 if let Err(e) = sock.set_nodelay(true) {
                     return Err(e);
                 }

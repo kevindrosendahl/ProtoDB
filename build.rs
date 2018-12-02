@@ -58,9 +58,11 @@ fn fix_generated_grpc(subdirectories: &Vec<&str>) {
     assert_eq!(split.len(), 4);
 
     let second = insert_imports(split[1].to_string(), subdirectories, 1);
-    let fourth = insert_imports(split[3].to_string(), subdirectories, 2);
+    let third = insert_imports(split[2].to_string(), subdirectories, 2);
+    let fourth = insert_imports(split[3].to_string(), subdirectories, 3);
 
-    let sections = vec![split[0].to_string(), second, split[2].to_string(), fourth];
+//    let sections = vec![split[0].to_string(), second, split[2].to_string(), fourth];
+    let sections = vec![split[0].to_string(), second, third, fourth];
     let mut fixed = sections.join(split_pattern);
 
     for dir in subdirectories.iter() {

@@ -115,11 +115,10 @@ pub mod server {
         }
     }
 
-    impl<T> tower::Service for ProtoDbServer<T>
+    impl<T> tower::Service<http::Request<grpc::BoxBody>> for ProtoDbServer<T>
     where
         T: ProtoDb,
     {
-        type Request = http::Request<tower_h2::RecvBody>;
         type Response = http::Response<proto_db::ResponseBody<T>>;
         type Error = h2::Error;
         type Future = proto_db::ResponseFuture<T>;
@@ -128,7 +127,7 @@ pub mod server {
             Ok(().into())
         }
 
-        fn call(&mut self, request: Self::Request) -> Self::Future {
+        fn call(&mut self, request: http::Request<grpc::BoxBody>) -> Self::Future {
             use self::proto_db::Kind::*;
 
             match request.uri().path() {
@@ -189,29 +188,56 @@ pub mod server {
                     }
                 }
                 _ => proto_db::ResponseFuture {
-                    kind: Err(grpc::Status::UNIMPLEMENTED),
+                    kind: Err(grpc::Status::with_code(grpc::Code::Unimplemented)),
                 },
             }
         }
     }
 
-    impl<T> tower::NewService for ProtoDbServer<T>
+    impl<T> tower::Service<()> for ProtoDbServer<T>
     where
         T: ProtoDb,
     {
-        type Request = http::Request<tower_h2::RecvBody>;
-        type Response = http::Response<proto_db::ResponseBody<T>>;
+        type Response = Self;
         type Error = h2::Error;
-        type Service = Self;
-        type InitError = h2::Error;
-        type Future = futures::FutureResult<Self::Service, Self::Error>;
+        type Future = futures::FutureResult<Self::Response, Self::Error>;
 
-        fn new_service(&self) -> Self::Future {
+        fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+            Ok(futures::Async::Ready(()))
+        }
+
+        fn call(&mut self, _target: ()) -> Self::Future {
             futures::ok(self.clone())
         }
     }
 
+    impl<T> tower::Service<http::Request<tower_h2::RecvBody>> for ProtoDbServer<T>
+    where
+        T: ProtoDb,
+    {
+        type Response = <Self as tower::Service<http::Request<grpc::BoxBody>>>::Response;
+        type Error = <Self as tower::Service<http::Request<grpc::BoxBody>>>::Error;
+        type Future = <Self as tower::Service<http::Request<grpc::BoxBody>>>::Future;
+
+        fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+            tower::Service::<http::Request<grpc::BoxBody>>::poll_ready(self)
+        }
+
+        fn call(&mut self, request: http::Request<tower_h2::RecvBody>) -> Self::Future {
+            let request = request.map(|b| grpc::BoxBody::new(Box::new(b)));
+            tower::Service::<http::Request<grpc::BoxBody>>::call(self, request)
+        }
+    }
+
     pub mod proto_db {
+        use super::super::collection;
+        use super::super::collection::{
+            CreateCollectionRequest, FindObjectRequest, InsertObjectRequest, ListCollectionsRequest,
+        };
+        use super::super::database;
+        use super::super::database::{CreateDatabaseRequest, ListDatabasesRequest};
+        use super::super::wasm;
+        use super::super::wasm::{RegisterModuleRequest, RunModuleRequest};
         use super::ProtoDb;
         use tower_grpc::codegen::server::*;
 
@@ -221,14 +247,46 @@ pub mod server {
         {
             pub(super) kind: Result<
                 Kind<
-                    grpc::unary::ResponseFuture<methods::CreateDatabase<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::ListDatabases<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::CreateCollection<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::ListCollections<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::InsertObject<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::FindObject<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::RegisterWasmModule<T>, tower_h2::RecvBody>,
-                    grpc::unary::ResponseFuture<methods::RunWasmModule<T>, tower_h2::RecvBody>,
+                    grpc::unary::ResponseFuture<
+                        methods::CreateDatabase<T>,
+                        grpc::BoxBody,
+                        database::CreateDatabaseRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::ListDatabases<T>,
+                        grpc::BoxBody,
+                        database::ListDatabasesRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::CreateCollection<T>,
+                        grpc::BoxBody,
+                        collection::CreateCollectionRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::ListCollections<T>,
+                        grpc::BoxBody,
+                        collection::ListCollectionsRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::InsertObject<T>,
+                        grpc::BoxBody,
+                        collection::InsertObjectRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::FindObject<T>,
+                        grpc::BoxBody,
+                        collection::FindObjectRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::RegisterWasmModule<T>,
+                        grpc::BoxBody,
+                        wasm::RegisterModuleRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::RunWasmModule<T>,
+                        grpc::BoxBody,
+                        wasm::RunModuleRequest,
+                    >,
                 >,
                 grpc::Status,
             >,
@@ -335,40 +393,58 @@ pub mod server {
                 Kind<
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::CreateDatabase<T> as grpc::UnaryService>::Response,
+                            <methods::CreateDatabase<T> as grpc::UnaryService<
+                                database::CreateDatabaseRequest,
+                            >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::ListDatabases<T> as grpc::UnaryService>::Response,
+                            <methods::ListDatabases<T> as grpc::UnaryService<
+                                database::ListDatabasesRequest,
+                            >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::CreateCollection<T> as grpc::UnaryService>::Response,
+                            <methods::CreateCollection<T> as grpc::UnaryService<
+                                collection::CreateCollectionRequest,
+                            >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::ListCollections<T> as grpc::UnaryService>::Response,
+                            <methods::ListCollections<T> as grpc::UnaryService<
+                                collection::ListCollectionsRequest,
+                            >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::InsertObject<T> as grpc::UnaryService>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<<methods::FindObject<T> as grpc::UnaryService>::Response>,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::RegisterWasmModule<T> as grpc::UnaryService>::Response,
+                            <methods::InsertObject<T> as grpc::UnaryService<
+                                collection::InsertObjectRequest,
+                            >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::RunWasmModule<T> as grpc::UnaryService>::Response,
+                            <methods::FindObject<T> as grpc::UnaryService<
+                                collection::FindObjectRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::RegisterWasmModule<T> as grpc::UnaryService<
+                                wasm::RegisterModuleRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::RunWasmModule<T> as grpc::UnaryService<
+                                wasm::RunModuleRequest,
+                            >>::Response,
                         >,
                     >,
                 >,
@@ -376,7 +452,7 @@ pub mod server {
             >,
         }
 
-        impl<T> tower_h2::Body for ResponseBody<T>
+        impl<T> grpc::Body for ResponseBody<T>
         where
             T: ProtoDb,
         {
@@ -398,7 +474,7 @@ pub mod server {
                 }
             }
 
-            fn poll_data(&mut self) -> futures::Poll<Option<Self::Data>, h2::Error> {
+            fn poll_data(&mut self) -> futures::Poll<Option<Self::Data>, grpc::Error> {
                 use self::Kind::*;
 
                 match self.kind {
@@ -414,24 +490,39 @@ pub mod server {
                 }
             }
 
-            fn poll_trailers(&mut self) -> futures::Poll<Option<http::HeaderMap>, h2::Error> {
+            fn poll_metadata(&mut self) -> futures::Poll<Option<http::HeaderMap>, grpc::Error> {
                 use self::Kind::*;
 
                 match self.kind {
-                    Ok(CreateDatabase(ref mut v)) => v.poll_trailers(),
-                    Ok(ListDatabases(ref mut v)) => v.poll_trailers(),
-                    Ok(CreateCollection(ref mut v)) => v.poll_trailers(),
-                    Ok(ListCollections(ref mut v)) => v.poll_trailers(),
-                    Ok(InsertObject(ref mut v)) => v.poll_trailers(),
-                    Ok(FindObject(ref mut v)) => v.poll_trailers(),
-                    Ok(RegisterWasmModule(ref mut v)) => v.poll_trailers(),
-                    Ok(RunWasmModule(ref mut v)) => v.poll_trailers(),
-                    Err(ref status) => {
-                        let mut map = http::HeaderMap::new();
-                        map.insert("grpc-status", status.to_header_value());
-                        Ok(Some(map).into())
-                    }
+                    Ok(CreateDatabase(ref mut v)) => v.poll_metadata(),
+                    Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
+                    Ok(CreateCollection(ref mut v)) => v.poll_metadata(),
+                    Ok(ListCollections(ref mut v)) => v.poll_metadata(),
+                    Ok(InsertObject(ref mut v)) => v.poll_metadata(),
+                    Ok(FindObject(ref mut v)) => v.poll_metadata(),
+                    Ok(RegisterWasmModule(ref mut v)) => v.poll_metadata(),
+                    Ok(RunWasmModule(ref mut v)) => v.poll_metadata(),
+                    Err(ref status) => status.to_header_map().map(Some).map(Into::into),
                 }
+            }
+        }
+
+        impl<T> tower_h2::Body for ResponseBody<T>
+        where
+            T: ProtoDb,
+        {
+            type Data = bytes::Bytes;
+
+            fn is_end_stream(&self) -> bool {
+                grpc::Body::is_end_stream(self)
+            }
+
+            fn poll_data(&mut self) -> futures::Poll<Option<Self::Data>, h2::Error> {
+                grpc::Body::poll_data(self).map_err(h2::Error::from)
+            }
+
+            fn poll_trailers(&mut self) -> futures::Poll<Option<http::HeaderMap>, h2::Error> {
+                grpc::Body::poll_metadata(self).map_err(h2::Error::from)
             }
         }
 
@@ -457,18 +548,18 @@ pub mod server {
         }
 
         pub mod methods {
-            use super::super::collection;
+            use super::super::super::collection;
+            use super::super::super::database;
+            use super::super::super::wasm;
             use super::super::collection::{
                 CreateCollectionRequest, CreateCollectionResponse, FindObjectRequest,
                 FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
                 ListCollectionsRequest, ListCollectionsResponse,
             };
-            use super::super::database;
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
                 ListDatabasesResponse,
             };
-            use super::super::wasm;
             use super::super::wasm::{
                 RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
             };
@@ -477,11 +568,10 @@ pub mod server {
 
             pub struct CreateDatabase<T>(pub T);
 
-            impl<T> tower::Service for CreateDatabase<T>
+            impl<T> tower::Service<grpc::Request<database::CreateDatabaseRequest>> for CreateDatabase<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<database::CreateDatabaseRequest>;
                 type Response = grpc::Response<database::CreateDatabaseResponse>;
                 type Error = grpc::Error;
                 type Future = T::CreateDatabaseFuture;
@@ -490,18 +580,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<database::CreateDatabaseRequest>,
+                ) -> Self::Future {
                     self.0.create_database(request)
                 }
             }
 
             pub struct ListDatabases<T>(pub T);
 
-            impl<T> tower::Service for ListDatabases<T>
+            impl<T> tower::Service<grpc::Request<database::ListDatabasesRequest>> for ListDatabases<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<database::ListDatabasesRequest>;
                 type Response = grpc::Response<database::ListDatabasesResponse>;
                 type Error = grpc::Error;
                 type Future = T::ListDatabasesFuture;
@@ -510,18 +602,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<database::ListDatabasesRequest>,
+                ) -> Self::Future {
                     self.0.list_databases(request)
                 }
             }
 
             pub struct CreateCollection<T>(pub T);
 
-            impl<T> tower::Service for CreateCollection<T>
+            impl<T> tower::Service<grpc::Request<collection::CreateCollectionRequest>> for CreateCollection<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<collection::CreateCollectionRequest>;
                 type Response = grpc::Response<collection::CreateCollectionResponse>;
                 type Error = grpc::Error;
                 type Future = T::CreateCollectionFuture;
@@ -530,18 +624,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::CreateCollectionRequest>,
+                ) -> Self::Future {
                     self.0.create_collection(request)
                 }
             }
 
             pub struct ListCollections<T>(pub T);
 
-            impl<T> tower::Service for ListCollections<T>
+            impl<T> tower::Service<grpc::Request<collection::ListCollectionsRequest>> for ListCollections<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<collection::ListCollectionsRequest>;
                 type Response = grpc::Response<collection::ListCollectionsResponse>;
                 type Error = grpc::Error;
                 type Future = T::ListCollectionsFuture;
@@ -550,18 +646,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::ListCollectionsRequest>,
+                ) -> Self::Future {
                     self.0.list_collections(request)
                 }
             }
 
             pub struct InsertObject<T>(pub T);
 
-            impl<T> tower::Service for InsertObject<T>
+            impl<T> tower::Service<grpc::Request<collection::InsertObjectRequest>> for InsertObject<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<collection::InsertObjectRequest>;
                 type Response = grpc::Response<collection::InsertObjectResponse>;
                 type Error = grpc::Error;
                 type Future = T::InsertObjectFuture;
@@ -570,18 +668,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::InsertObjectRequest>,
+                ) -> Self::Future {
                     self.0.insert_object(request)
                 }
             }
 
             pub struct FindObject<T>(pub T);
 
-            impl<T> tower::Service for FindObject<T>
+            impl<T> tower::Service<grpc::Request<collection::FindObjectRequest>> for FindObject<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<collection::FindObjectRequest>;
                 type Response = grpc::Response<collection::FindObjectResponse>;
                 type Error = grpc::Error;
                 type Future = T::FindObjectFuture;
@@ -590,18 +690,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::FindObjectRequest>,
+                ) -> Self::Future {
                     self.0.find_object(request)
                 }
             }
 
             pub struct RegisterWasmModule<T>(pub T);
 
-            impl<T> tower::Service for RegisterWasmModule<T>
+            impl<T> tower::Service<grpc::Request<wasm::RegisterModuleRequest>> for RegisterWasmModule<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<wasm::RegisterModuleRequest>;
                 type Response = grpc::Response<wasm::RegisterModuleResponse>;
                 type Error = grpc::Error;
                 type Future = T::RegisterWasmModuleFuture;
@@ -610,18 +712,20 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(
+                    &mut self,
+                    request: grpc::Request<wasm::RegisterModuleRequest>,
+                ) -> Self::Future {
                     self.0.register_wasm_module(request)
                 }
             }
 
             pub struct RunWasmModule<T>(pub T);
 
-            impl<T> tower::Service for RunWasmModule<T>
+            impl<T> tower::Service<grpc::Request<wasm::RunModuleRequest>> for RunWasmModule<T>
             where
                 T: ProtoDb,
             {
-                type Request = grpc::Request<wasm::RunModuleRequest>;
                 type Response = grpc::Response<wasm::RunModuleResponse>;
                 type Error = grpc::Error;
                 type Future = T::RunWasmModuleFuture;
@@ -630,7 +734,7 @@ pub mod server {
                     Ok(futures::Async::Ready(()))
                 }
 
-                fn call(&mut self, request: Self::Request) -> Self::Future {
+                fn call(&mut self, request: grpc::Request<wasm::RunModuleRequest>) -> Self::Future {
                     self.0.run_wasm_module(request)
                 }
             }
