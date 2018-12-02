@@ -4,19 +4,19 @@ use std::{env, fs, io::prelude::*, process::Command};
 fn main() {
     // Build protod
     let subdirectories = vec!["collection", "database", "wasm"];
-    let mut dirs: Vec<String> = vec!["./proto/protodb".to_string()];
+    let mut dirs: Vec<String> = vec!["../../proto/protodb".to_string()];
     dirs.extend::<Vec<String>>(
         subdirectories
             .iter()
-            .map(|d| format!("./proto/protodb/{}", d))
+            .map(|d| format!("../../proto/protodb/{}", d))
             .collect(),
     );
     let protos = read_protos_dirs(&dirs);
 
     tower_grpc_build::Config::new()
-        .enable_server(true)
-        .enable_client(false)
-        .build(&protos, &["proto".to_string()])
+        .enable_server(false)
+        .enable_client(true)
+        .build(&protos, &["../../proto".to_string()])
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 
     fix_generated_grpc(&subdirectories);
@@ -46,22 +46,22 @@ fn read_protos_dir(dir: String) -> Vec<String> {
         .collect()
 }
 
-// temporary hack to get around https://github.com/tower-rs/tower-grpc/issues/85
+//// temporary hack to get around https://github.com/tower-rs/tower-grpc/issues/85
 fn fix_generated_grpc(subdirectories: &Vec<&str>) {
     let out_dir = env::var("OUT_DIR").unwrap();
     let mut protodb_file = fs::File::open(format!("{}/protodb.rs", out_dir)).unwrap();
     let mut contents = String::new();
     protodb_file.read_to_string(&mut contents).unwrap();
 
-    let split_pattern = "use ::tower_grpc::codegen::server::*;";
+    println!("{:?}", contents);
+
+    let split_pattern = "use ::tower_grpc::codegen::client::*;";
     let split: Vec<&str> = contents.split(split_pattern).collect();
-    assert_eq!(split.len(), 4);
+    assert_eq!(split.len(), 2);
 
     let second = insert_imports(split[1].to_string(), subdirectories, 1);
-    let third = insert_imports(split[2].to_string(), subdirectories, 2);
-    let fourth = insert_imports(split[3].to_string(), subdirectories, 3);
 
-    let sections = vec![split[0].to_string(), second, third, fourth];
+    let sections = vec![split[0].to_string(), second];
     let mut fixed = sections.join(split_pattern);
 
     for dir in subdirectories.iter() {

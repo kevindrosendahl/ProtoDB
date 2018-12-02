@@ -14,6 +14,6 @@ pub fn main() {
     let handler = Handler::new(Arc::new(storage_engine.unwrap_or_else(|err| {
         panic!(format!("error initializing RocksDB database: {}", err));
     })));
-    let server = Server::new("127.0.0.1:10000".parse().unwrap(), handler);
+    let server = Server::new("[::1]:10000".parse().unwrap(), handler);
     server.run();
 }
