@@ -61,18 +61,9 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         self.indexes.clone()
     }
 
-    fn find_all(
-        &self,
-    ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
+    fn find_all(&self) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
         Box::new(FindAll::new(self.clone()))
             as Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>
-    }
-
-    fn find_all_decoded(
-        &self,
-    ) -> Box<dyn Iterator<Item = Result<DecodedObject, InternalStorageEngineError>>> {
-        Box::new(FindAllDecoded::new(self.clone()))
-            as Box<dyn Iterator<Item = Result<DecodedObject, InternalStorageEngineError>>>
     }
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
@@ -226,7 +217,7 @@ impl FindAll {
         end.push(delimiter_byte + 1);
 
         let kv_store = collection.kv_store.clone();
-        FindAll{
+        FindAll {
             inner: kv_store.bounded_prefix_iterator(&start.into_bytes(), &end),
             collection,
             curr_id: 0,
@@ -259,9 +250,7 @@ impl Iterator for FindAll {
                 }
 
                 // Otherwise return the object.
-                let object = self
-                    .curr_object
-                    .replace(Vec::new());
+                let object = self.curr_object.replace(Vec::new());
                 return Some(Ok(object));
             }
 
@@ -285,9 +274,7 @@ impl Iterator for FindAll {
                 None
             } else {
                 self.curr_id = id;
-                let object = self
-                    .curr_object
-                    .replace(Vec::new());
+                let object = self.curr_object.replace(Vec::new());
                 Some(object)
             };
 
@@ -302,117 +289,3 @@ impl Iterator for FindAll {
     }
 }
 
-
-struct FindAllDecoded {
-    inner: Box<dyn Iterator<Item = KVStoreBytes>>,
-
-    // should probably take a reference to the collection,
-    // but cloning the KVCollectionCatalogEntry shouldn't be _too_
-    // expensive and should be fine since most of its important members are Arcs,
-    // and easier for now than getting the lifetime right (if possible)
-    collection: KVCollectionCatalogEntry,
-
-    curr_id: u64,
-    curr_builder: RefCell<DecodedObjectBuilder>,
-
-    done: bool,
-}
-
-impl FindAllDecoded {
-    fn new(collection: KVCollectionCatalogEntry) -> Self {
-        let start = collection.key_generator.key_prefix();
-        let mut end = start.clone().into_bytes();
-        let delimiter_byte = end.pop().unwrap();
-        end.push(delimiter_byte + 1);
-
-        let kv_store = collection.kv_store.clone();
-        let builder = collection.schema.decoded_object_builder();
-        FindAllDecoded {
-            inner: kv_store.bounded_prefix_iterator(&start.into_bytes(), &end),
-            collection,
-            curr_id: 0,
-            curr_builder: RefCell::new(builder),
-            done: false,
-        }
-    }
-}
-
-impl Iterator for FindAllDecoded {
-    type Item = Result<DecodedObject, InternalStorageEngineError>;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        // If this iterator was previously marked as done, simply return None.
-        if self.done {
-            return None;
-        }
-
-        // Loop over key/value pairs until you see a new id or the key/value iterator
-        // is extinguished, and return the built object if there was one once either
-        // of those conditions is met.
-        loop {
-            let next = self.inner.next();
-            if next.is_none() {
-                self.done = true;
-
-                // If we never started building an object, the collection is empty so return None.
-                if self.curr_id == 0 {
-                    return None;
-                }
-
-                // Otherwise build the final object and return it.
-                let builder = self
-                    .curr_builder
-                    .replace(self.collection.schema.decoded_object_builder());
-                return Some(Ok(builder.build()));
-            }
-
-            // Get the key/value information from the info returned by the iterator.
-            let (key, value) = next.unwrap();
-            let (id, tag) = self
-                .collection
-                .key_generator
-                .parts_from_key(&String::from_utf8(key).unwrap());
-
-            // If this is the first object we're seeing, set curr_id to its id.
-            if self.curr_id == 0 {
-                self.curr_id = id;
-            }
-
-            // If we're looking at a new object, create a new builder for the new object,
-            // and build the current object to return after updating the new builder with
-            // the info we're seeing here.
-            // Also update the curr_id to be the new object's id.
-            let returnable = if id == self.curr_id {
-                None
-            } else {
-                self.curr_id = id;
-                let builder = self
-                    .curr_builder
-                    .replace(self.collection.schema.decoded_object_builder());
-                self.curr_builder.borrow_mut().id(id);
-                Some(builder.build())
-            };
-
-            // If the tag isn't part of the schema, return the last object if this is a new id,
-            // otherwise continue on to the next field.
-            let info = self.collection.schema.fields.get(&tag);
-            if info.is_none() {
-                if let Some(object) = returnable {
-                    return Some(Ok(object));
-                }
-
-                continue;
-            }
-
-            // Update the builder with this field.
-            let (_, _, type_) = info.unwrap();
-            let value = Schema::decode_value(*type_, &value);
-            self.curr_builder.borrow_mut().field(tag, value).unwrap();
-
-            // If this iteration was a new id, return it.
-            if let Some(object) = returnable {
-                return Some(Ok(object));
-            }
-        }
-    }
-}
