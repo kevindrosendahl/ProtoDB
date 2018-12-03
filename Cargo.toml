@@ -34,6 +34,3 @@ wasmi="0.4.2"
 
 [build-dependencies]
 tower-grpc-build = { git = "https://github.com/tower-rs/tower-grpc" }
-
-[patch.crates-io]
-http = { git = "http://github.com/hyperium/http", rev = "5f362a32278891672f428d570d46387fe6896a5d" }
