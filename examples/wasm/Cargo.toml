@@ -1,12 +1,12 @@
 [package]
-name = "wasm"
+name = "protodb-example-wasm"
 version = "0.1.0"
 authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
 edition = "2018"
 
+[lib]
+crate-type = ["cdylib"]
+
 [dependencies]
 protodb-wasm = { path = '../../crates/wasm', version = '0.1' }
 wasm-bindgen = "0.2.28"
-
-[lib]
-crate-type = ["cdylib"]

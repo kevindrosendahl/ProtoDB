@@ -4,6 +4,14 @@ version = "0.1.0"
 authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
 edition = "2018"
 
+[workspace]
+members = [
+    "crates/protoctl",
+    "crates/wasm",
+
+    "examples/wasm",
+]
+
 [dependencies]
 bytes = "0.4"
 byteorder = "1.2"
