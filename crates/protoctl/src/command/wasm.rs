@@ -29,6 +29,9 @@ pub enum Wasm {
 
         #[structopt(name = "crate", parse(from_os_str))]
         crate_: PathBuf,
+
+        #[structopt(long = "package", short = "p")]
+        package: Option<String>,
     },
 
     #[structopt(name = "run")]
@@ -41,38 +44,50 @@ pub fn run_wasm(wasm: Wasm) {
             database,
             name,
             crate_,
-        } => register_module(database, name, crate_),
+            package,
+        } => register_module(database, name, crate_, package),
         Wasm::Run { database, name } => run_wasm_module(database, name),
     }
 }
 
-fn register_module(database: String, name: String, crate_: PathBuf) {
-    env::set_current_dir(crate_).unwrap();
+fn register_module(database: String, name: String, crate_: PathBuf, package: Option<String>) {
+    env::set_current_dir(crate_.clone()).unwrap();
+
+    let tmp = tempdir::TempDir::new("protoctl-register-wasm-module")
+        .unwrap();
+    let path = tmp.path();
 
     let mut cmd = Command::new(which::which("cargo").unwrap());
-    assert_eq!(
-        cmd.arg("build")
-            .arg("--target=wasm32-unknown-unknown")
-            .spawn()
-            .unwrap()
-            .wait()
-            .unwrap()
-            .success(),
-        true,
-    );
+    cmd.arg("build").arg("--target=wasm32-unknown-unknown");
 
-    // TODO: get this from Cargo.toml
-    let crate_name = "wasm";
-    let tmp = tempdir::TempDir::new("protoctl-register-wasm-module").unwrap();
+    let crate_name = match package {
+        Some(package) => {
+            cmd.arg(&format!("--package={}", package));
+            package
+        }
+        None => String::from(
+            crate_
+                .as_path()
+                .file_name()
+                .unwrap()
+                .to_os_string()
+                .into_string()
+                .unwrap(),
+        ),
+    };
+    let crate_name = crate_name.replace("-", "_");
+
+    assert_eq!(cmd.spawn().unwrap().wait().unwrap().success(), true,);
+
     let mut cmd = Command::new(which::which("wasm-bindgen").unwrap());
 
     assert_eq!(
         cmd.arg(&format!(
             "target/wasm32-unknown-unknown/debug/{}.wasm",
-            crate_name
+            crate_name,
         ))
         .arg("--out-dir")
-        .arg(tmp.path())
+        .arg(path)
         .spawn()
         .unwrap()
         .wait()
@@ -81,11 +96,11 @@ fn register_module(database: String, name: String, crate_: PathBuf) {
         true,
     );
 
-    let mut file = File::open(tmp.path().join(&format!("{}_bg.wasm", crate_name))).unwrap();
+    let mut file = File::open(path.join(&format!("{}_bg.wasm", crate_name))).unwrap();
     let mut wasm = Vec::new();
     file.read_to_end(&mut wasm).unwrap();
 
-    let mut file = File::open(tmp.path().join(&format!("{}.js", crate_name))).unwrap();
+    let mut file = File::open(path.join(&format!("{}.js", crate_name))).unwrap();
     let mut js = String::new();
     file.read_to_string(&mut js).unwrap();
 

@@ -14,4 +14,4 @@ impl Module for MyModule {
     }
 }
 
-protodb_wasm_module!(MyModule, MyModule{});
+protodb_wasm_module!(MyModule, MyModule {});
