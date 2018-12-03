@@ -1,4 +1,4 @@
-use super::generated::protodb;
+use super::generated::{protodb, protodb::wasm::register_module_request::ModuleMetadata};
 use super::{Client, ClientError};
 
 use futures::Future;
@@ -9,6 +9,7 @@ impl Client {
         &mut self,
         database: String,
         name: String,
+        metadata: ModuleMetadata,
         wasm: Vec<u8>,
     ) -> Result<protodb::wasm::RegisterModuleResponse, ClientError> {
         let request = self
@@ -16,6 +17,7 @@ impl Client {
             .register_wasm_module(Request::new(protodb::wasm::RegisterModuleRequest {
                 database,
                 name,
+                metadata: Some(metadata),
                 wasm,
             }))
             .and_then(|response| Ok(response.into_inner()));

@@ -9,8 +9,6 @@ from protodb.collection.create_pb2 import CreateCollectionRequest
 from protodb.collection.list_pb2 import ListCollectionsRequest
 from protodb.object.insert_pb2 import InsertObjectRequest
 from protodb.object.find_pb2 import FindObjectRequest
-from protodb.wasm.register_pb2 import RegisterModuleRequest
-from protodb.wasm.run_pb2 import RunModuleRequest
 
 
 class Client:

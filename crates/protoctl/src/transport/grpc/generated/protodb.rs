@@ -330,8 +330,28 @@ pub mod wasm {
         pub database: String,
         #[prost(string, tag = "2")]
         pub name: String,
-        #[prost(bytes, tag = "3")]
+        #[prost(message, optional, tag = "3")]
+        pub metadata: ::std::option::Option<register_module_request::ModuleMetadata>,
+        #[prost(bytes, tag = "4")]
         pub wasm: Vec<u8>,
+    }
+    pub mod register_module_request {
+        #[derive(Clone, PartialEq, Message)]
+        pub struct ModuleMetadata {
+            #[prost(string, tag = "1")]
+            pub name: String,
+            #[prost(message, optional, tag = "2")]
+            pub bindgen_import_hashes: ::std::option::Option<module_metadata::BindgenImportHashes>,
+        }
+        pub mod module_metadata {
+            #[derive(Clone, PartialEq, Message)]
+            pub struct BindgenImportHashes {
+                #[prost(string, tag = "1")]
+                pub log: String,
+                #[prost(string, tag = "2")]
+                pub find_object: String,
+            }
+        }
     }
     #[derive(Clone, PartialEq, Message)]
     pub struct RegisterModuleResponse {

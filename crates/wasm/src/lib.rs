@@ -10,26 +10,24 @@ pub trait Module {
 }
 
 pub trait ProtoDB {
-    fn get_object(&self, collection: &str, id: u64) -> Option<Vec<u8>>;
+    fn find_object(&self, collection: &str, id: u64) -> Option<Vec<u8>>;
 }
 
 #[wasm_bindgen]
 extern "C" {
     pub fn log(message: &str);
 
-    fn get_object(collection: &str, id: u64) -> Option<Vec<u8>>;
+    fn find_object(collection: &str, id: u64) -> Option<Vec<u8>>;
 }
 
 #[doc(hidden)]
 pub struct ProtoDBImpl;
 
 impl ProtoDB for ProtoDBImpl {
-    fn get_object(&self, collection: &str, id: u64) -> Option<Vec<u8>> {
-        log("in get object");
-        get_object(collection, id)
+    fn find_object(&self, collection: &str, id: u64) -> Option<Vec<u8>> {
+        find_object(collection, id)
     }
 }
-
 
 #[macro_export]
 macro_rules! protodb_wasm_module {
@@ -44,11 +42,8 @@ macro_rules! protodb_wasm_module {
 
 		#[wasm_bindgen]
 		pub fn run() -> Vec<u8> {
-		    log("getting impl");
 		    let protodb = protodb_wasm::ProtoDBImpl;
-		    log("got impl");
 			MODULE.with(|module_cell| {
-			    log("calling run");
 				module_cell.borrow_mut().run(protodb)
 			})
 		}

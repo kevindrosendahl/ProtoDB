@@ -15,12 +15,14 @@ impl Handler {
         &mut self,
         request: &Request<wasm::RegisterModuleRequest>,
     ) -> wasm::RegisterModuleResponse {
+        let metadata = request.get_ref().metadata.clone().unwrap();
+        let bindgen_import_hashes = metadata.bindgen_import_hashes.unwrap();
         let module = ProtoDBModule::new(
             request.get_ref().wasm.clone(),
-            "./wasm".to_string(),
+            metadata.name,
             ProtoDBModuleImportHashes {
-                log: "5a667b7fd4c3dac9".to_string(),
-                get_object: "fd5ad791f53a8133".to_string(),
+                log: bindgen_import_hashes.log,
+                find_object: bindgen_import_hashes.find_object,
             },
         );
         self.storage_engine

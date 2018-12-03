@@ -18,8 +18,8 @@ static RUN_EXPORT: &'static str = "run";
 // TODO: for some reason the match in the import resolver would always match THROW_IMPORT
 static THROW_IMPORT: &'static str = "__wbindgen_throw";
 const THROW_IMPORT_INDEX: usize = 0;
-static GET_OBJECT_IMPORT_PREFIX: &'static str = "__wbg_getobject_";
-const GET_OBJECT_IMPORT_INDEX: usize = 1;
+static FIND_OBJECT_IMPORT_PREFIX: &'static str = "__wbg_findobject_";
+const FIND_OBJECT_IMPORT_INDEX: usize = 1;
 static LOG_IMPORT_PREFIX: &'static str = "__wbg_log_";
 const LOG_IMPORT_INDEX: usize = 2;
 
@@ -42,7 +42,7 @@ impl ProtoDBModule {
 #[derive(Clone)]
 pub struct ProtoDBModuleImportHashes {
     pub log: String,
-    pub get_object: String,
+    pub find_object: String,
 }
 
 pub struct Interpreter {
@@ -216,7 +216,7 @@ impl Externals for ProtoDBExternals {
     ) -> Result<Option<RuntimeValue>, Trap> {
         match index {
             THROW_IMPORT_INDEX => panic!("something bad happened"),
-            GET_OBJECT_IMPORT_INDEX => {
+            FIND_OBJECT_IMPORT_INDEX => {
                 let ret: u32 = args.nth(0);
 
                 // Get collection name.
@@ -282,7 +282,7 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
             ));
         }
 
-        if field_name == format!("{}{}", GET_OBJECT_IMPORT_PREFIX, self.hashes.get_object) {
+        if field_name == format!("{}{}", FIND_OBJECT_IMPORT_PREFIX, self.hashes.find_object) {
             return Ok(FuncInstance::alloc_host(
                 Signature::new(
                     &[
@@ -294,7 +294,7 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
                     ][..],
                     None,
                 ),
-                GET_OBJECT_IMPORT_INDEX,
+                FIND_OBJECT_IMPORT_INDEX,
             ));
         }
 

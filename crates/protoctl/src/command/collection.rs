@@ -6,7 +6,7 @@ use std::process::Command;
 use crate::CLIENT;
 
 use prost::Message;
-use prost_types::{FileDescriptorSet};
+use prost_types::FileDescriptorSet;
 
 #[derive(Debug, StructOpt)]
 pub enum Collection {
@@ -31,8 +31,8 @@ pub enum Collection {
 pub fn run_collection(collection: Collection) {
     match collection {
         Collection::Create {
-            name,
             database,
+            name,
             schema_file,
             schema_message,
             includes,

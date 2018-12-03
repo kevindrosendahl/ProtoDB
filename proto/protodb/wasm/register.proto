@@ -5,7 +5,19 @@ package protodb.wasm;
 message RegisterModuleRequest {
     string database = 1;
     string name = 2;
-    bytes wasm = 3;
+
+    message ModuleMetadata {
+        string name = 1;
+
+        message BindgenImportHashes {
+            string log = 1;
+            string find_object = 2;
+        }
+        BindgenImportHashes bindgen_import_hashes = 2;
+    }
+    ModuleMetadata metadata = 3;
+
+    bytes wasm = 4;
 }
 
 message RegisterModuleResponse {
