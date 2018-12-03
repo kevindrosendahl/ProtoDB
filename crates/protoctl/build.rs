@@ -1,3 +1,4 @@
+extern crate prost_build;
 extern crate tower_grpc_build;
 use std::{env, fs, io::prelude::*, process::Command};
 
@@ -52,8 +53,6 @@ fn fix_generated_grpc(subdirectories: &Vec<&str>) {
     let mut protodb_file = fs::File::open(format!("{}/protodb.rs", out_dir)).unwrap();
     let mut contents = String::new();
     protodb_file.read_to_string(&mut contents).unwrap();
-
-    println!("{:?}", contents);
 
     let split_pattern = "use ::tower_grpc::codegen::client::*;";
     let split: Vec<&str> = contents.split(split_pattern).collect();

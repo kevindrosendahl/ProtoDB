@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package protodb.examples.user;
+
 message User {
      uint64 id = 1;
 
