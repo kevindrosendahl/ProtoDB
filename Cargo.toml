@@ -1,16 +1,8 @@
 [package]
 name = "protodb"
 version = "0.1.0"
-authors = ["kevindrosendahl"]
+authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
 edition = "2018"
-
-[lib]
-name = "libprotodb"
-path = "src/lib.rs"
-
-[[bin]]
-name = "protodb"
-path = "src/main.rs"
 
 [dependencies]
 bytes = "0.4"

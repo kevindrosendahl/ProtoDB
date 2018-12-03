@@ -1,13 +1,13 @@
+pub mod command;
+pub mod transport;
+pub mod util;
+
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]
 extern crate prost_derive;
 #[macro_use]
 extern crate structopt;
-
-pub mod command;
-pub mod transport;
-pub mod util;
 
 use std::cell::RefCell;
 

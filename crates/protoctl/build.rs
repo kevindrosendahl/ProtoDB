@@ -1,4 +1,3 @@
-extern crate prost_build;
 extern crate tower_grpc_build;
 use std::{env, fs, io::prelude::*, process::Command};
 

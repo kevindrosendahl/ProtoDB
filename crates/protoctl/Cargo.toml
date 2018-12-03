@@ -31,4 +31,3 @@ which = "2.0.0"
 
 [build-dependencies]
 tower-grpc-build = { git = "https://github.com/tower-rs/tower-grpc" }
-prost-build = "0.4"
