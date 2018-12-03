@@ -118,13 +118,12 @@ fn create_collection(
 }
 
 fn list_collections(database: String) {
-    unimplemented!()
-    //    CLIENT
-    //        .with(|c| c.borrow_mut().list_databases())
-    //        .and_then(|response| {
-    //            println!("databases: {:?}", response.databases);
-    //            Ok(())
-    //        })
-    //        .map_err(|err| println!("error listing databases: {:?}", err))
-    //        .unwrap();
+    CLIENT
+        .with(|c| c.borrow_mut().list_collections(database))
+        .and_then(|response| {
+            println!("collections: {:?}", response.collections);
+            Ok(())
+        })
+        .map_err(|err| println!("error listing databases: {:?}", err))
+        .unwrap();
 }
