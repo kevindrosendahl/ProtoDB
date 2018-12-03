@@ -30,6 +30,9 @@ pub enum Wasm {
         #[structopt(name = "crate", parse(from_os_str))]
         crate_: PathBuf,
     },
+
+    #[structopt(name = "run")]
+    Run { database: String, name: String },
 }
 
 pub fn run_wasm(wasm: Wasm) {
@@ -39,6 +42,7 @@ pub fn run_wasm(wasm: Wasm) {
             name,
             crate_,
         } => register_module(database, name, crate_),
+        Wasm::Run { database, name } => run_wasm_module(database, name),
     }
 }
 
@@ -57,19 +61,18 @@ fn register_module(database: String, name: String, crate_: PathBuf) {
         true,
     );
 
-    let _tmp = tempdir::TempDir::new("protoctl-register-wasm-module").unwrap();
-    let mut cmd = Command::new(which::which("wasm-bindgen").unwrap());
-
     // TODO: get this from Cargo.toml
     let crate_name = "wasm";
-    let path = std::path::Path::new("/tmp/protodb/wasm");
+    let tmp = tempdir::TempDir::new("protoctl-register-wasm-module").unwrap();
+    let mut cmd = Command::new(which::which("wasm-bindgen").unwrap());
+
     assert_eq!(
         cmd.arg(&format!(
             "target/wasm32-unknown-unknown/debug/{}.wasm",
             crate_name
         ))
         .arg("--out-dir")
-        .arg(path)
+        .arg(tmp.path())
         .spawn()
         .unwrap()
         .wait()
@@ -78,11 +81,11 @@ fn register_module(database: String, name: String, crate_: PathBuf) {
         true,
     );
 
-    let mut file = File::open(path.join(&format!("{}_bg.wasm", crate_name))).unwrap();
+    let mut file = File::open(tmp.path().join(&format!("{}_bg.wasm", crate_name))).unwrap();
     let mut wasm = Vec::new();
     file.read_to_end(&mut wasm).unwrap();
 
-    let mut file = File::open(path.join(&format!("{}.js", crate_name))).unwrap();
+    let mut file = File::open(tmp.path().join(&format!("{}.js", crate_name))).unwrap();
     let mut js = String::new();
     file.read_to_string(&mut js).unwrap();
 
@@ -124,5 +127,24 @@ fn register_module(database: String, name: String, crate_: PathBuf) {
             Ok(())
         })
         .map_err(|err| println!("error registering wasm module: {:?}", err))
+        .unwrap();
+}
+
+fn run_wasm_module(database: String, name: String) {
+    CLIENT
+        .with(|c| c.borrow_mut().run_wasm_module(database, name))
+        .and_then(|response| {
+            use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
+            match response.error_code() {
+                ErrorCode::NoError => {
+                    println!("result: {:?}", String::from_utf8_lossy(&response.result))
+                }
+                ErrorCode::InternalError => println!("error running wasm module: internal error"),
+                ErrorCode::InvalidDatabase => println!("invalid database"),
+                ErrorCode::InvalidModule => println!("invalid module"),
+            }
+            Ok(())
+        })
+        .map_err(|err| println!("error running wasm module: {:?}", err))
         .unwrap();
 }
