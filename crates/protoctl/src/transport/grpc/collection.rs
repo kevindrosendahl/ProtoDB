@@ -37,4 +37,22 @@ impl Client {
 
         Ok(self.core.run(request)?)
     }
+
+    pub fn get_collection_info(
+        &mut self,
+        database: String,
+        collection: String,
+    ) -> Result<protodb::collection::GetCollectionInfoResponse, ClientError> {
+        let request = self
+            .client
+            .get_collection_info(Request::new(
+                protodb::collection::GetCollectionInfoRequest {
+                    database,
+                    collection,
+                },
+            ))
+            .and_then(|response| Ok(response.into_inner()));
+
+        Ok(self.core.run(request)?)
+    }
 }

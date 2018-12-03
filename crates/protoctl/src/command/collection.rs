@@ -24,6 +24,14 @@ pub enum Collection {
         #[structopt(long = "include", short = "i", parse(from_os_str))]
         includes: Vec<PathBuf>,
     },
+
+    #[structopt(name = "info")]
+    Info {
+        database: String,
+
+        collection: String,
+    },
+
     #[structopt(name = "list")]
     List { database: String },
 }
@@ -37,6 +45,10 @@ pub fn run_collection(collection: Collection) {
             schema_message,
             includes,
         } => create_collection(database, name, schema_file, schema_message, &includes),
+        Collection::Info {
+            database,
+            collection,
+        } => get_collection_info(database, collection),
         Collection::List { database } => list_collections(database),
     }
 }
@@ -94,7 +106,7 @@ fn create_collection(
             use crate::transport::grpc::generated::protodb::collection::create_collection_response::schema_error::SchemaErrorCode;
 
             match response.error_code() {
-                ErrorCode::NoError => (),
+                ErrorCode::NoError => println!("succesfully created collection"),
                 ErrorCode::InternalError => println!("error creating collection: internal error"),
                 ErrorCode::InvalidDatabase => println!("invalid database"),
                 ErrorCode::CollectionExists => println!("collection already exists"),
@@ -123,5 +135,36 @@ fn list_collections(database: String) {
             Ok(())
         })
         .map_err(|err| println!("error listing databases: {:?}", err))
+        .unwrap();
+}
+
+fn get_collection_info(database: String, collection: String) {
+    CLIENT
+        .with(|c| c.borrow_mut().get_collection_info(database.clone(), collection.clone()))
+        .and_then(|response| {
+            use crate::transport::grpc::generated::protodb::collection::get_collection_info_response::ErrorCode;
+
+            match response.error_code() {
+                ErrorCode::NoError => {
+                    println!("database: {}", database);
+                    println!("collection: {}", collection);
+
+                    let schema = response.schema.unwrap();
+                    println!("schema:");
+                    println!("  name: {}", schema.name());
+                    println!("  fields:");
+
+                    for field in schema.field.iter() {
+                        println!("    {} ({}): {:?}", field.name(), field.number(), field.type_());
+                    }
+                },
+                ErrorCode::InternalError => println!("error getting collection info: internal error"),
+                ErrorCode::InvalidDatabase => println!("invalid database"),
+                ErrorCode::InvalidCollection => println!("invalid collection"),
+            };
+
+            Ok(())
+        })
+        .map_err(|err| println!("error getting collection info: {:?}", err))
         .unwrap();
 }

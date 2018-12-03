@@ -1,8 +1,8 @@
 pub mod server {
     use super::collection;
     use super::collection::{
-        CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
-        ListCollectionsResponse,
+        CreateCollectionRequest, CreateCollectionResponse, GetCollectionInfoRequest,
+        GetCollectionInfoResponse, ListCollectionsRequest, ListCollectionsResponse,
     };
     use super::database;
     use super::database::{
@@ -47,6 +47,10 @@ pub mod server {
             Item = grpc::Response<collection::ListCollectionsResponse>,
             Error = grpc::Error,
         >;
+        type GetCollectionInfoFuture: futures::Future<
+            Item = grpc::Response<collection::GetCollectionInfoResponse>,
+            Error = grpc::Error,
+        >;
         type InsertObjectFuture: futures::Future<
             Item = grpc::Response<object::InsertObjectResponse>,
             Error = grpc::Error,
@@ -83,6 +87,11 @@ pub mod server {
             &mut self,
             request: grpc::Request<collection::ListCollectionsRequest>,
         ) -> Self::ListCollectionsFuture;
+
+        fn get_collection_info(
+            &mut self,
+            request: grpc::Request<collection::GetCollectionInfoRequest>,
+        ) -> Self::GetCollectionInfoFuture;
 
         fn insert_object(
             &mut self,
@@ -163,6 +172,13 @@ pub mod server {
                         kind: Ok(ListCollections(response)),
                     }
                 }
+                "/protodb.ProtoDB/GetCollectionInfo" => {
+                    let service = proto_db::methods::GetCollectionInfo(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(GetCollectionInfo(response)),
+                    }
+                }
                 "/protodb.ProtoDB/InsertObject" => {
                     let service = proto_db::methods::InsertObject(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
@@ -235,7 +251,9 @@ pub mod server {
 
     pub mod proto_db {
         use super::super::collection;
-        use super::super::collection::{CreateCollectionRequest, ListCollectionsRequest};
+        use super::super::collection::{
+            CreateCollectionRequest, GetCollectionInfoRequest, ListCollectionsRequest,
+        };
         use super::super::database;
         use super::super::database::{CreateDatabaseRequest, ListDatabasesRequest};
         use super::super::object;
@@ -270,6 +288,11 @@ pub mod server {
                         methods::ListCollections<T>,
                         grpc::BoxBody,
                         collection::ListCollectionsRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::GetCollectionInfo<T>,
+                        grpc::BoxBody,
+                        collection::GetCollectionInfoRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::InsertObject<T>,
@@ -339,6 +362,15 @@ pub mod server {
                         let (head, body) = response.into_parts();
                         let body = ResponseBody {
                             kind: Ok(ListCollections(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(GetCollectionInfo(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(GetCollectionInfo(body)),
                         };
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
@@ -425,6 +457,13 @@ pub mod server {
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
+                            <methods::GetCollectionInfo<T> as grpc::UnaryService<
+                                collection::GetCollectionInfoRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
                             <methods::InsertObject<T> as grpc::UnaryService<
                                 object::InsertObjectRequest,
                             >>::Response,
@@ -470,6 +509,7 @@ pub mod server {
                     Ok(ListDatabases(ref v)) => v.is_end_stream(),
                     Ok(CreateCollection(ref v)) => v.is_end_stream(),
                     Ok(ListCollections(ref v)) => v.is_end_stream(),
+                    Ok(GetCollectionInfo(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
                     Ok(RegisterWasmModule(ref v)) => v.is_end_stream(),
@@ -486,6 +526,7 @@ pub mod server {
                     Ok(ListDatabases(ref mut v)) => v.poll_data(),
                     Ok(CreateCollection(ref mut v)) => v.poll_data(),
                     Ok(ListCollections(ref mut v)) => v.poll_data(),
+                    Ok(GetCollectionInfo(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
                     Ok(RegisterWasmModule(ref mut v)) => v.poll_data(),
@@ -502,6 +543,7 @@ pub mod server {
                     Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
                     Ok(CreateCollection(ref mut v)) => v.poll_metadata(),
                     Ok(ListCollections(ref mut v)) => v.poll_metadata(),
+                    Ok(GetCollectionInfo(ref mut v)) => v.poll_metadata(),
                     Ok(InsertObject(ref mut v)) => v.poll_metadata(),
                     Ok(FindObject(ref mut v)) => v.poll_metadata(),
                     Ok(RegisterWasmModule(ref mut v)) => v.poll_metadata(),
@@ -536,6 +578,7 @@ pub mod server {
             ListDatabases,
             CreateCollection,
             ListCollections,
+            GetCollectionInfo,
             InsertObject,
             FindObject,
             RegisterWasmModule,
@@ -545,6 +588,7 @@ pub mod server {
             ListDatabases(ListDatabases),
             CreateCollection(CreateCollection),
             ListCollections(ListCollections),
+            GetCollectionInfo(GetCollectionInfo),
             InsertObject(InsertObject),
             FindObject(FindObject),
             RegisterWasmModule(RegisterWasmModule),
@@ -557,8 +601,8 @@ pub mod server {
             use super::super::super::object;
             use super::super::super::wasm;
             use super::super::collection::{
-                CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
-                ListCollectionsResponse,
+                CreateCollectionRequest, CreateCollectionResponse, GetCollectionInfoRequest,
+                GetCollectionInfoResponse, ListCollectionsRequest, ListCollectionsResponse,
             };
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
@@ -658,6 +702,28 @@ pub mod server {
                     request: grpc::Request<collection::ListCollectionsRequest>,
                 ) -> Self::Future {
                     self.0.list_collections(request)
+                }
+            }
+
+            pub struct GetCollectionInfo<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<collection::GetCollectionInfoRequest>> for GetCollectionInfo<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<collection::GetCollectionInfoResponse>;
+                type Error = grpc::Error;
+                type Future = T::GetCollectionInfoFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::GetCollectionInfoRequest>,
+                ) -> Self::Future {
+                    self.0.get_collection_info(request)
                 }
             }
 
@@ -791,6 +857,29 @@ pub mod collection {
             InvalidDatabase = 2,
             CollectionExists = 3,
             SchemaError = 4,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetCollectionInfoRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetCollectionInfoResponse {
+        #[prost(enumeration = "get_collection_info_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub schema: ::std::option::Option<::prost_types::DescriptorProto>,
+    }
+    pub mod get_collection_info_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
         }
     }
     #[derive(Clone, PartialEq, Message)]

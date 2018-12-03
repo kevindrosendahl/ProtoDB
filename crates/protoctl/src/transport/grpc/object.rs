@@ -2,7 +2,6 @@ use super::generated::protodb;
 use super::{Client, ClientError};
 
 use futures::Future;
-use prost_types::DescriptorProto;
 use tower_grpc::Request;
 
 impl Client {

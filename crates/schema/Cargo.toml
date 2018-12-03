@@ -1,0 +1,11 @@
+[package]
+name = "protodb-schema"
+version = "0.1.0"
+authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+bytes = "0.4"
+byteorder = "1.2"
+prost = "0.4"
+prost-types = "0.4"

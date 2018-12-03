@@ -5,7 +5,7 @@ use prost_types::field_descriptor_proto::{Label, Type};
 #[derive(Debug)]
 pub enum SchemaError {
     EncodingError(String),
-    InvalidFieldType((i32, Label, Type)),
+    InvalidFieldType((i32, String, Label, Type)),
     InvalidIdType(String),
     MissingIdField,
 }

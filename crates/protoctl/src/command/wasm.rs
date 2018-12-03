@@ -53,8 +53,7 @@ pub fn run_wasm(wasm: Wasm) {
 fn register_module(database: String, name: String, crate_: PathBuf, package: Option<String>) {
     env::set_current_dir(crate_.clone()).unwrap();
 
-    let tmp = tempdir::TempDir::new("protoctl-register-wasm-module")
-        .unwrap();
+    let tmp = tempdir::TempDir::new("protoctl-register-wasm-module").unwrap();
     let path = tmp.path();
 
     let mut cmd = Command::new(which::which("cargo").unwrap());

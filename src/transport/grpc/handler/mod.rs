@@ -88,6 +88,15 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "get collection info",
+        get_collection_info,
+        handle_get_collection_info,
+        GetCollectionInfoFuture,
+        protodb_collection::GetCollectionInfoRequest,
+        protodb_collection::GetCollectionInfoResponse
+    );
+
+    method_handler!(
         "insert object",
         insert_object,
         handle_insert_object,

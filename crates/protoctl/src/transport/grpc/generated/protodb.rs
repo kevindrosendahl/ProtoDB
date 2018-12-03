@@ -1,8 +1,8 @@
 pub mod client {
     use super::collection;
     use super::collection::{
-        CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
-        ListCollectionsResponse,
+        CreateCollectionRequest, CreateCollectionResponse, GetCollectionInfoRequest,
+        GetCollectionInfoResponse, ListCollectionsRequest, ListCollectionsResponse,
     };
     use super::database;
     use super::database::{
@@ -93,6 +93,23 @@ pub mod client {
             grpc::unary::Once<collection::ListCollectionsRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListCollections");
+            self.inner.unary(request, path)
+        }
+
+        pub fn get_collection_info<R>(
+            &mut self,
+            request: grpc::Request<collection::GetCollectionInfoRequest>,
+        ) -> grpc::unary::ResponseFuture<
+            collection::GetCollectionInfoResponse,
+            T::Future,
+            T::ResponseBody,
+        >
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<collection::GetCollectionInfoRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/GetCollectionInfo");
             self.inner.unary(request, path)
         }
 
@@ -192,6 +209,29 @@ pub mod collection {
             InvalidDatabase = 2,
             CollectionExists = 3,
             SchemaError = 4,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetCollectionInfoRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetCollectionInfoResponse {
+        #[prost(enumeration = "get_collection_info_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub schema: ::std::option::Option<::prost_types::DescriptorProto>,
+    }
+    pub mod get_collection_info_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
         }
     }
     #[derive(Clone, PartialEq, Message)]

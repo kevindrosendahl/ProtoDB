@@ -1,4 +1,4 @@
-use std::{collections::HashMap, io::Cursor};
+use std::{collections::BTreeMap, io::Cursor};
 
 use super::{
     errors::{ObjectError, SchemaError},
@@ -67,7 +67,7 @@ macro_rules! little_endian_decoder {
 
 impl Schema {
     pub fn wire_type(&self, tag: i32) -> Option<WireType> {
-        self.fields.get(&tag).map(|(_, type_)| {
+        self.fields.get(&tag).map(|(_, _, type_)| {
             match type_ {
                 Type::Int32
                 | Type::Int64
@@ -121,7 +121,7 @@ impl Schema {
     }
 
     pub fn decoded_object_builder(&self) -> DecodedObjectBuilder {
-        DecodedObjectBuilder::with_capacity(self.id_field, self.fields.len())
+        DecodedObjectBuilder::new(self.id_field)
     }
 
     pub fn encode_field(tag: i32, wire_type: WireType, value: &[u8], buf: &mut impl BufMut) {
@@ -194,6 +194,7 @@ impl Schema {
 #[derive(Debug)]
 pub struct FieldInfo {
     pub tag: i32,
+    pub name: String,
     pub wire_type: encoding::WireType,
     pub value: FieldValue,
 }
@@ -236,17 +237,7 @@ impl DecodedObjectBuilder {
             id_field,
             inner: DecodedObject {
                 id: 0,
-                inner: HashMap::new(),
-            },
-        }
-    }
-
-    pub fn with_capacity(id_field: i32, capacity: usize) -> DecodedObjectBuilder {
-        DecodedObjectBuilder {
-            id_field,
-            inner: DecodedObject {
-                id: 0,
-                inner: HashMap::with_capacity(capacity),
+                inner: BTreeMap::new(),
             },
         }
     }
@@ -275,7 +266,7 @@ impl DecodedObjectBuilder {
 #[derive(Clone)]
 pub struct DecodedObject {
     pub id: u64,
-    inner: HashMap<i32, FieldValue>,
+    inner: BTreeMap<i32, FieldValue>,
 }
 
 impl DecodedObject {
@@ -336,25 +327,31 @@ impl<'a> Iterator for DecodeObject<'a> {
             let tag = key as i32;
 
             // check to see if this field is part of the schema
-            let type_ = match self.schema.fields.get(&tag) {
-                Some((_, type_)) => Some(type_),
+            // note that we store this in an Option, and inspect the option in the wire_type
+            // match statement. this is because even if the field is not part of the schema,
+            // we need to move the buffer forward, and how we move the buffer forward is dependent
+            // on the wire type. that said, how to decode the value is dependent on its type,
+            // so we need to get the type prior to switching on the wire type so we can
+            // decode the field if it is a part of the schema.
+            let name_type = match self.schema.fields.get(&tag) {
+                Some((name, _, type_)) => Some((name, type_)),
                 None => None,
             };
 
             let offset = self.object_bytes.len() - self.object_buf.remaining();
-            let value = match wire_type {
+            let (name, value) = match wire_type {
                 // If the field's value is a varint, use the encoding library to decode it.
                 // This will advance the buffer.
                 encoding::WireType::Varint => {
                     match encoding::decode_varint(&mut self.object_buf) {
                         Ok(val) => {
                             // if the field was not part of the schema, go on to the next field
-                            if type_.is_none() {
+                            if name_type.is_none() {
                                 continue;
                             }
 
-                            let type_ = type_.unwrap();
-                            match type_ {
+                            let (name, type_) = name_type.unwrap();
+                            let value = match type_ {
                                 Type::Int32 => FieldValue::Int32(val as i32),
                                 Type::Int64 => FieldValue::Int64(val as i64),
                                 Type::Uint32 => FieldValue::Uint32(val as u32),
@@ -364,7 +361,9 @@ impl<'a> Iterator for DecodeObject<'a> {
                                 Type::Bool => FieldValue::Bool(val != 0),
                                 Type::Enum => FieldValue::Enum(val),
                                 _ => return wire_type_mismatch_err!(tag, type_, wire_type),
-                            }
+                            };
+
+                            (name, value)
                         }
                         Err(err) => return iter_err!(ObjectError::ProstDecodeError(err)),
                     }
@@ -376,13 +375,13 @@ impl<'a> Iterator for DecodeObject<'a> {
                     self.object_buf.advance(4);
 
                     // if the field was not part of the schema, go on to the next field
-                    if type_.is_none() {
+                    if name_type.is_none() {
                         continue;
                     }
 
                     let mut reader = Cursor::new(&self.object_bytes[offset..offset + 4]);
-                    let type_ = type_.unwrap();
-                    match type_ {
+                    let (name, type_) = name_type.unwrap();
+                    let value = match type_ {
                         Type::Float => match reader.read_f32::<LittleEndian>() {
                             Ok(val) => FieldValue::Float(val),
                             Err(err) => return decode_err!(tag, type_, err),
@@ -396,19 +395,21 @@ impl<'a> Iterator for DecodeObject<'a> {
                             Err(err) => return decode_err!(tag, type_, err),
                         },
                         _ => return wire_type_mismatch_err!(tag, type_, wire_type),
-                    }
+                    };
+
+                    (name, value)
                 }
                 encoding::WireType::SixtyFourBit => {
                     self.object_buf.advance(8);
 
                     // if the field was not part of the schema, go on to the next field
-                    if type_.is_none() {
+                    if name_type.is_none() {
                         continue;
                     }
 
                     let mut reader = Cursor::new(&self.object_bytes[offset..offset + 8]);
-                    let type_ = type_.unwrap();
-                    match type_ {
+                    let (name, type_) = name_type.unwrap();
+                    let value = match type_ {
                         Type::Double => match reader.read_f64::<LittleEndian>() {
                             Ok(val) => FieldValue::Double(val),
                             Err(err) => return decode_err!(tag, type_, err),
@@ -422,7 +423,9 @@ impl<'a> Iterator for DecodeObject<'a> {
                             Err(err) => return decode_err!(tag, type_, err),
                         },
                         _ => return wire_type_mismatch_err!(tag, type_, wire_type),
-                    }
+                    };
+
+                    (name, value)
                 }
                 encoding::WireType::LengthDelimited => {
                     match encoding::decode_varint(&mut self.object_buf) {
@@ -436,17 +439,19 @@ impl<'a> Iterator for DecodeObject<'a> {
                             self.object_buf.advance(len as usize);
 
                             // if the field was not part of the schema, go on to the next field
-                            if type_.is_none() {
+                            if name_type.is_none() {
                                 continue;
                             }
 
-                            let type_ = type_.unwrap();
+                            let (name, type_) = name_type.unwrap();
                             let bytes = &self.object_bytes[offset..offset + len as usize];
-                            match type_ {
+                            let value = match type_ {
                                 Type::String => FieldValue::String(bytes.to_vec()),
                                 Type::Bytes => FieldValue::Bytes(bytes.to_vec()),
                                 _ => return wire_type_mismatch_err!(tag, type_, wire_type),
-                            }
+                            };
+
+                            (name, value)
                         }
                         Err(err) => return iter_err!(ObjectError::ProstDecodeError(err)),
                     }
@@ -455,6 +460,7 @@ impl<'a> Iterator for DecodeObject<'a> {
 
             return Some(Ok(FieldInfo {
                 tag,
+                name: name.clone(),
                 wire_type,
                 value,
             }));

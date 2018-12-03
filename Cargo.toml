@@ -7,6 +7,7 @@ edition = "2018"
 [workspace]
 members = [
     "crates/protoctl",
+    "crates/schema",
     "crates/wasm",
 
     "examples/wasm",
@@ -21,6 +22,7 @@ http = "0.1"
 lazy_static = "1.1"
 log = "0.4"
 pretty_env_logger = "0.2"
+protodb-schema = { path = "crates/schema" }
 prost = "0.4"
 prost-types = "0.4"
 prost-derive = "0.4"

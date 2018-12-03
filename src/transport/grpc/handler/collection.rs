@@ -4,7 +4,7 @@ use super::super::generated::protodb::collection;
 use super::Handler;
 
 use crate::{
-    catalog::{database::DatabaseCatalogEntry, errors},
+    catalog::{collection::CollectionCatalogEntry, database::DatabaseCatalogEntry, errors},
     schema::errors::SchemaError,
 };
 
@@ -58,7 +58,7 @@ impl Handler {
                         SchemaError::EncodingError(msg) => {
                             create_collection_schema_err!(EncodingError, msg)
                         }
-                        SchemaError::InvalidFieldType((field, label, type_)) => {
+                        SchemaError::InvalidFieldType((_, field, label, type_)) => {
                             create_collection_schema_err!(
                                 InvalidFieldType,
                                 format!(
@@ -107,6 +107,31 @@ impl Handler {
             .unwrap_or_else(|error_code| collection::ListCollectionsResponse {
                 error_code: error_code as i32,
                 collections: Vec::new(),
+            })
+    }
+
+    pub(super) fn handle_get_collection_info(
+        &mut self,
+        request: &Request<collection::GetCollectionInfoRequest>,
+    ) -> collection::GetCollectionInfoResponse {
+        self.storage_engine
+            .clone()
+            .catalog()
+            .get_database_entry(&request.get_ref().database)
+            .ok_or(collection::get_collection_info_response::ErrorCode::InvalidDatabase)
+            .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
+                db.get_collection_entry(&request.get_ref().collection)
+                    .ok_or(collection::get_collection_info_response::ErrorCode::InvalidCollection)
+            })
+            .and_then(|collection: Arc<dyn CollectionCatalogEntry>| {
+                Ok(collection::GetCollectionInfoResponse {
+                    error_code: collection::list_collections_response::ErrorCode::NoError as i32,
+                    schema: Some(collection.schema().descriptor.clone()),
+                })
+            })
+            .unwrap_or_else(|error_code| collection::GetCollectionInfoResponse {
+                error_code: error_code as i32,
+                schema: None,
             })
     }
 }

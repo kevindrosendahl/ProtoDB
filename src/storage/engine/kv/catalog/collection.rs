@@ -243,7 +243,7 @@ impl Iterator for FindAllDecoded {
                 continue;
             }
 
-            let (_, type_) = info.unwrap();
+            let (_, _, type_) = info.unwrap();
             let value = Schema::decode_value(*type_, &value);
 
             builder.id(id);
