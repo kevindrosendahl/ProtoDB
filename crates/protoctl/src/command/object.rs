@@ -1,6 +1,6 @@
 use crate::CLIENT;
 
-use protodb_schema::{encoding::FieldValue, Schema};
+use protodb_schema::Schema;
 
 #[derive(Debug, StructOpt)]
 pub enum Object {
@@ -64,57 +64,7 @@ fn find_object(database: String, collection: String, id: u64) {
 
             for (tag, value) in object.fields_iter() {
                 let (name, _, _) = schema.fields.get(tag).unwrap();
-                let value = match value {
-                    FieldValue::Float(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Double(val)=> {
-                        format!("{}", val)
-                    },
-                    FieldValue::Int32(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Int64(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Uint32(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Uint64(val)=>  {
-                        format!("{}", val)
-                    },
-                    FieldValue::Sint32(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Sint64(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Fixed32(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Fixed64(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Sfixed32(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Sfixed64(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::Bool(val) => {
-                        format!("{}", val)
-                    },
-                    FieldValue::String(val)=>  {
-                        String::from_utf8_lossy(&val).into_owned()
-                    },
-                    FieldValue::Bytes(val) => {
-                        String::from_utf8_lossy(&val).into_owned()
-                    },
-                    FieldValue::Enum(val)=>  {
-                        format!("{}", val)
-                    },
-                };
-                println!("  {}: {:?}", name, value);
+                println!("  {}: {}", name, value);
             }
 
             Ok(())

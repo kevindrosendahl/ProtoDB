@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, io::Cursor};
+use std::{collections::BTreeMap, fmt, fmt::Formatter, io::Cursor};
 
 use super::{
     errors::{ObjectError, SchemaError},
@@ -217,6 +217,29 @@ pub enum FieldValue {
     String(Vec<u8>),
     Bytes(Vec<u8>),
     Enum(u64),
+}
+
+impl fmt::Display for FieldValue {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), fmt::Error> {
+        match self {
+            FieldValue::Float(val) => write!(f, "{}", val),
+            FieldValue::Double(val) => write!(f, "{}", val),
+            FieldValue::Int32(val) => write!(f, "{}", val),
+            FieldValue::Int64(val) => write!(f, "{}", val),
+            FieldValue::Uint32(val) => write!(f, "{}", val),
+            FieldValue::Uint64(val) => write!(f, "{}", val),
+            FieldValue::Sint32(val) => write!(f, "{}", val),
+            FieldValue::Sint64(val) => write!(f, "{}", val),
+            FieldValue::Fixed32(val) => write!(f, "{}", val),
+            FieldValue::Fixed64(val) => write!(f, "{}", val),
+            FieldValue::Sfixed32(val) => write!(f, "{}", val),
+            FieldValue::Sfixed64(val) => write!(f, "{}", val),
+            FieldValue::Bool(val) => write!(f, "{}", val),
+            FieldValue::String(val) => write!(f, "{}", String::from_utf8_lossy(&val)),
+            FieldValue::Bytes(val) => write!(f, "{:x?}", val),
+            FieldValue::Enum(val) => write!(f, "{}", val),
+        }
+    }
 }
 
 pub struct DecodeObject<'a> {
