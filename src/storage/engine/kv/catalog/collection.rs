@@ -1,4 +1,4 @@
-use std::{cell::RefCell, sync::Arc};
+use std::{cell::RefCell, collections::HashSet, sync::Arc};
 
 use super::super::store::{KVStore, KVStoreBytes};
 use super::{delimiter_prefix_bound, index::KVIndexCatalog, key_suffix, KEY_DELIMITER};
@@ -61,8 +61,11 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         self.indexes.clone()
     }
 
-    fn find_all(&self) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
-        Box::new(FindAll::new(self.clone()))
+    fn find_all(
+        &self,
+        fields: Option<HashSet<i32>>,
+    ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
+        Box::new(FindAll::new(self.clone(), fields))
             as Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>
     }
 
@@ -204,13 +207,15 @@ struct FindAll {
     // and easier for now than getting the lifetime right (if possible)
     collection: KVCollectionCatalogEntry,
 
+    fields: Option<HashSet<i32>>,
+
     curr_id: u64,
     curr_object: RefCell<Vec<u8>>,
     done: bool,
 }
 
 impl FindAll {
-    fn new(collection: KVCollectionCatalogEntry) -> Self {
+    fn new(collection: KVCollectionCatalogEntry, fields: Option<HashSet<i32>>) -> Self {
         let start = collection.key_generator.key_prefix();
         let mut end = start.clone().into_bytes();
         let delimiter_byte = end.pop().unwrap();
@@ -220,6 +225,7 @@ impl FindAll {
         FindAll {
             inner: kv_store.bounded_prefix_iterator(&start.into_bytes(), &end),
             collection,
+            fields,
             curr_id: 0,
             curr_object: Default::default(),
             done: false,
@@ -278,8 +284,14 @@ impl Iterator for FindAll {
                 Some(object)
             };
 
-            // Append the value to the object.
-            self.curr_object.borrow_mut().append(&mut value);
+            // Append the value to the object if either no fields were specified or if this was a specified field.
+            let valid = match &self.fields {
+                Some(fields) => fields.contains(&tag),
+                None => true,
+            };
+            if valid {
+                self.curr_object.borrow_mut().append(&mut value);
+            }
 
             // If this iteration was a new id, return it.
             if let Some(object) = returnable {
@@ -288,4 +300,3 @@ impl Iterator for FindAll {
         }
     }
 }
-

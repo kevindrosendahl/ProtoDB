@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use super::{
     errors::collection::{FindObjectError, InsertObjectError},
@@ -16,7 +16,10 @@ pub trait CollectionCatalogEntry {
 
     fn indexes(&self) -> Arc<dyn IndexCatalog>;
 
-    fn find_all(&self) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>;
+    fn find_all(
+        &self,
+        fields: Option<HashSet<i32>>,
+    ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>;
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError>;
 
