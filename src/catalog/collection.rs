@@ -16,6 +16,10 @@ pub trait CollectionCatalogEntry {
 
     fn indexes(&self) -> Arc<dyn IndexCatalog>;
 
+    fn find_all(
+        &self,
+    ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>;
+
     fn find_all_decoded(
         &self,
     ) -> Box<dyn Iterator<Item = Result<DecodedObject, InternalStorageEngineError>>>;
