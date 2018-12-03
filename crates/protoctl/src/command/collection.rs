@@ -1,14 +1,12 @@
-use std::env;
 use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::transport::grpc;
 use crate::CLIENT;
 
 use prost::Message;
-use prost_types::{FileDescriptorProto, FileDescriptorSet};
+use prost_types::{FileDescriptorSet};
 
 #[derive(Debug, StructOpt)]
 pub enum Collection {

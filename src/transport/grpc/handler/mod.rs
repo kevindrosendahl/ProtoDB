@@ -1,5 +1,6 @@
 mod collection;
 mod database;
+mod object;
 mod wasm;
 
 use std::{sync::Arc, time::Instant};
@@ -7,7 +8,8 @@ use std::{sync::Arc, time::Instant};
 use super::generated::{
     protodb,
     protodb::{
-        collection as protodb_collection, database as protodb_database, wasm as protodb_wasm,
+        collection as protodb_collection, database as protodb_database, object as protodb_object,
+        wasm as protodb_wasm,
     },
 };
 
@@ -90,8 +92,8 @@ impl protodb::server::ProtoDb for Handler {
         insert_object,
         handle_insert_object,
         InsertObjectFuture,
-        protodb_collection::InsertObjectRequest,
-        protodb_collection::InsertObjectResponse
+        protodb_object::InsertObjectRequest,
+        protodb_object::InsertObjectResponse
     );
 
     method_handler!(
@@ -99,8 +101,8 @@ impl protodb::server::ProtoDb for Handler {
         find_object,
         handle_find_object,
         FindObjectFuture,
-        protodb_collection::FindObjectRequest,
-        protodb_collection::FindObjectResponse
+        protodb_object::FindObjectRequest,
+        protodb_object::FindObjectResponse
     );
 
     method_handler!(

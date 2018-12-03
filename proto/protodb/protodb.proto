@@ -3,11 +3,11 @@ syntax = "proto3";
 package protodb;
 
 import "protodb/collection/create.proto";
-import "protodb/collection/find_object.proto";
-import "protodb/collection/insert_object.proto";
 import "protodb/collection/list.proto";
 import "protodb/database/create.proto";
 import "protodb/database/list.proto";
+import "protodb/object/find.proto";
+import "protodb/object/insert.proto";
 import "protodb/wasm/register.proto";
 import "protodb/wasm/run.proto";
 
@@ -17,8 +17,9 @@ service ProtoDB {
 
     rpc CreateCollection (protodb.collection.CreateCollectionRequest) returns (protodb.collection.CreateCollectionResponse);
     rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
-    rpc InsertObject (protodb.collection.InsertObjectRequest) returns (protodb.collection.InsertObjectResponse);
-    rpc FindObject (protodb.collection.FindObjectRequest) returns (protodb.collection.FindObjectResponse);
+
+    rpc InsertObject (protodb.object.InsertObjectRequest) returns (protodb.object.InsertObjectResponse);
+    rpc FindObject (protodb.object.FindObjectRequest) returns (protodb.object.FindObjectResponse);
 
     rpc RegisterWasmModule(protodb.wasm.RegisterModuleRequest) returns (protodb.wasm.RegisterModuleResponse);
     rpc RunWasmModule(protodb.wasm.RunModuleRequest) returns (protodb.wasm.RunModuleResponse);

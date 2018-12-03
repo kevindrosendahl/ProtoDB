@@ -1,4 +1,3 @@
-use crate::transport::grpc;
 use crate::CLIENT;
 
 #[derive(Debug, StructOpt)]

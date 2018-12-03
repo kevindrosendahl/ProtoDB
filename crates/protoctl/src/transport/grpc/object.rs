@@ -6,32 +6,36 @@ use prost_types::DescriptorProto;
 use tower_grpc::Request;
 
 impl Client {
-    pub fn create_collection(
+    pub fn insert_object(
         &mut self,
         database: String,
-        name: String,
-        schema: DescriptorProto,
-    ) -> Result<protodb::collection::CreateCollectionResponse, ClientError> {
+        collection: String,
+        object: Vec<u8>,
+    ) -> Result<protodb::object::InsertObjectResponse, ClientError> {
         let request = self
             .client
-            .create_collection(Request::new(protodb::collection::CreateCollectionRequest {
+            .insert_object(Request::new(protodb::object::InsertObjectRequest {
                 database,
-                name,
-                schema: Some(schema),
+                collection,
+                object,
             }))
             .and_then(|response| Ok(response.into_inner()));
 
         Ok(self.core.run(request)?)
     }
 
-    pub fn list_collections(
+    pub fn find_object(
         &mut self,
         database: String,
-    ) -> Result<protodb::collection::ListCollectionsResponse, ClientError> {
+        collection: String,
+        id: u64,
+    ) -> Result<protodb::object::FindObjectResponse, ClientError> {
         let request = self
             .client
-            .list_collections(Request::new(protodb::collection::ListCollectionsRequest {
+            .find_object(Request::new(protodb::object::FindObjectRequest {
                 database,
+                collection,
+                id,
             }))
             .and_then(|response| Ok(response.into_inner()));
 

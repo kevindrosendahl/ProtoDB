@@ -1,12 +1,16 @@
 pub mod client {
     use super::collection;
     use super::collection::{
-        CreateCollectionRequest, CreateCollectionResponse, FindObjectRequest, FindObjectResponse,
-        InsertObjectRequest, InsertObjectResponse, ListCollectionsRequest, ListCollectionsResponse,
+        CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
+        ListCollectionsResponse,
     };
     use super::database;
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
+    };
+    use super::object;
+    use super::object::{
+        FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
     };
     use super::wasm;
     use super::wasm::{
@@ -94,12 +98,12 @@ pub mod client {
 
         pub fn insert_object<R>(
             &mut self,
-            request: grpc::Request<collection::InsertObjectRequest>,
-        ) -> grpc::unary::ResponseFuture<collection::InsertObjectResponse, T::Future, T::ResponseBody>
+            request: grpc::Request<object::InsertObjectRequest>,
+        ) -> grpc::unary::ResponseFuture<object::InsertObjectResponse, T::Future, T::ResponseBody>
         where
             T: tower::HttpService<R>,
             T::ResponseBody: grpc::Body,
-            grpc::unary::Once<collection::InsertObjectRequest>: grpc::Encodable<R>,
+            grpc::unary::Once<object::InsertObjectRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/InsertObject");
             self.inner.unary(request, path)
@@ -107,12 +111,12 @@ pub mod client {
 
         pub fn find_object<R>(
             &mut self,
-            request: grpc::Request<collection::FindObjectRequest>,
-        ) -> grpc::unary::ResponseFuture<collection::FindObjectResponse, T::Future, T::ResponseBody>
+            request: grpc::Request<object::FindObjectRequest>,
+        ) -> grpc::unary::ResponseFuture<object::FindObjectResponse, T::Future, T::ResponseBody>
         where
             T: tower::HttpService<R>,
             T::ResponseBody: grpc::Body,
-            grpc::unary::Once<collection::FindObjectRequest>: grpc::Encodable<R>,
+            grpc::unary::Once<object::FindObjectRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/FindObject");
             self.inner.unary(request, path)
@@ -191,6 +195,66 @@ pub mod collection {
         }
     }
     #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsResponse {
+        #[prost(enumeration = "list_collections_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(string, repeated, tag = "2")]
+        pub collections: ::std::vec::Vec<String>,
+    }
+    pub mod list_collections_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+        }
+    }
+
+}
+pub mod database {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseRequest {
+        #[prost(string, tag = "1")]
+        pub name: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseResponse {
+        #[prost(enumeration = "create_database_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+    }
+    pub mod create_database_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            DatabaseExists = 2,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesRequest {}
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesResponse {
+        #[prost(enumeration = "list_databases_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(string, repeated, tag = "2")]
+        pub databases: ::std::vec::Vec<String>,
+    }
+    pub mod list_databases_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+        }
+    }
+
+}
+pub mod object {
+    #[derive(Clone, PartialEq, Message)]
     pub struct FindObjectRequest {
         #[prost(string, tag = "1")]
         pub database: String,
@@ -255,63 +319,6 @@ pub mod collection {
             InvalidCollection = 3,
             ObjectExists = 4,
             ObjectError = 5,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsRequest {
-        #[prost(string, tag = "1")]
-        pub database: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsResponse {
-        #[prost(enumeration = "list_collections_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-        #[prost(string, repeated, tag = "2")]
-        pub collections: ::std::vec::Vec<String>,
-    }
-    pub mod list_collections_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
-            InvalidDatabase = 2,
-        }
-    }
-
-}
-pub mod database {
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseRequest {
-        #[prost(string, tag = "1")]
-        pub name: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseResponse {
-        #[prost(enumeration = "create_database_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-    }
-    pub mod create_database_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
-            DatabaseExists = 2,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesRequest {}
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesResponse {
-        #[prost(enumeration = "list_databases_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-        #[prost(string, repeated, tag = "2")]
-        pub databases: ::std::vec::Vec<String>,
-    }
-    pub mod list_databases_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
         }
     }
 

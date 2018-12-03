@@ -1,12 +1,16 @@
 pub mod server {
     use super::collection;
     use super::collection::{
-        CreateCollectionRequest, CreateCollectionResponse, FindObjectRequest, FindObjectResponse,
-        InsertObjectRequest, InsertObjectResponse, ListCollectionsRequest, ListCollectionsResponse,
+        CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
+        ListCollectionsResponse,
     };
     use super::database;
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
+    };
+    use super::object;
+    use super::object::{
+        FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
     };
     use super::wasm;
     use super::wasm::{
@@ -44,11 +48,11 @@ pub mod server {
             Error = grpc::Error,
         >;
         type InsertObjectFuture: futures::Future<
-            Item = grpc::Response<collection::InsertObjectResponse>,
+            Item = grpc::Response<object::InsertObjectResponse>,
             Error = grpc::Error,
         >;
         type FindObjectFuture: futures::Future<
-            Item = grpc::Response<collection::FindObjectResponse>,
+            Item = grpc::Response<object::FindObjectResponse>,
             Error = grpc::Error,
         >;
         type RegisterWasmModuleFuture: futures::Future<
@@ -82,12 +86,12 @@ pub mod server {
 
         fn insert_object(
             &mut self,
-            request: grpc::Request<collection::InsertObjectRequest>,
+            request: grpc::Request<object::InsertObjectRequest>,
         ) -> Self::InsertObjectFuture;
 
         fn find_object(
             &mut self,
-            request: grpc::Request<collection::FindObjectRequest>,
+            request: grpc::Request<object::FindObjectRequest>,
         ) -> Self::FindObjectFuture;
 
         fn register_wasm_module(
@@ -231,11 +235,11 @@ pub mod server {
 
     pub mod proto_db {
         use super::super::collection;
-        use super::super::collection::{
-            CreateCollectionRequest, FindObjectRequest, InsertObjectRequest, ListCollectionsRequest,
-        };
+        use super::super::collection::{CreateCollectionRequest, ListCollectionsRequest};
         use super::super::database;
         use super::super::database::{CreateDatabaseRequest, ListDatabasesRequest};
+        use super::super::object;
+        use super::super::object::{FindObjectRequest, InsertObjectRequest};
         use super::super::wasm;
         use super::super::wasm::{RegisterModuleRequest, RunModuleRequest};
         use super::ProtoDb;
@@ -270,12 +274,12 @@ pub mod server {
                     grpc::unary::ResponseFuture<
                         methods::InsertObject<T>,
                         grpc::BoxBody,
-                        collection::InsertObjectRequest,
+                        object::InsertObjectRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::FindObject<T>,
                         grpc::BoxBody,
-                        collection::FindObjectRequest,
+                        object::FindObjectRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::RegisterWasmModule<T>,
@@ -422,14 +426,14 @@ pub mod server {
                     grpc::Encode<
                         grpc::unary::Once<
                             <methods::InsertObject<T> as grpc::UnaryService<
-                                collection::InsertObjectRequest,
+                                object::InsertObjectRequest,
                             >>::Response,
                         >,
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
                             <methods::FindObject<T> as grpc::UnaryService<
-                                collection::FindObjectRequest,
+                                object::FindObjectRequest,
                             >>::Response,
                         >,
                     >,
@@ -550,15 +554,18 @@ pub mod server {
         pub mod methods {
             use super::super::super::collection;
             use super::super::super::database;
+            use super::super::super::object;
             use super::super::super::wasm;
             use super::super::collection::{
-                CreateCollectionRequest, CreateCollectionResponse, FindObjectRequest,
-                FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
-                ListCollectionsRequest, ListCollectionsResponse,
+                CreateCollectionRequest, CreateCollectionResponse, ListCollectionsRequest,
+                ListCollectionsResponse,
             };
             use super::super::database::{
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
                 ListDatabasesResponse,
+            };
+            use super::super::object::{
+                FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
             };
             use super::super::wasm::{
                 RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
@@ -656,11 +663,11 @@ pub mod server {
 
             pub struct InsertObject<T>(pub T);
 
-            impl<T> tower::Service<grpc::Request<collection::InsertObjectRequest>> for InsertObject<T>
+            impl<T> tower::Service<grpc::Request<object::InsertObjectRequest>> for InsertObject<T>
             where
                 T: ProtoDb,
             {
-                type Response = grpc::Response<collection::InsertObjectResponse>;
+                type Response = grpc::Response<object::InsertObjectResponse>;
                 type Error = grpc::Error;
                 type Future = T::InsertObjectFuture;
 
@@ -670,7 +677,7 @@ pub mod server {
 
                 fn call(
                     &mut self,
-                    request: grpc::Request<collection::InsertObjectRequest>,
+                    request: grpc::Request<object::InsertObjectRequest>,
                 ) -> Self::Future {
                     self.0.insert_object(request)
                 }
@@ -678,11 +685,11 @@ pub mod server {
 
             pub struct FindObject<T>(pub T);
 
-            impl<T> tower::Service<grpc::Request<collection::FindObjectRequest>> for FindObject<T>
+            impl<T> tower::Service<grpc::Request<object::FindObjectRequest>> for FindObject<T>
             where
                 T: ProtoDb,
             {
-                type Response = grpc::Response<collection::FindObjectResponse>;
+                type Response = grpc::Response<object::FindObjectResponse>;
                 type Error = grpc::Error;
                 type Future = T::FindObjectFuture;
 
@@ -692,7 +699,7 @@ pub mod server {
 
                 fn call(
                     &mut self,
-                    request: grpc::Request<collection::FindObjectRequest>,
+                    request: grpc::Request<object::FindObjectRequest>,
                 ) -> Self::Future {
                     self.0.find_object(request)
                 }
@@ -787,6 +794,66 @@ pub mod collection {
         }
     }
     #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListCollectionsResponse {
+        #[prost(enumeration = "list_collections_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(string, repeated, tag = "2")]
+        pub collections: ::std::vec::Vec<String>,
+    }
+    pub mod list_collections_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+        }
+    }
+
+}
+pub mod database {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseRequest {
+        #[prost(string, tag = "1")]
+        pub name: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateDatabaseResponse {
+        #[prost(enumeration = "create_database_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+    }
+    pub mod create_database_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            DatabaseExists = 2,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesRequest {}
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListDatabasesResponse {
+        #[prost(enumeration = "list_databases_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(string, repeated, tag = "2")]
+        pub databases: ::std::vec::Vec<String>,
+    }
+    pub mod list_databases_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+        }
+    }
+
+}
+pub mod object {
+    #[derive(Clone, PartialEq, Message)]
     pub struct FindObjectRequest {
         #[prost(string, tag = "1")]
         pub database: String,
@@ -851,63 +918,6 @@ pub mod collection {
             InvalidCollection = 3,
             ObjectExists = 4,
             ObjectError = 5,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsRequest {
-        #[prost(string, tag = "1")]
-        pub database: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListCollectionsResponse {
-        #[prost(enumeration = "list_collections_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-        #[prost(string, repeated, tag = "2")]
-        pub collections: ::std::vec::Vec<String>,
-    }
-    pub mod list_collections_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
-            InvalidDatabase = 2,
-        }
-    }
-
-}
-pub mod database {
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseRequest {
-        #[prost(string, tag = "1")]
-        pub name: String,
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct CreateDatabaseResponse {
-        #[prost(enumeration = "create_database_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-    }
-    pub mod create_database_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
-            DatabaseExists = 2,
-        }
-    }
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesRequest {}
-    #[derive(Clone, PartialEq, Message)]
-    pub struct ListDatabasesResponse {
-        #[prost(enumeration = "list_databases_response::ErrorCode", tag = "1")]
-        pub error_code: i32,
-        #[prost(string, repeated, tag = "2")]
-        pub databases: ::std::vec::Vec<String>,
-    }
-    pub mod list_databases_response {
-        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
-        pub enum ErrorCode {
-            NoError = 0,
-            InternalError = 1,
         }
     }
 

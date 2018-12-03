@@ -4,7 +4,7 @@ use std::{env, fs, io::prelude::*, process::Command};
 
 fn main() {
     // Build protod
-    let subdirectories = vec!["collection", "database", "wasm"];
+    let subdirectories = vec!["collection", "database", "object", "wasm"];
     let mut dirs: Vec<String> = vec!["../../proto/protodb".to_string()];
     dirs.extend::<Vec<String>>(
         subdirectories
