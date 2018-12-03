@@ -1,10 +1,10 @@
 #! /bin/bash
 
-protoc -I src/protos \
+protoc -I ../protos \
         -I ../../proto \
         -I /usr/local/include \
         --python_out=src \
-        src/protos/*.proto
+        ../protos/*.proto
 
 python -m grpc_tools.protoc \
     -I ../../proto \
@@ -13,4 +13,8 @@ python -m grpc_tools.protoc \
     ../../proto/protodb/*.proto \
     ../../proto/protodb/**/*.proto
 
-touch src/protodb/__init__.py
+generated_paths=( "" "collection/" "database/" "object/" "wasm/" )
+for path in "${generated_paths[@]}"
+do
+    touch src/protodb/${path}__init__.py
+done

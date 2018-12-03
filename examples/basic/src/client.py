@@ -5,11 +5,10 @@ from google.protobuf.descriptor_pb2 import DescriptorProto
 from protodb import protodb_pb2_grpc
 from protodb.database.create_pb2 import CreateDatabaseRequest
 from protodb.database.list_pb2 import ListDatabasesRequest
-from protodb.database.run_wasm_pb2 import RunWasmRequest
 from protodb.collection.create_pb2 import CreateCollectionRequest
 from protodb.collection.list_pb2 import ListCollectionsRequest
-from protodb.collection.insert_object_pb2 import InsertObjectRequest
-from protodb.collection.find_object_pb2 import FindObjectRequest
+from protodb.object.insert_pb2 import InsertObjectRequest
+from protodb.object.find_pb2 import FindObjectRequest
 from protodb.wasm.register_pb2 import RegisterModuleRequest
 from protodb.wasm.run_pb2 import RunModuleRequest
 
@@ -51,12 +50,3 @@ class Client:
     def find_user(self, database, collection, id):
         request = FindObjectRequest(database=database, collection=collection, id=id)
         return self.stub.FindObject(request)
-
-    def register_wasm_module(self, database, name):
-        with open("/home/kevin/src/github.com/kevindrosendahl/ProtoDB/examples/wasm/wasm_bg.wasm", "rb") as f:
-            request = RegisterModuleRequest(database=database, name=name, wasm=bytes(f.read()))
-            return self.stub.RegisterWasmModule(request)
-
-    def run_wasm_module(self, database, name):
-        request = RunModuleRequest(database=database, name=name)
-        return self.stub.RunWasmModule(request)
