@@ -59,7 +59,7 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
-        "list database",
+        "list databases",
         list_databases,
         handle_list_databases,
         ListDatabasesFuture,

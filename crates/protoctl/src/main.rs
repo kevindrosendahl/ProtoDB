@@ -1,5 +1,5 @@
-use protoctl::{command::run_protoctl, Cli};
 use human_panic::setup_panic;
+use protoctl::{command::run_protoctl, Cli};
 use structopt::StructOpt;
 
 fn main() {

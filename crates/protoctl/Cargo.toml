@@ -18,6 +18,7 @@ prost = "0.4"
 prost-types = "0.4"
 prost-derive = "0.4"
 tokio-core = "0.1"
+tower-add-origin = { git = "https://github.com/tower-rs/tower-http" }
 tower-h2 = { git = "https://github.com/tower-rs/tower-h2" }
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-grpc = { git = "https://github.com/tower-rs/tower-grpc" }
