@@ -12,6 +12,8 @@ message RegisterModuleRequest {
         message BindgenImportHashes {
             string log = 1;
             string find_object = 2;
+            string find_objects_iter = 3;
+            string find_objects_iter_next = 4;
         }
         BindgenImportHashes bindgen_import_hashes = 2;
     }

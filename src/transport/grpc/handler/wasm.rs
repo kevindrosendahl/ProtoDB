@@ -23,6 +23,8 @@ impl Handler {
             ProtoDBModuleImportHashes {
                 log: bindgen_import_hashes.log,
                 find_object: bindgen_import_hashes.find_object,
+                find_object_iter: bindgen_import_hashes.find_objects_iter,
+                find_object_iter_next: bindgen_import_hashes.find_objects_iter_next,
             },
         );
         self.storage_engine

@@ -1,6 +1,13 @@
-use std::{io::Cursor, sync::Arc};
+use std::{
+    collections::HashMap,
+    io::Cursor,
+    sync::{
+        atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT},
+        Arc,
+    },
+};
 
-use crate::storage::StorageEngine;
+use crate::storage::{errors::InternalStorageEngineError, StorageEngine};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use wasmi::{
@@ -20,8 +27,12 @@ static THROW_IMPORT: &'static str = "__wbindgen_throw";
 const THROW_IMPORT_INDEX: usize = 0;
 static FIND_OBJECT_IMPORT_PREFIX: &'static str = "__wbg_findobject_";
 const FIND_OBJECT_IMPORT_INDEX: usize = 1;
+static FIND_OBJECTS_ITER_IMPORT_PREFIX: &'static str = "__wbg_findobjectsiter_";
+const FIND_OBJECTS_ITER_IMPORT_INDEX: usize = 2;
+static FIND_OBJECTS_ITER_NEXT_IMPORT_PREFIX: &'static str = "__wbg_findobjectsiternext_";
+const FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX: usize = 3;
 static LOG_IMPORT_PREFIX: &'static str = "__wbg_log_";
-const LOG_IMPORT_INDEX: usize = 2;
+const LOG_IMPORT_INDEX: usize = 4;
 
 pub struct ProtoDBModule {
     wasm_module: Module,
@@ -43,6 +54,8 @@ impl ProtoDBModule {
 pub struct ProtoDBModuleImportHashes {
     pub log: String,
     pub find_object: String,
+    pub find_object_iter: String,
+    pub find_object_iter_next: String,
 }
 
 pub struct Interpreter {
@@ -88,6 +101,8 @@ impl ProtoDBModuleInstance {
             memory_export: memory_export.clone(),
 
             storage_engine,
+            iterators: HashMap::new(),
+            iterator_counter: ATOMIC_USIZE_INIT,
         };
 
         ProtoDBModuleInstance {
@@ -161,6 +176,9 @@ struct ProtoDBExternals {
     memory_export: ExternVal,
 
     storage_engine: Arc<dyn StorageEngine>,
+    iterators:
+        HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>,
+    iterator_counter: AtomicUsize,
 }
 
 impl ProtoDBExternals {
@@ -252,6 +270,49 @@ impl Externals for ProtoDBExternals {
 
                 Ok(None)
             }
+            FIND_OBJECTS_ITER_IMPORT_INDEX => {
+                // Get collection name.
+                let collection_ptr: u32 = args.nth(0);
+                let collection_len: u32 = args.nth(1);
+                let collection = self.get_string(collection_ptr, collection_len as usize);
+
+                // Get id.
+                let iter_id = self.iterator_counter.fetch_add(1, Ordering::SeqCst);
+
+                // Look up the object.
+                let iter = self
+                    .storage_engine
+                    .catalog()
+                    .get_database_entry("dev")
+                    .unwrap()
+                    .get_collection_entry(&collection)
+                    .unwrap()
+                    .find_all(None);
+
+                self.iterators.insert(iter_id, iter);
+                Ok(Some(RuntimeValue::I32(iter_id as i32)))
+            }
+            FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX => {
+                let ret: u32 = args.nth(0);
+
+                let iter_id: u32 = args.nth(1);
+                let iter_id = iter_id as usize;
+                let iter = self.iterators.get_mut(&iter_id).unwrap();
+
+                let (ptr, len) = match iter.next() {
+                    Some(object) => {
+                        let object = object.unwrap();
+                        (self.pass_byte_array(&object), object.len())
+                    }
+                    None => (0, 0),
+                };
+
+                // Pass where the object was allocated down to the guest.
+                self.get_memory().set_value(ret, ptr).unwrap();
+                self.get_memory().set_value(ret + 4, len as u32).unwrap();
+
+                Ok(None)
+            }
             LOG_IMPORT_INDEX => {
                 let ptr: u32 = args.nth(0);
                 let len: u32 = args.nth(1);
@@ -295,6 +356,30 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
                     None,
                 ),
                 FIND_OBJECT_IMPORT_INDEX,
+            ));
+        }
+
+        if field_name
+            == format!(
+                "{}{}",
+                FIND_OBJECTS_ITER_IMPORT_PREFIX, self.hashes.find_object_iter
+            )
+        {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(&[ValueType::I32, ValueType::I32][..], Some(ValueType::I32)),
+                FIND_OBJECTS_ITER_IMPORT_INDEX,
+            ));
+        }
+
+        if field_name
+            == format!(
+                "{}{}",
+                FIND_OBJECTS_ITER_NEXT_IMPORT_PREFIX, self.hashes.find_object_iter_next
+            )
+        {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(&[ValueType::I32, ValueType::I32][..], None),
+                FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX,
             ));
         }
 

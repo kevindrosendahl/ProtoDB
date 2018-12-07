@@ -26,6 +26,9 @@ def main():
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
 
+    for i in range(1, 1000):
+        insert_user(client, id=i, first_name='jane', last_name='doe', age=40)
+
     find_user(client, 1)
     find_user(client, 2)
     find_user(client, 3)

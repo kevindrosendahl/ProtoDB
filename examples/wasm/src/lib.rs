@@ -9,8 +9,15 @@ struct MyModule;
 
 impl Module for MyModule {
     fn run(&mut self, protodb: impl ProtoDB) -> Vec<u8> {
-        log("trying to find object 1");
-        protodb.find_object("users", 1).unwrap()
+        log("trying to find objects");
+
+        let mut count = 0;
+        for (idx, object) in protodb.find_objects("users").enumerate() {
+            log(&format!("object #{}: {:?}", idx, object));
+            count += 1;
+        }
+
+        vec![count]
     }
 }
 

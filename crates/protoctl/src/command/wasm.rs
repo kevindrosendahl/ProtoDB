@@ -16,6 +16,10 @@ use regex::Regex;
 lazy_static! {
     static ref FIND_OBJECT_BINDGEN_RE: Regex =
         Regex::new("__wbg_findobject_([a-f0-9]{16})").unwrap();
+    static ref FIND_OBJECT_ITER_BINDGEN_RE: Regex =
+        Regex::new("__wbg_findobjectsiter_([a-f0-9]{16})").unwrap();
+    static ref FIND_OBJECT_ITER_NEXT_BINDGEN_RE: Regex =
+        Regex::new("__wbg_findobjectsiternext_([a-f0-9]{16})").unwrap();
     static ref LOG_BINDGEN_RE: Regex = Regex::new("__wbg_log_([a-f0-9]{16})").unwrap();
 }
 
@@ -57,7 +61,7 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
     let path = tmp.path();
 
     let mut cmd = Command::new(which::which("cargo").unwrap());
-    cmd.arg("build").arg("--target=wasm32-unknown-unknown");
+    cmd.arg("build").arg("--target=wasm32-unknown-unknown").arg("--release");
 
     let crate_name = match package {
         Some(package) => {
@@ -82,7 +86,7 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
 
     assert_eq!(
         cmd.arg(&format!(
-            "target/wasm32-unknown-unknown/debug/{}.wasm",
+            "target/wasm32-unknown-unknown/release/{}.wasm",
             crate_name,
         ))
         .arg("--out-dir")
@@ -105,22 +109,38 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
 
     let find_object_bindgen_hash = FIND_OBJECT_BINDGEN_RE
         .captures(&js)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str();
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
+
+    let find_object_iter_bindgen_hash = FIND_OBJECT_ITER_BINDGEN_RE
+        .captures(&js)
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
+
+    let find_object_iter_next_bindgen_hash = FIND_OBJECT_ITER_NEXT_BINDGEN_RE
+        .captures(&js)
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
 
     let log_bindgen_hash = LOG_BINDGEN_RE
         .captures(&js)
-        .unwrap()
-        .get(1)
-        .unwrap()
-        .as_str();
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
 
     let metadata = ModuleMetadata {
         name: format!("./{}", crate_name),
         bindgen_import_hashes: Some(BindgenImportHashes {
             find_object: find_object_bindgen_hash.to_string(),
+            find_objects_iter: find_object_iter_bindgen_hash.to_string(),
+            find_objects_iter_next: find_object_iter_next_bindgen_hash.to_string(),
             log: log_bindgen_hash.to_string(),
         }),
     };
@@ -151,7 +171,7 @@ fn run_wasm_module(database: String, name: String) {
             use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
             match response.error_code() {
                 ErrorCode::NoError => {
-                    println!("result: {:?}", String::from_utf8_lossy(&response.result))
+                    println!("result: {:?}", response.result)
                 }
                 ErrorCode::InternalError => println!("error running wasm module: internal error"),
                 ErrorCode::InvalidDatabase => println!("invalid database"),

@@ -1038,6 +1038,10 @@ pub mod wasm {
                 pub log: String,
                 #[prost(string, tag = "2")]
                 pub find_object: String,
+                #[prost(string, tag = "3")]
+                pub find_objects_iter: String,
+                #[prost(string, tag = "4")]
+                pub find_objects_iter_next: String,
             }
         }
     }
