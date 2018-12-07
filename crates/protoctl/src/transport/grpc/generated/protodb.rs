@@ -14,7 +14,8 @@ pub mod client {
     };
     use super::wasm;
     use super::wasm::{
-        RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
+        GetModuleInfoRequest, GetModuleInfoResponse, RegisterModuleRequest, RegisterModuleResponse,
+        RunModuleRequest, RunModuleResponse,
     };
     use tower_grpc::codegen::client::*;
 
@@ -79,23 +80,6 @@ pub mod client {
             self.inner.unary(request, path)
         }
 
-        pub fn list_collections<R>(
-            &mut self,
-            request: grpc::Request<collection::ListCollectionsRequest>,
-        ) -> grpc::unary::ResponseFuture<
-            collection::ListCollectionsResponse,
-            T::Future,
-            T::ResponseBody,
-        >
-        where
-            T: tower::HttpService<R>,
-            T::ResponseBody: grpc::Body,
-            grpc::unary::Once<collection::ListCollectionsRequest>: grpc::Encodable<R>,
-        {
-            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListCollections");
-            self.inner.unary(request, path)
-        }
-
         pub fn get_collection_info<R>(
             &mut self,
             request: grpc::Request<collection::GetCollectionInfoRequest>,
@@ -113,16 +97,20 @@ pub mod client {
             self.inner.unary(request, path)
         }
 
-        pub fn insert_object<R>(
+        pub fn list_collections<R>(
             &mut self,
-            request: grpc::Request<object::InsertObjectRequest>,
-        ) -> grpc::unary::ResponseFuture<object::InsertObjectResponse, T::Future, T::ResponseBody>
+            request: grpc::Request<collection::ListCollectionsRequest>,
+        ) -> grpc::unary::ResponseFuture<
+            collection::ListCollectionsResponse,
+            T::Future,
+            T::ResponseBody,
+        >
         where
             T: tower::HttpService<R>,
             T::ResponseBody: grpc::Body,
-            grpc::unary::Once<object::InsertObjectRequest>: grpc::Encodable<R>,
+            grpc::unary::Once<collection::ListCollectionsRequest>: grpc::Encodable<R>,
         {
-            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/InsertObject");
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListCollections");
             self.inner.unary(request, path)
         }
 
@@ -136,6 +124,32 @@ pub mod client {
             grpc::unary::Once<object::FindObjectRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/FindObject");
+            self.inner.unary(request, path)
+        }
+
+        pub fn insert_object<R>(
+            &mut self,
+            request: grpc::Request<object::InsertObjectRequest>,
+        ) -> grpc::unary::ResponseFuture<object::InsertObjectResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<object::InsertObjectRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/InsertObject");
+            self.inner.unary(request, path)
+        }
+
+        pub fn get_wasm_module_info<R>(
+            &mut self,
+            request: grpc::Request<wasm::GetModuleInfoRequest>,
+        ) -> grpc::unary::ResponseFuture<wasm::GetModuleInfoResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<wasm::GetModuleInfoRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/GetWasmModuleInfo");
             self.inner.unary(request, path)
         }
 
@@ -365,6 +379,29 @@ pub mod object {
 }
 pub mod wasm {
     #[derive(Clone, PartialEq, Message)]
+    pub struct GetModuleInfoRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub name: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetModuleInfoResponse {
+        #[prost(enumeration = "get_module_info_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub result_schema: ::std::option::Option<::prost_types::DescriptorProto>,
+    }
+    pub mod get_module_info_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidModule = 3,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
     pub struct RegisterModuleRequest {
         #[prost(string, tag = "1")]
         pub database: String,
@@ -374,6 +411,8 @@ pub mod wasm {
         pub metadata: ::std::option::Option<register_module_request::ModuleMetadata>,
         #[prost(bytes, tag = "4")]
         pub wasm: Vec<u8>,
+        #[prost(message, optional, tag = "5")]
+        pub result_schema: ::std::option::Option<::prost_types::DescriptorProto>,
     }
     pub mod register_module_request {
         #[derive(Clone, PartialEq, Message)]

@@ -10,6 +10,7 @@ use std::{
 use crate::storage::{errors::InternalStorageEngineError, StorageEngine};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
+use prost_types::DescriptorProto;
 use wasmi::{
     Error as InterpreterError, ExternVal, Externals, FuncInstance, FuncRef, ImportsBuilder,
     MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef, NopExternals, RuntimeArgs,
@@ -38,14 +39,21 @@ pub struct ProtoDBModule {
     wasm_module: Module,
     name: String,
     hashes: ProtoDBModuleImportHashes,
+    pub result_schema: DescriptorProto,
 }
 
 impl ProtoDBModule {
-    pub fn new(wasm_binary: Vec<u8>, name: String, hashes: ProtoDBModuleImportHashes) -> Self {
+    pub fn new(
+        wasm_binary: Vec<u8>,
+        name: String,
+        hashes: ProtoDBModuleImportHashes,
+        result_schema: DescriptorProto,
+    ) -> Self {
         ProtoDBModule {
             wasm_module: Module::from_buffer(wasm_binary).expect("failed to load_wasm"),
             name,
             hashes,
+            result_schema,
         }
     }
 }

@@ -9,6 +9,7 @@ import "protodb/database/create.proto";
 import "protodb/database/list.proto";
 import "protodb/object/find.proto";
 import "protodb/object/insert.proto";
+import "protodb/wasm/get_info.proto";
 import "protodb/wasm/register.proto";
 import "protodb/wasm/run.proto";
 
@@ -17,12 +18,13 @@ service ProtoDB {
     rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
 
     rpc CreateCollection (protodb.collection.CreateCollectionRequest) returns (protodb.collection.CreateCollectionResponse);
-    rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
     rpc GetCollectionInfo (protodb.collection.GetCollectionInfoRequest) returns (protodb.collection.GetCollectionInfoResponse);
+    rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
 
-    rpc InsertObject (protodb.object.InsertObjectRequest) returns (protodb.object.InsertObjectResponse);
     rpc FindObject (protodb.object.FindObjectRequest) returns (protodb.object.FindObjectResponse);
+    rpc InsertObject (protodb.object.InsertObjectRequest) returns (protodb.object.InsertObjectResponse);
 
+    rpc GetWasmModuleInfo(protodb.wasm.GetModuleInfoRequest) returns (protodb.wasm.GetModuleInfoResponse);
     rpc RegisterWasmModule(protodb.wasm.RegisterModuleRequest) returns (protodb.wasm.RegisterModuleResponse);
     rpc RunWasmModule(protodb.wasm.RunModuleRequest) returns (protodb.wasm.RunModuleResponse);
 }

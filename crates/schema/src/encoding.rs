@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, fmt, fmt::Formatter, io::Cursor};
+use std::{collections::{BTreeMap, HashMap}, fmt, fmt::Formatter, io::Cursor};
 
 use super::{
     errors::{ObjectError, SchemaError},
@@ -8,7 +8,7 @@ use super::{
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut};
 use prost::{encoding, encoding::WireType};
-use prost_types::field_descriptor_proto::Type;
+use prost_types::field_descriptor_proto::{Label, Type};
 
 macro_rules! varint_encoder {
     ( $val:ident ) => {{
@@ -90,7 +90,7 @@ impl Schema {
         DecodeObject {
             object_buf: Cursor::new(object),
             object_bytes: &object,
-            schema: self,
+            fields: &self.fields,
         }
     }
 
@@ -246,7 +246,7 @@ impl fmt::Display for FieldValue {
 pub struct DecodeObject<'a> {
     object_buf: Cursor<&'a [u8]>,
     object_bytes: &'a [u8],
-    schema: &'a Schema,
+    fields: &'a HashMap<i32, (String, Label, Type)>,
 }
 
 #[derive(Clone)]
@@ -357,7 +357,7 @@ impl<'a> Iterator for DecodeObject<'a> {
             // on the wire type. that said, how to decode the value is dependent on its type,
             // so we need to get the type prior to switching on the wire type so we can
             // decode the field if it is a part of the schema.
-            let name_type = match self.schema.fields.get(&tag) {
+            let name_type = match self.fields.get(&tag) {
                 Some((name, _, type_)) => Some((name, type_)),
                 None => None,
             };

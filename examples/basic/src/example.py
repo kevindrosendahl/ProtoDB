@@ -35,6 +35,7 @@ def main():
 
     find_user(client, 1)
     find_user(client, 1000)
+    find_user(client, 1001)
 
 
 def create_database(client):
@@ -121,11 +122,15 @@ def find_user(client, id):
     if response.error_code == FindObjectResponse.NO_ERROR:
         user = User()
         user.ParseFromString(response.object)
-        print('found user {}:'.format(id))
-        print('  id: {}'.format(user.id))
-        print('  first name: {}'.format(user.first_name))
-        print('  last name: {}'.format(user.last_name))
-        print('  age: {}'.format(user.age))
+        print('''found user {}:
+    id: {}
+    first name: {}
+    last name: {}
+    age: {}'''.format(id,
+                      user.id,
+                      user.first_name,
+                      user.last_name,
+                      user.age))
         return
 
     error_code_str = FindObjectResponse.ErrorCode.Name(response.error_code)

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package protodb.wasm;
+
+import "google/protobuf/descriptor.proto";
+
+message GetModuleInfoRequest {
+    string database = 1;
+    string name = 2;
+}
+
+message GetModuleInfoResponse {
+    enum ErrorCode {
+        NO_ERROR = 0;
+        INTERNAL_ERROR = 1;
+        INVALID_DATABASE = 2;
+        INVALID_MODULE = 3;
+    }
+    ErrorCode error_code = 1;
+
+    google.protobuf.DescriptorProto result_schema = 2;
+}

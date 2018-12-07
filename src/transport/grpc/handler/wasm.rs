@@ -11,6 +11,31 @@ use crate::{
 use tower_grpc::Request;
 
 impl Handler {
+    pub(crate) fn handle_get_wasm_module_info(
+        &mut self,
+        request: &Request<wasm::GetModuleInfoRequest>,
+    ) -> wasm::GetModuleInfoResponse {
+        self.storage_engine
+            .clone()
+            .catalog()
+            .get_database_entry(&request.get_ref().database)
+            .ok_or(wasm::get_module_info_response::ErrorCode::InvalidDatabase)
+            .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
+                db.get_wasm_module(&request.get_ref().name)
+                    .ok_or(wasm::get_module_info_response::ErrorCode::InvalidModule)
+            })
+            .and_then(|module: Arc<ProtoDBModule>| {
+                Ok(wasm::GetModuleInfoResponse {
+                    error_code: wasm::run_module_response::ErrorCode::NoError as i32,
+                    result_schema: Some(module.result_schema.clone()),
+                })
+            })
+            .unwrap_or_else(|error_code| wasm::GetModuleInfoResponse {
+                error_code: error_code as i32,
+                result_schema: None,
+            })
+    }
+
     pub(crate) fn handle_register_wasm_module(
         &mut self,
         request: &Request<wasm::RegisterModuleRequest>,
@@ -26,6 +51,7 @@ impl Handler {
                 find_object_iter: bindgen_import_hashes.find_objects_iter,
                 find_object_iter_next: bindgen_import_hashes.find_objects_iter_next,
             },
+            request.get_ref().result_schema.clone().unwrap(),
         );
         self.storage_engine
             .clone()

@@ -1,6 +1,7 @@
 use std::env;
+use std::fs;
 use std::fs::File;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -11,6 +12,9 @@ use crate::{
     CLIENT,
 };
 
+use protodb_schema::{descriptor_fields, encoding::DecodeObject};
+use prost::Message;
+use prost_types::FileDescriptorSet;
 use regex::Regex;
 
 lazy_static! {
@@ -36,6 +40,14 @@ pub enum Wasm {
 
         #[structopt(long = "package", short = "p")]
         package: Option<String>,
+
+        #[structopt(parse(from_os_str))]
+        result_schema_file: PathBuf,
+
+        result_schema_message: String,
+
+        #[structopt(long = "include", short = "i", parse(from_os_str))]
+        result_includes: Vec<PathBuf>,
     },
 
     #[structopt(name = "run")]
@@ -49,12 +61,31 @@ pub fn run_wasm(wasm: Wasm) {
             name,
             crate_,
             package,
-        } => register_module(database, name, crate_, package),
+            result_schema_file,
+            result_schema_message,
+            result_includes,
+        } => register_module(
+            database,
+            name,
+            crate_,
+            package,
+            result_schema_file,
+            result_schema_message,
+            result_includes,
+        ),
         Wasm::Run { database, name } => run_wasm_module(database, name),
     }
 }
 
-fn register_module(database: String, name: String, crate_: PathBuf, package: Option<String>) {
+fn register_module(
+    database: String,
+    name: String,
+    crate_: PathBuf,
+    package: Option<String>,
+    result_schema_file: PathBuf,
+    result_schema_message: String,
+    result_includes: Vec<PathBuf>,
+) {
     env::set_current_dir(crate_.clone()).unwrap();
 
     let tmp = tempdir::TempDir::new("protoctl-register-wasm-module").unwrap();
@@ -147,8 +178,49 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
         }),
     };
 
+//    let descriptor_set = tmp.path().join("descriptor-set");
+    let descriptor_set = std::path::Path::new("/tmp/descriptor-set");
+
+    let mut cmd = Command::new(prost_build::protoc());
+    cmd.arg("--include_imports")
+        .arg("--include_source_info")
+        .arg("-o")
+        .arg(&descriptor_set);
+
+    for include in result_includes {
+        cmd.arg("-I").arg(include);
+    }
+
+    cmd.arg(result_schema_file.clone());
+
+    let output = cmd.output().unwrap();
+    if !output.status.success() {
+        panic!("protoc failed: {}", String::from_utf8_lossy(&output.stderr));
+    }
+
+    let mut buf = Vec::new();
+    fs::File::open(descriptor_set)
+        .unwrap()
+        .read_to_end(&mut buf)
+        .unwrap();
+    let descriptor_set = FileDescriptorSet::decode(&buf).unwrap();
+    let file_descriptor = descriptor_set
+        .file
+        .iter()
+        .find(|&descriptor| {
+            descriptor.name() == result_schema_file.as_os_str().to_str().unwrap()
+        })
+        .unwrap();
+
+    let descriptor = file_descriptor
+        .message_type
+        .iter()
+        .find(|&message| message.name() == result_schema_message)
+        .unwrap()
+        .clone();
+
     CLIENT
-        .with(|c| c.borrow_mut().register_wasm_module(database, name, metadata, wasm))
+        .with(|c| c.borrow_mut().register_wasm_module(database, name, metadata, wasm, descriptor))
         .and_then(|response| {
             use crate::transport::grpc::generated::protodb::wasm::register_module_response::ErrorCode;
 
@@ -168,16 +240,37 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
 
 fn run_wasm_module(database: String, name: String) {
     CLIENT
-        .with(|c| c.borrow_mut().run_wasm_module(database, name))
+        .with(|c| c.borrow_mut().run_wasm_module(database.clone(), name.clone()))
         .and_then(|response| {
             use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
             match response.error_code() {
-                ErrorCode::NoError => println!("result: {:?}", response.result),
-                ErrorCode::InternalError => println!("error running wasm module: internal error"),
-                ErrorCode::InvalidDatabase => println!("invalid database"),
-                ErrorCode::InvalidModule => println!("invalid module"),
+                ErrorCode::NoError => Ok(response.result),
+                ErrorCode::InternalError => panic!("error running wasm module: internal error"),
+                ErrorCode::InvalidDatabase => panic!("invalid database"),
+                ErrorCode::InvalidModule => panic!("invalid module"),
             }
-            Ok(())
+        })
+        .and_then(|result| {
+            CLIENT
+                .with(|c| c.borrow_mut().get_wasm_module_info(database, name))
+                .and_then(|info| {
+//                    let descriptor = info.result_schema.unwrap();
+//                    let (descriptor_fields, _) = descriptor_fields(&descriptor).unwrap();
+//                    let object = DecodeObject {
+//                        object_buf: Cursor::new(result),
+//                        object_bytes: &result,
+//                        fields: &descriptor_fields,
+//                    };
+////                    let object = schema.decoded_object(&result).unwrap();
+//                    println!("response: ");
+//
+//                    for (tag, value) in object.fields_iter() {
+//                        let (name, _, _) = schema.fields.get(tag).unwrap();
+//                        println!("  {}: {}", name, value);
+//                    }
+
+                    Ok(())
+                })
         })
         .map_err(|err| println!("error running wasm module: {:?}", err))
         .unwrap();

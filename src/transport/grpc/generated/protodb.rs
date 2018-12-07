@@ -14,7 +14,8 @@ pub mod server {
     };
     use super::wasm;
     use super::wasm::{
-        RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
+        GetModuleInfoRequest, GetModuleInfoResponse, RegisterModuleRequest, RegisterModuleResponse,
+        RunModuleRequest, RunModuleResponse,
     };
     use tower_grpc::codegen::server::*;
 
@@ -43,20 +44,24 @@ pub mod server {
             Item = grpc::Response<collection::CreateCollectionResponse>,
             Error = grpc::Error,
         >;
+        type GetCollectionInfoFuture: futures::Future<
+            Item = grpc::Response<collection::GetCollectionInfoResponse>,
+            Error = grpc::Error,
+        >;
         type ListCollectionsFuture: futures::Future<
             Item = grpc::Response<collection::ListCollectionsResponse>,
             Error = grpc::Error,
         >;
-        type GetCollectionInfoFuture: futures::Future<
-            Item = grpc::Response<collection::GetCollectionInfoResponse>,
+        type FindObjectFuture: futures::Future<
+            Item = grpc::Response<object::FindObjectResponse>,
             Error = grpc::Error,
         >;
         type InsertObjectFuture: futures::Future<
             Item = grpc::Response<object::InsertObjectResponse>,
             Error = grpc::Error,
         >;
-        type FindObjectFuture: futures::Future<
-            Item = grpc::Response<object::FindObjectResponse>,
+        type GetWasmModuleInfoFuture: futures::Future<
+            Item = grpc::Response<wasm::GetModuleInfoResponse>,
             Error = grpc::Error,
         >;
         type RegisterWasmModuleFuture: futures::Future<
@@ -83,25 +88,30 @@ pub mod server {
             request: grpc::Request<collection::CreateCollectionRequest>,
         ) -> Self::CreateCollectionFuture;
 
+        fn get_collection_info(
+            &mut self,
+            request: grpc::Request<collection::GetCollectionInfoRequest>,
+        ) -> Self::GetCollectionInfoFuture;
+
         fn list_collections(
             &mut self,
             request: grpc::Request<collection::ListCollectionsRequest>,
         ) -> Self::ListCollectionsFuture;
 
-        fn get_collection_info(
+        fn find_object(
             &mut self,
-            request: grpc::Request<collection::GetCollectionInfoRequest>,
-        ) -> Self::GetCollectionInfoFuture;
+            request: grpc::Request<object::FindObjectRequest>,
+        ) -> Self::FindObjectFuture;
 
         fn insert_object(
             &mut self,
             request: grpc::Request<object::InsertObjectRequest>,
         ) -> Self::InsertObjectFuture;
 
-        fn find_object(
+        fn get_wasm_module_info(
             &mut self,
-            request: grpc::Request<object::FindObjectRequest>,
-        ) -> Self::FindObjectFuture;
+            request: grpc::Request<wasm::GetModuleInfoRequest>,
+        ) -> Self::GetWasmModuleInfoFuture;
 
         fn register_wasm_module(
             &mut self,
@@ -165,6 +175,13 @@ pub mod server {
                         kind: Ok(CreateCollection(response)),
                     }
                 }
+                "/protodb.ProtoDB/GetCollectionInfo" => {
+                    let service = proto_db::methods::GetCollectionInfo(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(GetCollectionInfo(response)),
+                    }
+                }
                 "/protodb.ProtoDB/ListCollections" => {
                     let service = proto_db::methods::ListCollections(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
@@ -172,11 +189,11 @@ pub mod server {
                         kind: Ok(ListCollections(response)),
                     }
                 }
-                "/protodb.ProtoDB/GetCollectionInfo" => {
-                    let service = proto_db::methods::GetCollectionInfo(self.proto_db.clone());
+                "/protodb.ProtoDB/FindObject" => {
+                    let service = proto_db::methods::FindObject(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
                     proto_db::ResponseFuture {
-                        kind: Ok(GetCollectionInfo(response)),
+                        kind: Ok(FindObject(response)),
                     }
                 }
                 "/protodb.ProtoDB/InsertObject" => {
@@ -186,11 +203,11 @@ pub mod server {
                         kind: Ok(InsertObject(response)),
                     }
                 }
-                "/protodb.ProtoDB/FindObject" => {
-                    let service = proto_db::methods::FindObject(self.proto_db.clone());
+                "/protodb.ProtoDB/GetWasmModuleInfo" => {
+                    let service = proto_db::methods::GetWasmModuleInfo(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
                     proto_db::ResponseFuture {
-                        kind: Ok(FindObject(response)),
+                        kind: Ok(GetWasmModuleInfo(response)),
                     }
                 }
                 "/protodb.ProtoDB/RegisterWasmModule" => {
@@ -259,7 +276,7 @@ pub mod server {
         use super::super::object;
         use super::super::object::{FindObjectRequest, InsertObjectRequest};
         use super::super::wasm;
-        use super::super::wasm::{RegisterModuleRequest, RunModuleRequest};
+        use super::super::wasm::{GetModuleInfoRequest, RegisterModuleRequest, RunModuleRequest};
         use super::ProtoDb;
         use tower_grpc::codegen::server::*;
 
@@ -285,14 +302,19 @@ pub mod server {
                         collection::CreateCollectionRequest,
                     >,
                     grpc::unary::ResponseFuture<
+                        methods::GetCollectionInfo<T>,
+                        grpc::BoxBody,
+                        collection::GetCollectionInfoRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
                         methods::ListCollections<T>,
                         grpc::BoxBody,
                         collection::ListCollectionsRequest,
                     >,
                     grpc::unary::ResponseFuture<
-                        methods::GetCollectionInfo<T>,
+                        methods::FindObject<T>,
                         grpc::BoxBody,
-                        collection::GetCollectionInfoRequest,
+                        object::FindObjectRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::InsertObject<T>,
@@ -300,9 +322,9 @@ pub mod server {
                         object::InsertObjectRequest,
                     >,
                     grpc::unary::ResponseFuture<
-                        methods::FindObject<T>,
+                        methods::GetWasmModuleInfo<T>,
                         grpc::BoxBody,
-                        object::FindObjectRequest,
+                        wasm::GetModuleInfoRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::RegisterWasmModule<T>,
@@ -357,6 +379,15 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
+                    Ok(GetCollectionInfo(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(GetCollectionInfo(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
                     Ok(ListCollections(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
@@ -366,11 +397,11 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
-                    Ok(GetCollectionInfo(ref mut fut)) => {
+                    Ok(FindObject(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
                         let body = ResponseBody {
-                            kind: Ok(GetCollectionInfo(body)),
+                            kind: Ok(FindObject(body)),
                         };
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
@@ -384,11 +415,11 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
-                    Ok(FindObject(ref mut fut)) => {
+                    Ok(GetWasmModuleInfo(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
                         let body = ResponseBody {
-                            kind: Ok(FindObject(body)),
+                            kind: Ok(GetWasmModuleInfo(body)),
                         };
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
@@ -450,6 +481,13 @@ pub mod server {
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
+                            <methods::GetCollectionInfo<T> as grpc::UnaryService<
+                                collection::GetCollectionInfoRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
                             <methods::ListCollections<T> as grpc::UnaryService<
                                 collection::ListCollectionsRequest,
                             >>::Response,
@@ -457,8 +495,8 @@ pub mod server {
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::GetCollectionInfo<T> as grpc::UnaryService<
-                                collection::GetCollectionInfoRequest,
+                            <methods::FindObject<T> as grpc::UnaryService<
+                                object::FindObjectRequest,
                             >>::Response,
                         >,
                     >,
@@ -471,8 +509,8 @@ pub mod server {
                     >,
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::FindObject<T> as grpc::UnaryService<
-                                object::FindObjectRequest,
+                            <methods::GetWasmModuleInfo<T> as grpc::UnaryService<
+                                wasm::GetModuleInfoRequest,
                             >>::Response,
                         >,
                     >,
@@ -508,10 +546,11 @@ pub mod server {
                     Ok(CreateDatabase(ref v)) => v.is_end_stream(),
                     Ok(ListDatabases(ref v)) => v.is_end_stream(),
                     Ok(CreateCollection(ref v)) => v.is_end_stream(),
-                    Ok(ListCollections(ref v)) => v.is_end_stream(),
                     Ok(GetCollectionInfo(ref v)) => v.is_end_stream(),
-                    Ok(InsertObject(ref v)) => v.is_end_stream(),
+                    Ok(ListCollections(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
+                    Ok(InsertObject(ref v)) => v.is_end_stream(),
+                    Ok(GetWasmModuleInfo(ref v)) => v.is_end_stream(),
                     Ok(RegisterWasmModule(ref v)) => v.is_end_stream(),
                     Ok(RunWasmModule(ref v)) => v.is_end_stream(),
                     Err(_) => true,
@@ -525,10 +564,11 @@ pub mod server {
                     Ok(CreateDatabase(ref mut v)) => v.poll_data(),
                     Ok(ListDatabases(ref mut v)) => v.poll_data(),
                     Ok(CreateCollection(ref mut v)) => v.poll_data(),
-                    Ok(ListCollections(ref mut v)) => v.poll_data(),
                     Ok(GetCollectionInfo(ref mut v)) => v.poll_data(),
-                    Ok(InsertObject(ref mut v)) => v.poll_data(),
+                    Ok(ListCollections(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
+                    Ok(InsertObject(ref mut v)) => v.poll_data(),
+                    Ok(GetWasmModuleInfo(ref mut v)) => v.poll_data(),
                     Ok(RegisterWasmModule(ref mut v)) => v.poll_data(),
                     Ok(RunWasmModule(ref mut v)) => v.poll_data(),
                     Err(_) => Ok(None.into()),
@@ -542,10 +582,11 @@ pub mod server {
                     Ok(CreateDatabase(ref mut v)) => v.poll_metadata(),
                     Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
                     Ok(CreateCollection(ref mut v)) => v.poll_metadata(),
-                    Ok(ListCollections(ref mut v)) => v.poll_metadata(),
                     Ok(GetCollectionInfo(ref mut v)) => v.poll_metadata(),
-                    Ok(InsertObject(ref mut v)) => v.poll_metadata(),
+                    Ok(ListCollections(ref mut v)) => v.poll_metadata(),
                     Ok(FindObject(ref mut v)) => v.poll_metadata(),
+                    Ok(InsertObject(ref mut v)) => v.poll_metadata(),
+                    Ok(GetWasmModuleInfo(ref mut v)) => v.poll_metadata(),
                     Ok(RegisterWasmModule(ref mut v)) => v.poll_metadata(),
                     Ok(RunWasmModule(ref mut v)) => v.poll_metadata(),
                     Err(ref status) => status.to_header_map().map(Some).map(Into::into),
@@ -577,20 +618,22 @@ pub mod server {
             CreateDatabase,
             ListDatabases,
             CreateCollection,
-            ListCollections,
             GetCollectionInfo,
-            InsertObject,
+            ListCollections,
             FindObject,
+            InsertObject,
+            GetWasmModuleInfo,
             RegisterWasmModule,
             RunWasmModule,
         > {
             CreateDatabase(CreateDatabase),
             ListDatabases(ListDatabases),
             CreateCollection(CreateCollection),
-            ListCollections(ListCollections),
             GetCollectionInfo(GetCollectionInfo),
-            InsertObject(InsertObject),
+            ListCollections(ListCollections),
             FindObject(FindObject),
+            InsertObject(InsertObject),
+            GetWasmModuleInfo(GetWasmModuleInfo),
             RegisterWasmModule(RegisterWasmModule),
             RunWasmModule(RunWasmModule),
         }
@@ -612,7 +655,8 @@ pub mod server {
                 FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
             };
             use super::super::wasm::{
-                RegisterModuleRequest, RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
+                GetModuleInfoRequest, GetModuleInfoResponse, RegisterModuleRequest,
+                RegisterModuleResponse, RunModuleRequest, RunModuleResponse,
             };
             use super::super::ProtoDb;
             use tower_grpc::codegen::server::*;
@@ -683,6 +727,28 @@ pub mod server {
                 }
             }
 
+            pub struct GetCollectionInfo<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<collection::GetCollectionInfoRequest>> for GetCollectionInfo<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<collection::GetCollectionInfoResponse>;
+                type Error = grpc::Error;
+                type Future = T::GetCollectionInfoFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<collection::GetCollectionInfoRequest>,
+                ) -> Self::Future {
+                    self.0.get_collection_info(request)
+                }
+            }
+
             pub struct ListCollections<T>(pub T);
 
             impl<T> tower::Service<grpc::Request<collection::ListCollectionsRequest>> for ListCollections<T>
@@ -705,15 +771,15 @@ pub mod server {
                 }
             }
 
-            pub struct GetCollectionInfo<T>(pub T);
+            pub struct FindObject<T>(pub T);
 
-            impl<T> tower::Service<grpc::Request<collection::GetCollectionInfoRequest>> for GetCollectionInfo<T>
+            impl<T> tower::Service<grpc::Request<object::FindObjectRequest>> for FindObject<T>
             where
                 T: ProtoDb,
             {
-                type Response = grpc::Response<collection::GetCollectionInfoResponse>;
+                type Response = grpc::Response<object::FindObjectResponse>;
                 type Error = grpc::Error;
-                type Future = T::GetCollectionInfoFuture;
+                type Future = T::FindObjectFuture;
 
                 fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
                     Ok(futures::Async::Ready(()))
@@ -721,9 +787,9 @@ pub mod server {
 
                 fn call(
                     &mut self,
-                    request: grpc::Request<collection::GetCollectionInfoRequest>,
+                    request: grpc::Request<object::FindObjectRequest>,
                 ) -> Self::Future {
-                    self.0.get_collection_info(request)
+                    self.0.find_object(request)
                 }
             }
 
@@ -749,15 +815,15 @@ pub mod server {
                 }
             }
 
-            pub struct FindObject<T>(pub T);
+            pub struct GetWasmModuleInfo<T>(pub T);
 
-            impl<T> tower::Service<grpc::Request<object::FindObjectRequest>> for FindObject<T>
+            impl<T> tower::Service<grpc::Request<wasm::GetModuleInfoRequest>> for GetWasmModuleInfo<T>
             where
                 T: ProtoDb,
             {
-                type Response = grpc::Response<object::FindObjectResponse>;
+                type Response = grpc::Response<wasm::GetModuleInfoResponse>;
                 type Error = grpc::Error;
-                type Future = T::FindObjectFuture;
+                type Future = T::GetWasmModuleInfoFuture;
 
                 fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
                     Ok(futures::Async::Ready(()))
@@ -765,9 +831,9 @@ pub mod server {
 
                 fn call(
                     &mut self,
-                    request: grpc::Request<object::FindObjectRequest>,
+                    request: grpc::Request<wasm::GetModuleInfoRequest>,
                 ) -> Self::Future {
-                    self.0.find_object(request)
+                    self.0.get_wasm_module_info(request)
                 }
             }
 
@@ -1013,6 +1079,29 @@ pub mod object {
 }
 pub mod wasm {
     #[derive(Clone, PartialEq, Message)]
+    pub struct GetModuleInfoRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub name: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetModuleInfoResponse {
+        #[prost(enumeration = "get_module_info_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub result_schema: ::std::option::Option<::prost_types::DescriptorProto>,
+    }
+    pub mod get_module_info_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidModule = 3,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
     pub struct RegisterModuleRequest {
         #[prost(string, tag = "1")]
         pub database: String,
@@ -1022,6 +1111,8 @@ pub mod wasm {
         pub metadata: ::std::option::Option<register_module_request::ModuleMetadata>,
         #[prost(bytes, tag = "4")]
         pub wasm: Vec<u8>,
+        #[prost(message, optional, tag = "5")]
+        pub result_schema: ::std::option::Option<::prost_types::DescriptorProto>,
     }
     pub mod register_module_request {
         #[derive(Clone, PartialEq, Message)]

@@ -38,7 +38,7 @@ impl Module for UserAgeAverage {
 
         let average_age = (age as f64) / (num_users as f64);
 
-        log(&format!("found {} objects total", num_users));
+        log(&format!("found {} users", num_users));
         log(&format!("average age: {}", average_age));
 
         let statistics = users::UserStatistics {

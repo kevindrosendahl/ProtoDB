@@ -115,6 +115,15 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "get wasm module info",
+        get_wasm_module_info,
+        handle_get_wasm_module_info,
+        GetWasmModuleInfoFuture,
+        protodb_wasm::GetModuleInfoRequest,
+        protodb_wasm::GetModuleInfoResponse
+    );
+
+    method_handler!(
         "register wasm module",
         register_wasm_module,
         handle_register_wasm_module,

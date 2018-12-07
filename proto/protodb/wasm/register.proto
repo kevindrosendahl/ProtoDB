@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package protodb.wasm;
 
+import "google/protobuf/descriptor.proto";
+
 message RegisterModuleRequest {
     string database = 1;
     string name = 2;
@@ -20,6 +22,7 @@ message RegisterModuleRequest {
     ModuleMetadata metadata = 3;
 
     bytes wasm = 4;
+    google.protobuf.DescriptorProto result_schema = 5;
 }
 
 message RegisterModuleResponse {
