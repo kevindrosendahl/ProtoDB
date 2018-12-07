@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashSet, sync::Arc};
+use std::{cell::RefCell, collections::HashSet, io::Cursor, sync::Arc};
 
 use super::super::store::{KVStore, KVStoreBytes};
 use super::{delimiter_prefix_bound, index::KVIndexCatalog, key_suffix, KEY_DELIMITER};
@@ -13,6 +13,7 @@ use crate::{
 };
 
 use prost_types::DescriptorProto;
+use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 #[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
@@ -71,7 +72,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
         // get the key bounds for the object
-        let (start, end) = delimiter_prefix_bound(self.key_generator.object_key_prefix(id));
+        let (start, end) = delimiter_prefix_bound(self.key_generator.field_key_prefix(id));
 
         // allocate the buffer that we'll be encoding the message into
         let mut buf = Vec::new();
@@ -176,7 +177,10 @@ impl CollectionKeyGenerator {
 
     #[inline(always)]
     fn object_key_prefix(&self, id: u64) -> String {
-        format!("{prefix}{id}", prefix = self.key_prefix(), id = id,)
+        // In order to have the keys sorted in the correct order,
+        // pad the left of the id with 0s up to the length of the
+        // longest u64.
+        format!("{prefix}{id:0>20}", prefix = self.key_prefix(), id = id,)
     }
 
     #[inline(always)]
@@ -190,8 +194,11 @@ impl CollectionKeyGenerator {
 
     #[inline(always)]
     fn field_key(&self, id: u64, tag: i32) -> String {
+        // In order to have the keys sorted in the correct order,
+        // pad the left of the id with 0s up to the length of the
+        // longest i32.
         format!(
-            "{prefix}{tag}",
+            "{prefix}{tag:0>10}",
             prefix = self.field_key_prefix(id),
             tag = tag,
         )

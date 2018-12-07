@@ -24,12 +24,12 @@ fn key_suffix(prefix: &str, key: &str) -> String {
     // move past the prefix
     key_parts
         .next()
-        .unwrap_or_else(|| panic!("corrupted key: {}", key));
+        .unwrap_or_else(|| panic!("corrupted key (no prefix): {}", key));
 
     // get the suffix
     let suffix = key_parts
         .next()
-        .unwrap_or_else(|| panic!("corrupted key: {}", key));
+        .unwrap_or_else(|| panic!("corrupted key (no suffix): {}", key));
 
     String::from(suffix)
 }

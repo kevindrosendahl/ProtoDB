@@ -26,12 +26,17 @@ def main():
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
 
-    for i in range(1, 1000):
+    for i in range(1, 1010):
         insert_user(client, id=i, first_name='jane', last_name='doe', age=40)
 
     find_user(client, 1)
     find_user(client, 2)
     find_user(client, 3)
+    find_user(client, 10)
+    find_user(client, 11)
+    find_user(client, 19)
+    find_user(client, 20)
+    find_user(client, 21)
 
 
 def create_database(client):
