@@ -8,7 +8,7 @@ use prost_types::{
 pub mod encoding;
 pub mod errors;
 
-pub use self::encoding::{DecodedObject, DecodedObjectBuilder};
+pub use self::encoding::{DecodedIdObject, DecodedObjectBuilder};
 
 const ID_FIELD: &str = "id";
 
@@ -16,7 +16,7 @@ const ID_FIELD: &str = "id";
 pub struct Schema {
     pub descriptor: DescriptorProto,
     pub id_field: i32,
-    pub fields: HashMap<i32, (String, Label, Type)>,
+    pub fields: DescriptorFields,
 }
 
 impl Schema {
@@ -35,7 +35,18 @@ impl Schema {
     }
 }
 
-pub fn descriptor_fields(descriptor: &DescriptorProto) -> Result<(HashMap<i32, (String, Label, Type)>, Option<i32>), errors::SchemaError> {
+#[derive(Clone, Debug)]
+pub struct DescriptorFields {
+    inner: HashMap<i32, (String, Label, Type)>,
+}
+
+impl DescriptorFields {
+    pub fn info(&self, field: &i32) -> Option<&(String, Label, Type)> {
+        self.inner.get(field)
+    }
+}
+
+pub fn descriptor_fields(descriptor: &DescriptorProto) -> Result<(DescriptorFields, Option<i32>), errors::SchemaError> {
     let mut id_field = None;
     let mut fields = HashMap::new();
     for field in descriptor.field.iter() {
@@ -75,5 +86,5 @@ pub fn descriptor_fields(descriptor: &DescriptorProto) -> Result<(HashMap<i32, (
         );
     }
 
-    Ok((fields, id_field))
+    Ok((DescriptorFields { inner: fields }, id_field))
 }

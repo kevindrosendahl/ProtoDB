@@ -1,7 +1,7 @@
 use std::env;
 use std::fs;
 use std::fs::File;
-use std::io::{Cursor, Read};
+use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -12,7 +12,7 @@ use crate::{
     CLIENT,
 };
 
-use protodb_schema::{descriptor_fields, encoding::DecodeObject};
+use protodb_schema::{descriptor_fields, encoding::decoded_object};
 use prost::Message;
 use prost_types::FileDescriptorSet;
 use regex::Regex;
@@ -254,20 +254,15 @@ fn run_wasm_module(database: String, name: String) {
             CLIENT
                 .with(|c| c.borrow_mut().get_wasm_module_info(database, name))
                 .and_then(|info| {
-//                    let descriptor = info.result_schema.unwrap();
-//                    let (descriptor_fields, _) = descriptor_fields(&descriptor).unwrap();
-//                    let object = DecodeObject {
-//                        object_buf: Cursor::new(result),
-//                        object_bytes: &result,
-//                        fields: &descriptor_fields,
-//                    };
-////                    let object = schema.decoded_object(&result).unwrap();
-//                    println!("response: ");
-//
-//                    for (tag, value) in object.fields_iter() {
-//                        let (name, _, _) = schema.fields.get(tag).unwrap();
-//                        println!("  {}: {}", name, value);
-//                    }
+                    let descriptor = info.result_schema.unwrap();
+                    let (descriptor_fields, _) = descriptor_fields(&descriptor).unwrap();
+                    let object = decoded_object(&descriptor_fields, &result).unwrap();
+                    println!("response: ");
+
+                    for (tag, value) in object.fields_iter() {
+                        let (name, _, _) = descriptor_fields.info(tag).unwrap();
+                        println!("  {}: {}", name, value);
+                    }
 
                     Ok(())
                 })

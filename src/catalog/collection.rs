@@ -5,7 +5,7 @@ use super::{
     index::IndexCatalog,
 };
 use crate::{
-    schema::{DecodedObject, Schema},
+    schema::{DecodedIdObject, Schema},
     storage::errors::InternalStorageEngineError,
 };
 

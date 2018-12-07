@@ -9,7 +9,7 @@ use crate::{
         index::IndexCatalog,
     },
     schema::{
-        encoding::FieldValue, errors::SchemaError, DecodedObject, DecodedObjectBuilder, Schema,
+        encoding::FieldValue, errors::SchemaError, DecodedIdObject, DecodedObjectBuilder, Schema,
     },
     storage::errors::InternalStorageEngineError,
 };

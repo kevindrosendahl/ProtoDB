@@ -1,6 +1,7 @@
-use std::{collections::{BTreeMap, HashMap}, fmt, fmt::Formatter, io::Cursor};
+use std::{collections::BTreeMap, fmt, fmt::Formatter, io::Cursor};
 
 use super::{
+    DescriptorFields,
     errors::{ObjectError, SchemaError},
     Schema,
 };
@@ -8,7 +9,7 @@ use super::{
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut};
 use prost::{encoding, encoding::WireType};
-use prost_types::field_descriptor_proto::{Label, Type};
+use prost_types::field_descriptor_proto::Type;
 
 macro_rules! varint_encoder {
     ( $val:ident ) => {{
@@ -67,7 +68,7 @@ macro_rules! little_endian_decoder {
 
 impl Schema {
     pub fn wire_type(&self, tag: i32) -> Option<WireType> {
-        self.fields.get(&tag).map(|(_, _, type_)| {
+        self.fields.info(&tag).map(|(_, _, type_)| {
             match type_ {
                 Type::Int32
                 | Type::Int64
@@ -94,42 +95,33 @@ impl Schema {
         }
     }
 
-    pub fn decoded_object<'a>(&'a self, object: &'a [u8]) -> Result<DecodedObject, ObjectError> {
-        let mut decoded_builder = self.decoded_object_builder();
-        self.decode_object(object).try_for_each(|f| {
-            // if the value is an error, simply return it
-            if f.is_err() {
-                // try_for_each expects you to return an Ok(()) or an Err
-                // so we need to show the compiler here that we're definitely
-                // returning an Err and not an Ok(FieldInfo), so need
-                // to do this unwrapping.
-                return Err(f.err().unwrap());
+    pub fn decoded_object<'a>(&'a self, object: &'a [u8]) -> Result<DecodedIdObject, ObjectError> {
+        let decoded = decoded_object(&self.fields, object)?;
+        match decoded.field(self.id_field) {
+            None => Err(ObjectError::SchemaError(SchemaError::MissingIdField)),
+            Some(id) => {
+                match id {
+                    FieldValue::Uint64(id) => {
+                        Ok(DecodedIdObject{
+                            id: *id,
+                            inner: decoded,
+                        })
+                    }
+                    // FIXME: get type for error
+                   _ => unimplemented!()
+                }
             }
-
-            // add the field to our fields map
-            let f = f.unwrap();
-            decoded_builder
-                .field(f.tag, f.value.clone())
-                .map_err(|err| ObjectError::SchemaError(err))
-        })?;
-
-        let decoded = decoded_builder.build();
-        match decoded.id {
-            0 => Err(ObjectError::SchemaError(SchemaError::MissingIdField)),
-            _ => Ok(decoded),
         }
     }
 
-    pub fn decoded_object_builder(&self) -> DecodedObjectBuilder {
-        DecodedObjectBuilder::new(self.id_field)
-    }
-
+    // FIXME: move out of Schema
     pub fn encode_field(tag: i32, wire_type: WireType, value: &[u8], buf: &mut impl BufMut) {
         encoding::encode_key(tag as u32, wire_type, buf);
         buf.put(value);
     }
 
     // FIXME: this probably take in a buffer
+    // FIXME: move out of Schema
     pub fn encode_value(value: FieldValue) -> Vec<u8> {
         // TODO: can probably macro this out a bit more
         match value {
@@ -158,6 +150,7 @@ impl Schema {
     }
 
     #[allow(dead_code)]
+    // FIXME: move out of Schema
     pub fn decode_value(type_: Type, value: &[u8]) -> FieldValue {
         // TODO: can probably macro this out a bit more
         match type_ {
@@ -243,64 +236,39 @@ impl fmt::Display for FieldValue {
     }
 }
 
+pub fn decoded_object(fields: &DescriptorFields, object: &[u8]) -> Result<DecodedObject, ObjectError> {
+    let mut decoded_builder = DecodedObjectBuilder::new();
+    let mut decoder = DecodeObject {
+        object_buf: Cursor::new(object),
+        object_bytes: &object,
+        fields,
+    };
+
+    decoder.try_for_each(|f| {
+        // if the value is an error, simply return it
+        if f.is_err() {
+            // try_for_each expects you to return an Ok(()) or an Err
+            // so we need to show the compiler here that we're definitely
+            // returning an Err and not an Ok(FieldInfo), so need
+            // to do this unwrapping.
+            return Err(f.err().unwrap());
+        }
+
+        // add the field to our fields map
+        let f = f.unwrap();
+        decoded_builder
+            .field(f.tag, f.value.clone())
+            .map_err(|err| ObjectError::SchemaError(err))
+    })?;
+
+    Ok(decoded_builder.build())
+}
+
+
 pub struct DecodeObject<'a> {
     object_buf: Cursor<&'a [u8]>,
     object_bytes: &'a [u8],
-    fields: &'a HashMap<i32, (String, Label, Type)>,
-}
-
-#[derive(Clone)]
-pub struct DecodedObjectBuilder {
-    id_field: i32,
-    inner: DecodedObject,
-}
-
-impl DecodedObjectBuilder {
-    pub fn new(id_field: i32) -> DecodedObjectBuilder {
-        DecodedObjectBuilder {
-            id_field,
-            inner: DecodedObject {
-                id: 0,
-                inner: BTreeMap::new(),
-            },
-        }
-    }
-
-    pub fn build(self) -> DecodedObject {
-        self.inner
-    }
-
-    pub fn id(&mut self, id: u64) {
-        self.inner.id = id;
-    }
-
-    pub fn field(&mut self, tag: i32, value: FieldValue) -> Result<(), SchemaError> {
-        if tag == self.id_field {
-            match value {
-                FieldValue::Uint64(id) => self.id(id),
-                // FIXME: should handle this better
-                _ => return Err(SchemaError::InvalidIdType("non-u64".into())),
-            }
-        }
-        self.inner.inner.insert(tag, value);
-        Ok(())
-    }
-}
-
-#[derive(Clone)]
-pub struct DecodedObject {
-    pub id: u64,
-    inner: BTreeMap<i32, FieldValue>,
-}
-
-impl DecodedObject {
-    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue)> {
-        self.inner.iter()
-    }
-
-    pub fn field(&self, tag: i32) -> Option<&FieldValue> {
-        self.inner.get(&tag)
-    }
+    fields: &'a DescriptorFields,
 }
 
 macro_rules! iter_err {
@@ -357,7 +325,7 @@ impl<'a> Iterator for DecodeObject<'a> {
             // on the wire type. that said, how to decode the value is dependent on its type,
             // so we need to get the type prior to switching on the wire type so we can
             // decode the field if it is a part of the schema.
-            let name_type = match self.fields.get(&tag) {
+            let name_type = match self.fields.info(&tag) {
                 Some((name, _, type_)) => Some((name, type_)),
                 None => None,
             };
@@ -489,5 +457,60 @@ impl<'a> Iterator for DecodeObject<'a> {
                 value,
             }));
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct DecodedObjectBuilder {
+    inner: DecodedObject,
+}
+
+impl DecodedObjectBuilder {
+    pub fn new() -> DecodedObjectBuilder {
+        DecodedObjectBuilder {
+            inner: DecodedObject {
+                inner: BTreeMap::new(),
+            },
+        }
+    }
+
+    pub fn build(self) -> DecodedObject {
+        self.inner
+    }
+
+    pub fn field(&mut self, tag: i32, value: FieldValue) -> Result<(), SchemaError> {
+        self.inner.inner.insert(tag, value);
+        Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct DecodedObject {
+    inner: BTreeMap<i32, FieldValue>,
+}
+
+impl DecodedObject {
+    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue)> {
+        self.inner.iter()
+    }
+
+    pub fn field(&self, tag: i32) -> Option<&FieldValue> {
+        self.inner.get(&tag)
+    }
+
+}
+#[derive(Clone)]
+pub struct DecodedIdObject {
+    pub id: u64,
+    inner: DecodedObject,
+}
+
+impl DecodedIdObject {
+    pub fn fields_iter(&self) -> impl Iterator<Item = (&i32, &FieldValue)> {
+        self.inner.fields_iter()
+    }
+
+    pub fn field(&self, tag: i32) -> Option<&FieldValue> {
+        self.inner.field(tag)
     }
 }

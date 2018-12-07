@@ -63,7 +63,7 @@ fn find_object(database: String, collection: String, id: u64) {
             println!("object {}:", object.id);
 
             for (tag, value) in object.fields_iter() {
-                let (name, _, _) = schema.fields.get(tag).unwrap();
+                let (name, _, _) = schema.fields.info(tag).unwrap();
                 println!("  {}: {}", name, value);
             }
 
