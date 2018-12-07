@@ -1,0 +1,8 @@
+syntax = "proto3";
+
+package protodb.examples.user_statistics;
+
+message UserStatistics {
+    uint32 num_users = 1;
+    double average_age = 2;
+}

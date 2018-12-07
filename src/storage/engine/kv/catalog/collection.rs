@@ -8,12 +8,14 @@ use crate::{
         errors::collection::{FindObjectError, InsertObjectError},
         index::IndexCatalog,
     },
-    schema::{errors::SchemaError, DecodedObject, DecodedObjectBuilder, Schema},
+    schema::{
+        encoding::FieldValue, errors::SchemaError, DecodedObject, DecodedObjectBuilder, Schema,
+    },
     storage::errors::InternalStorageEngineError,
 };
 
-use prost_types::DescriptorProto;
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
+use prost_types::DescriptorProto;
 
 #[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
@@ -243,6 +245,7 @@ impl FindAll {
 impl Iterator for FindAll {
     type Item = Result<Vec<u8>, InternalStorageEngineError>;
 
+    // TODO: lots of unnecessary allocation in here
     fn next(&mut self) -> Option<Self::Item> {
         // If this iterator was previously marked as done, simply return None.
         if self.done {
@@ -297,7 +300,10 @@ impl Iterator for FindAll {
                 None => true,
             };
             if valid {
-                self.curr_object.borrow_mut().append(&mut value);
+                let mut buf = Vec::new();
+                let wire_type = self.collection.schema.wire_type(tag).unwrap();
+                Schema::encode_field(tag, wire_type, &value, &mut buf);
+                self.curr_object.borrow_mut().append(&mut buf);
             }
 
             // If this iteration was a new id, return it.

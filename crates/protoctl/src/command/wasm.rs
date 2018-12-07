@@ -61,7 +61,9 @@ fn register_module(database: String, name: String, crate_: PathBuf, package: Opt
     let path = tmp.path();
 
     let mut cmd = Command::new(which::which("cargo").unwrap());
-    cmd.arg("build").arg("--target=wasm32-unknown-unknown").arg("--release");
+    cmd.arg("build")
+        .arg("--target=wasm32-unknown-unknown")
+        .arg("--release");
 
     let crate_name = match package {
         Some(package) => {
@@ -170,9 +172,7 @@ fn run_wasm_module(database: String, name: String) {
         .and_then(|response| {
             use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
             match response.error_code() {
-                ErrorCode::NoError => {
-                    println!("result: {:?}", response.result)
-                }
+                ErrorCode::NoError => println!("result: {:?}", response.result),
                 ErrorCode::InternalError => println!("error running wasm module: internal error"),
                 ErrorCode::InvalidDatabase => println!("invalid database"),
                 ErrorCode::InvalidModule => println!("invalid module"),

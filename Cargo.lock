@@ -814,6 +814,10 @@ dependencies = [
 name = "protodb-example-wasm"
 version = "0.1.0"
 dependencies = [
+ "bytes 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prost 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prost-build 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "prost-derive 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "protodb-wasm 0.1.0",
  "wasm-bindgen 0.2.28 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

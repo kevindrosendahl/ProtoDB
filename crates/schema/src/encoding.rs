@@ -129,6 +129,7 @@ impl Schema {
         buf.put(value);
     }
 
+    // FIXME: this probably take in a buffer
     pub fn encode_value(value: FieldValue) -> Vec<u8> {
         // TODO: can probably macro this out a bit more
         match value {

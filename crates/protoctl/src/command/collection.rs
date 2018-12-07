@@ -106,7 +106,7 @@ fn create_collection(
             use crate::transport::grpc::generated::protodb::collection::create_collection_response::schema_error::SchemaErrorCode;
 
             match response.error_code() {
-                ErrorCode::NoError => println!("succesfully created collection"),
+                ErrorCode::NoError => println!("successfully created collection"),
                 ErrorCode::InternalError => println!("error creating collection: internal error"),
                 ErrorCode::InvalidDatabase => println!("invalid database"),
                 ErrorCode::CollectionExists => println!("collection already exists"),

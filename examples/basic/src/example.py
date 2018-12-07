@@ -1,3 +1,5 @@
+from random import randint
+
 from protodb.database.create_pb2 import CreateDatabaseResponse
 from protodb.database.list_pb2 import ListDatabasesResponse
 from protodb.collection.create_pb2 import CreateCollectionResponse
@@ -26,17 +28,13 @@ def main():
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
     insert_user(client, id=2, first_name='jane', last_name='doe', age=40)
 
-    for i in range(1, 1010):
-        insert_user(client, id=i, first_name='jane', last_name='doe', age=40)
+    print('\ninserting 1000 users')
+    for i in range(3, 1001):
+        age = randint(25, 75)
+        insert_user(client, verbose=False, id=i, first_name='jane', last_name='doe', age=age)
 
     find_user(client, 1)
-    find_user(client, 2)
-    find_user(client, 3)
-    find_user(client, 10)
-    find_user(client, 11)
-    find_user(client, 19)
-    find_user(client, 20)
-    find_user(client, 21)
+    find_user(client, 1000)
 
 
 def create_database(client):
@@ -93,23 +91,27 @@ def list_collections(client):
     print('list collections failed: ' + error_code_str)
 
 
-def insert_user(client, **user_kwargs):
+def insert_user(client, verbose=True, **user_kwargs):
     id = user_kwargs['id']
-    print('\ninserting user {}'.format(id))
+
+    if verbose:
+        print('\ninserting user {}'.format(id))
+
     user = User(**user_kwargs)
 
     response = client.insert_user(DATABASE_NAME, COLLECTION_NAME, user)
 
     if response.error_code == InsertObjectResponse.NO_ERROR:
-        print('user {} successfully inserted'.format(id))
+        if verbose:
+            print('user {} successfully inserted'.format(id))
         return
 
     if response.error_code != InsertObjectResponse.OBJECT_ERROR:
         error_code_str = InsertObjectResponse.ErrorCode.Name(response.error_code)
-        print('insert failed: ' + error_code_str)
+        print('insert user {} failed: '.format(id) + error_code_str)
         return
 
-    print('insert failed: ' + response.object_error)
+    print('insert user {} failed: '.format(id) + response.object_error)
 
 
 def find_user(client, id):
