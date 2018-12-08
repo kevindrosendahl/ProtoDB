@@ -29,7 +29,7 @@ fn find_object(database: String, collection: String, id: u64) {
         .with(|c| c.borrow_mut().get_collection_info(database.clone(), collection.clone()))
         .map_err(|err| format!("{:?}", err))
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::collection::get_collection_info_response::ErrorCode;
+            use protodb_client::generated::protodb::collection::get_collection_info_response::ErrorCode;
 
             match response.error_code() {
                 ErrorCode::NoError => {
@@ -44,7 +44,7 @@ fn find_object(database: String, collection: String, id: u64) {
             CLIENT.with(|c| c.borrow_mut().find_object(database, collection, id))
                 .map_err(|err| format!("{:?}", err))
                 .and_then(|response| {
-                    use crate::transport::grpc::generated::protodb::object::find_object_response::ErrorCode;
+                    use protodb_client::generated::protodb::object::find_object_response::ErrorCode;
 
                     match response.error_code() {
                         ErrorCode::NoError => {

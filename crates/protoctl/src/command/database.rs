@@ -22,7 +22,7 @@ fn create_database(name: String) {
     CLIENT
         .with(|c| c.borrow_mut().create_database(name))
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::database::create_database_response::ErrorCode;
+            use protodb_client::generated::protodb::database::create_database_response::ErrorCode;
             match response.error_code() {
                 ErrorCode::NoError => (),
                 ErrorCode::InternalError => println!("error creating database: internal error"),

@@ -102,8 +102,8 @@ fn create_collection(
     CLIENT
         .with(|c| c.borrow_mut().create_collection(database, name, descriptor))
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::collection::create_collection_response::ErrorCode;
-            use crate::transport::grpc::generated::protodb::collection::create_collection_response::schema_error::SchemaErrorCode;
+            use protodb_client::generated::protodb::collection::create_collection_response::ErrorCode;
+            use protodb_client::generated::protodb::collection::create_collection_response::schema_error::SchemaErrorCode;
 
             match response.error_code() {
                 ErrorCode::NoError => println!("successfully created collection"),
@@ -142,7 +142,7 @@ fn get_collection_info(database: String, collection: String) {
     CLIENT
         .with(|c| c.borrow_mut().get_collection_info(database.clone(), collection.clone()))
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::collection::get_collection_info_response::ErrorCode;
+            use protodb_client::generated::protodb::collection::get_collection_info_response::ErrorCode;
 
             match response.error_code() {
                 ErrorCode::NoError => {

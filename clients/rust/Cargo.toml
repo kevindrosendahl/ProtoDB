@@ -1,38 +1,33 @@
 [package]
-name = "protodb"
+name = "protodb-client"
 version = "0.1.0"
 authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
 edition = "2018"
 
-[workspace]
-members = [
-    "clients/rust",
-    "crates/protoctl",
-    "crates/schema",
-    "crates/wasm",
-    "examples/wasm",
-]
-
 [dependencies]
 bytes = "0.4"
 byteorder = "1.2"
-env_logger = { version = "0.5", default-features = false }
+console = "0.7.0"
+dialoguer = "0.3.0"
 futures = "0.1"
 http = "0.1"
-lazy_static = "1.1"
-log = "0.4"
-pretty_env_logger = "0.2"
-protodb-schema = { path = "crates/schema" }
+human-panic = "1.0.1"
+indicatif = "0.10.1"
+lazy_static = "1.2.0"
 prost = "0.4"
-prost-types = "0.4"
+prost-build = "0.4"
 prost-derive = "0.4"
-rocksdb = "0.10"
+prost-types = "0.4"
+regex = "1.1.0"
+tempdir = "0.3.7"
 tokio-core = "0.1"
+tower-add-origin = { git = "https://github.com/tower-rs/tower-http" }
 tower-h2 = { git = "https://github.com/tower-rs/tower-h2" }
 tower-http = { git = "https://github.com/tower-rs/tower-http" }
 tower-grpc = { git = "https://github.com/tower-rs/tower-grpc" }
 tower-service = { git = "https://github.com/tower-rs/tower" }
-wasmi="0.4.2"
+structopt = "0.2.13"
+which = "2.0.0"
 
 [build-dependencies]
 tower-grpc-build = { git = "https://github.com/tower-rs/tower-grpc" }

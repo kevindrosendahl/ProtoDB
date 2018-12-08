@@ -5,6 +5,9 @@ pub mod generated;
 mod object;
 mod wasm;
 
+#[macro_use]
+extern crate prost_derive;
+
 pub use self::errors::ClientError;
 use self::generated::protodb;
 
@@ -29,11 +32,15 @@ pub struct Client {
 
 impl Client {
     pub fn new() -> Self {
-        let mut core = Core::new().unwrap();
+        let core = Core::new().unwrap();
+        Client::with_core(core)
+    }
+
+    pub fn with_core(mut core: Core) -> Self {
         let reactor = core.handle();
 
         let addr = "[::1]:10000".parse().unwrap();
-        let uri: http::Uri = format!("http://localhost:10000").parse().unwrap();
+        let uri: http::Uri = "http://localhost:10000".to_string().parse().unwrap();
 
         let get_client = TcpStream::connect(&addr, &reactor)
             .and_then(move |socket| {
@@ -55,5 +62,11 @@ impl Client {
         let client = core.run(get_client).unwrap();
 
         Client { core, client }
+    }
+}
+
+impl Default for Client {
+    fn default() -> Self {
+        Self::new()
     }
 }

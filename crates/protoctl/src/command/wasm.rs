@@ -5,15 +5,13 @@ use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 
-use crate::{
-    transport::grpc::generated::protodb::wasm::register_module_request::{
-        module_metadata::BindgenImportHashes, ModuleMetadata,
-    },
-    CLIENT,
-};
+use crate::CLIENT;
 
 use prost::Message;
 use prost_types::FileDescriptorSet;
+use protodb_client::generated::protodb::wasm::register_module_request::{
+    module_metadata::BindgenImportHashes, ModuleMetadata,
+};
 use protodb_schema::{descriptor_fields, encoding::decoded_object};
 use regex::Regex;
 
@@ -220,7 +218,7 @@ fn register_module(
     CLIENT
         .with(|c| c.borrow_mut().register_wasm_module(database, name, metadata, wasm, descriptor))
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::wasm::register_module_response::ErrorCode;
+            use protodb_client::generated::protodb::wasm::register_module_response::ErrorCode;
 
             match response.error_code() {
                 ErrorCode::NoError => (),
@@ -243,7 +241,7 @@ fn run_wasm_module(database: String, name: String) {
                 .run_wasm_module(database.clone(), name.clone())
         })
         .and_then(|response| {
-            use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
+            use protodb_client::generated::protodb::wasm::run_module_response::ErrorCode;
             match response.error_code() {
                 ErrorCode::NoError => Ok(response.result),
                 ErrorCode::InternalError => panic!("error running wasm module: internal error"),

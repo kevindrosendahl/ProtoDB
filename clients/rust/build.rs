@@ -76,7 +76,7 @@ pub mod {} {{
     }
 
     let output_path = format!(
-        "{}/src/transport/grpc/generated/protodb.rs",
+        "{}/src/generated/protodb.rs",
         env::var("CARGO_MANIFEST_DIR").unwrap()
     );
     let mut buffer = fs::File::create(output_path.clone()).unwrap();

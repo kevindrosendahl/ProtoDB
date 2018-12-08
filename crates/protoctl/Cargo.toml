@@ -18,6 +18,7 @@ prost = "0.4"
 prost-build = "0.4"
 prost-derive = "0.4"
 prost-types = "0.4"
+protodb-client = { path = "../../clients/rust" }
 protodb-schema = { path = "../schema" }
 regex = "1.1.0"
 tempdir = "0.3.7"
