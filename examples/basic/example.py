@@ -100,7 +100,7 @@ def insert_user(client, verbose=True, **user_kwargs):
 
     user = User(**user_kwargs)
 
-    response = client.insert_user(DATABASE_NAME, COLLECTION_NAME, user)
+    response = client.insert_object(DATABASE_NAME, COLLECTION_NAME, user)
 
     if response.error_code == InsertObjectResponse.NO_ERROR:
         if verbose:
@@ -117,7 +117,7 @@ def insert_user(client, verbose=True, **user_kwargs):
 
 def find_user(client, id):
     print('\nfinding user {}'.format(id))
-    response = client.find_user(DATABASE_NAME, COLLECTION_NAME, id)
+    response = client.find_object(DATABASE_NAME, COLLECTION_NAME, id)
 
     if response.error_code == FindObjectResponse.NO_ERROR:
         user = User()

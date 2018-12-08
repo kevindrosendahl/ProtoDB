@@ -38,13 +38,13 @@ class Client:
         request = ListCollectionsRequest(database=database)
         return self.stub.ListCollections(request)
 
-    def insert_user(self, database, collection, user):
+    def insert_object(self, database, collection, object):
         request = InsertObjectRequest(
             database=database,
             collection=collection,
-            object=user.SerializeToString())
+            object=object.SerializeToString())
         return self.stub.InsertObject(request)
 
-    def find_user(self, database, collection, id):
+    def find_object(self, database, collection, id):
         request = FindObjectRequest(database=database, collection=collection, id=id)
         return self.stub.FindObject(request)
