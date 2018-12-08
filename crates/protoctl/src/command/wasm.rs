@@ -12,9 +12,9 @@ use crate::{
     CLIENT,
 };
 
-use protodb_schema::{descriptor_fields, encoding::decoded_object};
 use prost::Message;
 use prost_types::FileDescriptorSet;
+use protodb_schema::{descriptor_fields, encoding::decoded_object};
 use regex::Regex;
 
 lazy_static! {
@@ -178,7 +178,7 @@ fn register_module(
         }),
     };
 
-//    let descriptor_set = tmp.path().join("descriptor-set");
+    //    let descriptor_set = tmp.path().join("descriptor-set");
     let descriptor_set = std::path::Path::new("/tmp/descriptor-set");
 
     let mut cmd = Command::new(prost_build::protoc());
@@ -207,9 +207,7 @@ fn register_module(
     let file_descriptor = descriptor_set
         .file
         .iter()
-        .find(|&descriptor| {
-            descriptor.name() == result_schema_file.as_os_str().to_str().unwrap()
-        })
+        .find(|&descriptor| descriptor.name() == result_schema_file.as_os_str().to_str().unwrap())
         .unwrap();
 
     let descriptor = file_descriptor
@@ -240,7 +238,10 @@ fn register_module(
 
 fn run_wasm_module(database: String, name: String) {
     CLIENT
-        .with(|c| c.borrow_mut().run_wasm_module(database.clone(), name.clone()))
+        .with(|c| {
+            c.borrow_mut()
+                .run_wasm_module(database.clone(), name.clone())
+        })
         .and_then(|response| {
             use crate::transport::grpc::generated::protodb::wasm::run_module_response::ErrorCode;
             match response.error_code() {

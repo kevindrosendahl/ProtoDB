@@ -2,11 +2,13 @@
 import grpc
 
 from protodb.collection import create_pb2 as protodb_dot_collection_dot_create__pb2
+from protodb.collection import get_info_pb2 as protodb_dot_collection_dot_get__info__pb2
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
 from protodb.object import find_pb2 as protodb_dot_object_dot_find__pb2
 from protodb.object import insert_pb2 as protodb_dot_object_dot_insert__pb2
+from protodb.wasm import get_info_pb2 as protodb_dot_wasm_dot_get__info__pb2
 from protodb.wasm import register_pb2 as protodb_dot_wasm_dot_register__pb2
 from protodb.wasm import run_pb2 as protodb_dot_wasm_dot_run__pb2
 
@@ -36,20 +38,30 @@ class ProtoDBStub(object):
         request_serializer=protodb_dot_collection_dot_create__pb2.CreateCollectionRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_create__pb2.CreateCollectionResponse.FromString,
         )
+    self.GetCollectionInfo = channel.unary_unary(
+        '/protodb.ProtoDB/GetCollectionInfo',
+        request_serializer=protodb_dot_collection_dot_get__info__pb2.GetCollectionInfoRequest.SerializeToString,
+        response_deserializer=protodb_dot_collection_dot_get__info__pb2.GetCollectionInfoResponse.FromString,
+        )
     self.ListCollections = channel.unary_unary(
         '/protodb.ProtoDB/ListCollections',
         request_serializer=protodb_dot_collection_dot_list__pb2.ListCollectionsRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_list__pb2.ListCollectionsResponse.FromString,
+        )
+    self.FindObject = channel.unary_unary(
+        '/protodb.ProtoDB/FindObject',
+        request_serializer=protodb_dot_object_dot_find__pb2.FindObjectRequest.SerializeToString,
+        response_deserializer=protodb_dot_object_dot_find__pb2.FindObjectResponse.FromString,
         )
     self.InsertObject = channel.unary_unary(
         '/protodb.ProtoDB/InsertObject',
         request_serializer=protodb_dot_object_dot_insert__pb2.InsertObjectRequest.SerializeToString,
         response_deserializer=protodb_dot_object_dot_insert__pb2.InsertObjectResponse.FromString,
         )
-    self.FindObject = channel.unary_unary(
-        '/protodb.ProtoDB/FindObject',
-        request_serializer=protodb_dot_object_dot_find__pb2.FindObjectRequest.SerializeToString,
-        response_deserializer=protodb_dot_object_dot_find__pb2.FindObjectResponse.FromString,
+    self.GetWasmModuleInfo = channel.unary_unary(
+        '/protodb.ProtoDB/GetWasmModuleInfo',
+        request_serializer=protodb_dot_wasm_dot_get__info__pb2.GetModuleInfoRequest.SerializeToString,
+        response_deserializer=protodb_dot_wasm_dot_get__info__pb2.GetModuleInfoResponse.FromString,
         )
     self.RegisterWasmModule = channel.unary_unary(
         '/protodb.ProtoDB/RegisterWasmModule',
@@ -88,7 +100,21 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def GetCollectionInfo(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def ListCollections(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def FindObject(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -102,7 +128,7 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
-  def FindObject(self, request, context):
+  def GetWasmModuleInfo(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -141,20 +167,30 @@ def add_ProtoDBServicer_to_server(servicer, server):
           request_deserializer=protodb_dot_collection_dot_create__pb2.CreateCollectionRequest.FromString,
           response_serializer=protodb_dot_collection_dot_create__pb2.CreateCollectionResponse.SerializeToString,
       ),
+      'GetCollectionInfo': grpc.unary_unary_rpc_method_handler(
+          servicer.GetCollectionInfo,
+          request_deserializer=protodb_dot_collection_dot_get__info__pb2.GetCollectionInfoRequest.FromString,
+          response_serializer=protodb_dot_collection_dot_get__info__pb2.GetCollectionInfoResponse.SerializeToString,
+      ),
       'ListCollections': grpc.unary_unary_rpc_method_handler(
           servicer.ListCollections,
           request_deserializer=protodb_dot_collection_dot_list__pb2.ListCollectionsRequest.FromString,
           response_serializer=protodb_dot_collection_dot_list__pb2.ListCollectionsResponse.SerializeToString,
+      ),
+      'FindObject': grpc.unary_unary_rpc_method_handler(
+          servicer.FindObject,
+          request_deserializer=protodb_dot_object_dot_find__pb2.FindObjectRequest.FromString,
+          response_serializer=protodb_dot_object_dot_find__pb2.FindObjectResponse.SerializeToString,
       ),
       'InsertObject': grpc.unary_unary_rpc_method_handler(
           servicer.InsertObject,
           request_deserializer=protodb_dot_object_dot_insert__pb2.InsertObjectRequest.FromString,
           response_serializer=protodb_dot_object_dot_insert__pb2.InsertObjectResponse.SerializeToString,
       ),
-      'FindObject': grpc.unary_unary_rpc_method_handler(
-          servicer.FindObject,
-          request_deserializer=protodb_dot_object_dot_find__pb2.FindObjectRequest.FromString,
-          response_serializer=protodb_dot_object_dot_find__pb2.FindObjectResponse.SerializeToString,
+      'GetWasmModuleInfo': grpc.unary_unary_rpc_method_handler(
+          servicer.GetWasmModuleInfo,
+          request_deserializer=protodb_dot_wasm_dot_get__info__pb2.GetModuleInfoRequest.FromString,
+          response_serializer=protodb_dot_wasm_dot_get__info__pb2.GetModuleInfoResponse.SerializeToString,
       ),
       'RegisterWasmModule': grpc.unary_unary_rpc_method_handler(
           servicer.RegisterWasmModule,

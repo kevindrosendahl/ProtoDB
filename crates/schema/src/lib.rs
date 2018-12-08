@@ -46,7 +46,9 @@ impl DescriptorFields {
     }
 }
 
-pub fn descriptor_fields(descriptor: &DescriptorProto) -> Result<(DescriptorFields, Option<i32>), errors::SchemaError> {
+pub fn descriptor_fields(
+    descriptor: &DescriptorProto,
+) -> Result<(DescriptorFields, Option<i32>), errors::SchemaError> {
     let mut id_field = None;
     let mut fields = HashMap::new();
     for field in descriptor.field.iter() {

@@ -7,8 +7,8 @@ from protodb.collection.list_pb2 import ListCollectionsResponse
 from protodb.object.insert_pb2 import InsertObjectResponse
 from protodb.object.find_pb2 import FindObjectResponse
 
-from client import Client
-from user_pb2 import User
+from protodb.client import Client
+from user.user_pb2 import User
 
 
 DATABASE_NAME = 'dev'

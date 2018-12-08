@@ -5,7 +5,7 @@ use crate::schema::DecodedIdObject;
 pub trait IndexAccessMethod {
     fn build(&self) -> Result<(), errors::BuildIndexError>;
 
-    fn insert(&self, id: u64, obj: DecodedIdObject) -> Result<(), errors::IndexInsertError>;
+    fn insert(&self, obj: DecodedIdObject) -> Result<(), errors::IndexInsertError>;
 
     fn iter(&self) -> Box<dyn IndexAccessMethodIterator<Item = u64>>;
 }

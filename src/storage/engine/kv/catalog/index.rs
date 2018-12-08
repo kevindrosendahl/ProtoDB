@@ -39,7 +39,7 @@ impl KVIndexCatalog {
 
 impl IndexCatalog for KVIndexCatalog {
     fn create_index(&self, field: i32) -> Result<usize, InternalStorageEngineError> {
-        let _id = self.entry_counter.fetch_add(1, Ordering::SeqCst) + 1;
+        let index_id = self.entry_counter.fetch_add(1, Ordering::SeqCst) + 1;
         unimplemented!()
     }
 
@@ -57,4 +57,20 @@ pub struct KVIndexCatalogEntry {
     collection: String,
 
     access_method: Arc<dyn IndexAccessMethod>,
+}
+
+impl KVIndexCatalogEntry {
+    pub fn new(kv_store: Arc<dyn KVStore>, database: String, collection: String) -> KVIndexCatalogEntry {
+        unimplemented!()
+    }
+}
+
+impl IndexCatalogEntry for KVIndexCatalogEntry {
+    fn id(&self) -> u64 {
+        unimplemented!()
+    }
+
+    fn access_method(&self) -> Arc<IndexAccessMethod> {
+        unimplemented!()
+    }
 }

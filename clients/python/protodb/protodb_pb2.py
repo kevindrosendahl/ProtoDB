@@ -14,11 +14,13 @@ _sym_db = _symbol_database.Default()
 
 
 from protodb.collection import create_pb2 as protodb_dot_collection_dot_create__pb2
+from protodb.collection import get_info_pb2 as protodb_dot_collection_dot_get__info__pb2
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
 from protodb.object import find_pb2 as protodb_dot_object_dot_find__pb2
 from protodb.object import insert_pb2 as protodb_dot_object_dot_insert__pb2
+from protodb.wasm import get_info_pb2 as protodb_dot_wasm_dot_get__info__pb2
 from protodb.wasm import register_pb2 as protodb_dot_wasm_dot_register__pb2
 from protodb.wasm import run_pb2 as protodb_dot_wasm_dot_run__pb2
 
@@ -27,9 +29,9 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/protodb.proto',
   package='protodb',
   syntax='proto3',
-  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection/create.proto\x1a\x1dprotodb/collection/list.proto\x1a\x1dprotodb/database/create.proto\x1a\x1bprotodb/database/list.proto\x1a\x19protodb/object/find.proto\x1a\x1bprotodb/object/insert.proto\x1a\x1bprotodb/wasm/register.proto\x1a\x16protodb/wasm/run.proto2\x8e\x06\n\x07ProtoDB\x12\x63\n\x0e\x43reateDatabase\x12\'.protodb.database.CreateDatabaseRequest\x1a(.protodb.database.CreateDatabaseResponse\x12`\n\rListDatabases\x12&.protodb.database.ListDatabasesRequest\x1a\'.protodb.database.ListDatabasesResponse\x12m\n\x10\x43reateCollection\x12+.protodb.collection.CreateCollectionRequest\x1a,.protodb.collection.CreateCollectionResponse\x12j\n\x0fListCollections\x12*.protodb.collection.ListCollectionsRequest\x1a+.protodb.collection.ListCollectionsResponse\x12Y\n\x0cInsertObject\x12#.protodb.object.InsertObjectRequest\x1a$.protodb.object.InsertObjectResponse\x12S\n\nFindObject\x12!.protodb.object.FindObjectRequest\x1a\".protodb.object.FindObjectResponse\x12_\n\x12RegisterWasmModule\x12#.protodb.wasm.RegisterModuleRequest\x1a$.protodb.wasm.RegisterModuleResponse\x12P\n\rRunWasmModule\x12\x1e.protodb.wasm.RunModuleRequest\x1a\x1f.protodb.wasm.RunModuleResponseb\x06proto3')
+  serialized_pb=_b('\n\x15protodb/protodb.proto\x12\x07protodb\x1a\x1fprotodb/collection/create.proto\x1a!protodb/collection/get_info.proto\x1a\x1dprotodb/collection/list.proto\x1a\x1dprotodb/database/create.proto\x1a\x1bprotodb/database/list.proto\x1a\x19protodb/object/find.proto\x1a\x1bprotodb/object/insert.proto\x1a\x1bprotodb/wasm/get_info.proto\x1a\x1bprotodb/wasm/register.proto\x1a\x16protodb/wasm/run.proto2\xde\x07\n\x07ProtoDB\x12\x63\n\x0e\x43reateDatabase\x12\'.protodb.database.CreateDatabaseRequest\x1a(.protodb.database.CreateDatabaseResponse\x12`\n\rListDatabases\x12&.protodb.database.ListDatabasesRequest\x1a\'.protodb.database.ListDatabasesResponse\x12m\n\x10\x43reateCollection\x12+.protodb.collection.CreateCollectionRequest\x1a,.protodb.collection.CreateCollectionResponse\x12p\n\x11GetCollectionInfo\x12,.protodb.collection.GetCollectionInfoRequest\x1a-.protodb.collection.GetCollectionInfoResponse\x12j\n\x0fListCollections\x12*.protodb.collection.ListCollectionsRequest\x1a+.protodb.collection.ListCollectionsResponse\x12S\n\nFindObject\x12!.protodb.object.FindObjectRequest\x1a\".protodb.object.FindObjectResponse\x12Y\n\x0cInsertObject\x12#.protodb.object.InsertObjectRequest\x1a$.protodb.object.InsertObjectResponse\x12\\\n\x11GetWasmModuleInfo\x12\".protodb.wasm.GetModuleInfoRequest\x1a#.protodb.wasm.GetModuleInfoResponse\x12_\n\x12RegisterWasmModule\x12#.protodb.wasm.RegisterModuleRequest\x1a$.protodb.wasm.RegisterModuleResponse\x12P\n\rRunWasmModule\x12\x1e.protodb.wasm.RunModuleRequest\x1a\x1f.protodb.wasm.RunModuleResponseb\x06proto3')
   ,
-  dependencies=[protodb_dot_collection_dot_create__pb2.DESCRIPTOR,protodb_dot_collection_dot_list__pb2.DESCRIPTOR,protodb_dot_database_dot_create__pb2.DESCRIPTOR,protodb_dot_database_dot_list__pb2.DESCRIPTOR,protodb_dot_object_dot_find__pb2.DESCRIPTOR,protodb_dot_object_dot_insert__pb2.DESCRIPTOR,protodb_dot_wasm_dot_register__pb2.DESCRIPTOR,protodb_dot_wasm_dot_run__pb2.DESCRIPTOR,])
+  dependencies=[protodb_dot_collection_dot_create__pb2.DESCRIPTOR,protodb_dot_collection_dot_get__info__pb2.DESCRIPTOR,protodb_dot_collection_dot_list__pb2.DESCRIPTOR,protodb_dot_database_dot_create__pb2.DESCRIPTOR,protodb_dot_database_dot_list__pb2.DESCRIPTOR,protodb_dot_object_dot_find__pb2.DESCRIPTOR,protodb_dot_object_dot_insert__pb2.DESCRIPTOR,protodb_dot_wasm_dot_get__info__pb2.DESCRIPTOR,protodb_dot_wasm_dot_register__pb2.DESCRIPTOR,protodb_dot_wasm_dot_run__pb2.DESCRIPTOR,])
 
 
 
@@ -43,8 +45,8 @@ _PROTODB = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   options=None,
-  serialized_start=268,
-  serialized_end=1050,
+  serialized_start=332,
+  serialized_end=1322,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateDatabase',
@@ -74,21 +76,21 @@ _PROTODB = _descriptor.ServiceDescriptor(
     options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='ListCollections',
-    full_name='protodb.ProtoDB.ListCollections',
+    name='GetCollectionInfo',
+    full_name='protodb.ProtoDB.GetCollectionInfo',
     index=3,
     containing_service=None,
-    input_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSREQUEST,
-    output_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSRESPONSE,
+    input_type=protodb_dot_collection_dot_get__info__pb2._GETCOLLECTIONINFOREQUEST,
+    output_type=protodb_dot_collection_dot_get__info__pb2._GETCOLLECTIONINFORESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='InsertObject',
-    full_name='protodb.ProtoDB.InsertObject',
+    name='ListCollections',
+    full_name='protodb.ProtoDB.ListCollections',
     index=4,
     containing_service=None,
-    input_type=protodb_dot_object_dot_insert__pb2._INSERTOBJECTREQUEST,
-    output_type=protodb_dot_object_dot_insert__pb2._INSERTOBJECTRESPONSE,
+    input_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSREQUEST,
+    output_type=protodb_dot_collection_dot_list__pb2._LISTCOLLECTIONSRESPONSE,
     options=None,
   ),
   _descriptor.MethodDescriptor(
@@ -101,9 +103,27 @@ _PROTODB = _descriptor.ServiceDescriptor(
     options=None,
   ),
   _descriptor.MethodDescriptor(
+    name='InsertObject',
+    full_name='protodb.ProtoDB.InsertObject',
+    index=6,
+    containing_service=None,
+    input_type=protodb_dot_object_dot_insert__pb2._INSERTOBJECTREQUEST,
+    output_type=protodb_dot_object_dot_insert__pb2._INSERTOBJECTRESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
+    name='GetWasmModuleInfo',
+    full_name='protodb.ProtoDB.GetWasmModuleInfo',
+    index=7,
+    containing_service=None,
+    input_type=protodb_dot_wasm_dot_get__info__pb2._GETMODULEINFOREQUEST,
+    output_type=protodb_dot_wasm_dot_get__info__pb2._GETMODULEINFORESPONSE,
+    options=None,
+  ),
+  _descriptor.MethodDescriptor(
     name='RegisterWasmModule',
     full_name='protodb.ProtoDB.RegisterWasmModule',
-    index=6,
+    index=8,
     containing_service=None,
     input_type=protodb_dot_wasm_dot_register__pb2._REGISTERMODULEREQUEST,
     output_type=protodb_dot_wasm_dot_register__pb2._REGISTERMODULERESPONSE,
@@ -112,7 +132,7 @@ _PROTODB = _descriptor.ServiceDescriptor(
   _descriptor.MethodDescriptor(
     name='RunWasmModule',
     full_name='protodb.ProtoDB.RunWasmModule',
-    index=7,
+    index=9,
     containing_service=None,
     input_type=protodb_dot_wasm_dot_run__pb2._RUNMODULEREQUEST,
     output_type=protodb_dot_wasm_dot_run__pb2._RUNMODULERESPONSE,

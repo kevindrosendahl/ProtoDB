@@ -1,9 +1,8 @@
 use std::{collections::BTreeMap, fmt, fmt::Formatter, io::Cursor};
 
 use super::{
-    DescriptorFields,
     errors::{ObjectError, SchemaError},
-    Schema,
+    DescriptorFields, Schema,
 };
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -101,14 +100,12 @@ impl Schema {
             None => Err(ObjectError::SchemaError(SchemaError::MissingIdField)),
             Some(id) => {
                 match id {
-                    FieldValue::Uint64(id) => {
-                        Ok(DecodedIdObject{
-                            id: *id,
-                            inner: decoded,
-                        })
-                    }
+                    FieldValue::Uint64(id) => Ok(DecodedIdObject {
+                        id: *id,
+                        inner: decoded,
+                    }),
                     // FIXME: get type for error
-                   _ => unimplemented!()
+                    _ => unimplemented!(),
                 }
             }
         }
@@ -236,7 +233,10 @@ impl fmt::Display for FieldValue {
     }
 }
 
-pub fn decoded_object(fields: &DescriptorFields, object: &[u8]) -> Result<DecodedObject, ObjectError> {
+pub fn decoded_object(
+    fields: &DescriptorFields,
+    object: &[u8],
+) -> Result<DecodedObject, ObjectError> {
     let mut decoded_builder = DecodedObjectBuilder::new();
     let mut decoder = DecodeObject {
         object_buf: Cursor::new(object),
@@ -263,7 +263,6 @@ pub fn decoded_object(fields: &DescriptorFields, object: &[u8]) -> Result<Decode
 
     Ok(decoded_builder.build())
 }
-
 
 pub struct DecodeObject<'a> {
     object_buf: Cursor<&'a [u8]>,
@@ -497,7 +496,6 @@ impl DecodedObject {
     pub fn field(&self, tag: i32) -> Option<&FieldValue> {
         self.inner.get(&tag)
     }
-
 }
 #[derive(Clone)]
 pub struct DecodedIdObject {
