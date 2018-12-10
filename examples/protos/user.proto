@@ -5,7 +5,8 @@ package protodb.examples.user;
 message User {
      uint64 id = 1;
 
-    string first_name = 2;
-    string last_name = 3;
-    uint32 age = 4;
+     string first_name = 2;
+     string last_name = 3;
+     uint32 age = 4;
+     string email_address = 5;
 }

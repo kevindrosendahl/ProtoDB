@@ -4,5 +4,11 @@ package protodb.examples.user_statistics;
 
 message UserStatistics {
     uint32 num_users = 1;
-    double average_age = 2;
+
+    double age_mean = 2;
+    double age_std_dev = 3;
+    double age_variance = 4;
+    uint64 age_cardinality = 5;
+
+    string youngest_email_address = 6;
 }

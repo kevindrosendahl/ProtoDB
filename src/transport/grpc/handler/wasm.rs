@@ -42,7 +42,6 @@ impl Handler {
     ) -> wasm::RegisterModuleResponse {
         let metadata = request.get_ref().metadata.clone().unwrap();
         let bindgen_import_hashes = metadata.bindgen_import_hashes.unwrap();
-        println!("{:?}", bindgen_import_hashes);
         let module = ProtoDBModule::new(
             request.get_ref().wasm.clone(),
             metadata.name,
