@@ -70,10 +70,10 @@ pub fn run_wasm(wasm: Wasm) {
         } => register_module(
             database,
             name,
-            crate_,
+            &crate_,
             package,
-            result_schema_file,
-            result_schema_message,
+            &result_schema_file,
+            &result_schema_message,
             result_includes,
         ),
         Wasm::Run { database, name } => run_wasm_module(database, name),
@@ -83,10 +83,10 @@ pub fn run_wasm(wasm: Wasm) {
 fn register_module(
     database: String,
     name: String,
-    crate_: PathBuf,
+    crate_: &PathBuf,
     package: Option<String>,
-    result_schema_file: PathBuf,
-    result_schema_message: String,
+    result_schema_file: &PathBuf,
+    result_schema_message: &str,
     result_includes: Vec<PathBuf>,
 ) {
     env::set_current_dir(crate_.clone()).unwrap();
@@ -104,15 +104,13 @@ fn register_module(
             cmd.arg(&format!("--package={}", package));
             package
         }
-        None => String::from(
-            crate_
-                .as_path()
-                .file_name()
-                .unwrap()
-                .to_os_string()
-                .into_string()
-                .unwrap(),
-        ),
+        None => crate_
+            .as_path()
+            .file_name()
+            .unwrap()
+            .to_os_string()
+            .into_string()
+            .unwrap(),
     };
     let crate_name = crate_name.replace("-", "_");
 

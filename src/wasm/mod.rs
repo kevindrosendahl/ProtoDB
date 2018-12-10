@@ -407,7 +407,7 @@ impl Externals for ProtoDBExternals {
                 self.pass_u64(state.last_id, ret);
 
                 Ok(None)
-            },
+            }
             INDEX_ITER_NEXT_VALUE_IMPORT_INDEX => {
                 let ret: u32 = args.nth(0);
 
@@ -432,7 +432,7 @@ impl Externals for ProtoDBExternals {
                 self.get_memory().set_value(ret + 4, value).unwrap();
 
                 Ok(None)
-            },
+            }
             _ => panic!("unknown function index {}", index),
         }
     }

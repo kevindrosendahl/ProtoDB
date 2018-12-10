@@ -116,15 +116,14 @@ impl KVIndexAccessMethodIterator {
         let index_start = index_key_prefix(&database, &collection, index_id);
         let (start, end) = delimiter_prefix_bound(index_start);
 
-        let start= match mode.from {
-            Some(value) => index_object_key_prefix(&database, &collection, index_id, &value).into_bytes(),
-            None => start
+        let start = match mode.from {
+            Some(value) => {
+                index_object_key_prefix(&database, &collection, index_id, &value).into_bytes()
+            }
+            None => start,
         };
 
-
-
-
-//        let (start, end) = delimiter_prefix_bound(start);
+        //        let (start, end) = delimiter_prefix_bound(start);
 
         let _start = String::from_utf8(start.clone()).unwrap();
         let _end = String::from_utf8(end.clone()).unwrap();

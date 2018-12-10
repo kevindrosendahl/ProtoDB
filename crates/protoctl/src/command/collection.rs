@@ -44,7 +44,7 @@ pub fn run_collection(collection: Collection) {
             schema_file,
             schema_message,
             includes,
-        } => create_collection(database, name, schema_file, schema_message, &includes),
+        } => create_collection(database, name, &schema_file, &schema_message, &includes),
         Collection::Info {
             database,
             collection,
@@ -56,8 +56,8 @@ pub fn run_collection(collection: Collection) {
 fn create_collection(
     database: String,
     name: String,
-    schema_file: PathBuf,
-    schema_message: String,
+    schema_file: &PathBuf,
+    schema_message: &str,
     includes: &[PathBuf],
 ) {
     let tmp = tempdir::TempDir::new("protoctl-create-collection").unwrap();
@@ -138,6 +138,7 @@ fn list_collections(database: String) {
         .unwrap();
 }
 
+#[allow(clippy::needless_pass_by_value)]
 fn get_collection_info(database: String, collection: String) {
     CLIENT
         .with(|c| c.borrow_mut().get_collection_info(database.clone(), collection.clone()))

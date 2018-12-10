@@ -36,12 +36,12 @@ impl Module for UserAgeAverage {
         //            age += user.age;
         //        }
 
-        for (value, id) in protodb.index_iter("users", 1, None) {
+        for (value, _) in protodb.index_iter("users", 1, None) {
             num_users += 1;
             age += value;
         }
 
-        let average_age = (age as f64) / (num_users as f64);
+        let average_age = f64::from(age) / f64::from(num_users);
 
         log(&format!("found {} users", num_users));
         log(&format!("average age: {}", average_age));
