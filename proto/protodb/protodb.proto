@@ -7,6 +7,7 @@ import "protodb/collection/get_info.proto";
 import "protodb/collection/list.proto";
 import "protodb/database/create.proto";
 import "protodb/database/list.proto";
+import "protodb/index/create.proto";
 import "protodb/object/find.proto";
 import "protodb/object/insert.proto";
 import "protodb/wasm/get_info.proto";
@@ -14,12 +15,14 @@ import "protodb/wasm/register.proto";
 import "protodb/wasm/run.proto";
 
 service ProtoDB {
-    rpc CreateDatabase (protodb.database.CreateDatabaseRequest) returns (protodb.database.CreateDatabaseResponse);
-    rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
-
     rpc CreateCollection (protodb.collection.CreateCollectionRequest) returns (protodb.collection.CreateCollectionResponse);
     rpc GetCollectionInfo (protodb.collection.GetCollectionInfoRequest) returns (protodb.collection.GetCollectionInfoResponse);
     rpc ListCollections (protodb.collection.ListCollectionsRequest) returns (protodb.collection.ListCollectionsResponse);
+
+    rpc CreateDatabase (protodb.database.CreateDatabaseRequest) returns (protodb.database.CreateDatabaseResponse);
+    rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
+
+    rpc CreateIndex (protodb.index.CreateIndexRequest) returns (protodb.index.CreateIndexResponse);
 
     rpc FindObject (protodb.object.FindObjectRequest) returns (protodb.object.FindObjectResponse);
     rpc InsertObject (protodb.object.InsertObjectRequest) returns (protodb.object.InsertObjectResponse);

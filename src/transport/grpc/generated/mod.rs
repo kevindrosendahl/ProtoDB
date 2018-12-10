@@ -11,6 +11,5 @@
 //        include!(concat!(env!("OUT_DIR"), "/protodb.database.rs"));
 //    }
 //}
-
 #[allow(unused_imports)]
 pub mod protodb;

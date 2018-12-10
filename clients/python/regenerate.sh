@@ -9,7 +9,7 @@ python -m grpc_tools.protoc \
     ../../proto/protodb/*.proto \
     ../../proto/protodb/**/*.proto
 
-generated_paths=( "" "collection/" "database/" "object/" "wasm/" )
+generated_paths=( "" "collection/" "database/" "index/" "object/" "wasm/" )
 for path in "${generated_paths[@]}"
 do
     touch protodb/${path}__init__.py

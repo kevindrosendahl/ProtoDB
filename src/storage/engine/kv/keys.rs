@@ -121,8 +121,8 @@ pub fn tag_from_key(database: &str, collection: &str, key: &str, id: u64) -> i32
 }
 
 #[inline(always)]
-pub fn parts_from_key(database: &str, collection: &str, key: &str) -> (u64, i32) {
-    let prefix = key_prefix(database, collection);
+pub fn object_id_and_field_from_key(database: &str, collection: &str, key: &str) -> (u64, i32) {
+    let prefix = collection_object_key_prefix(database, collection);
     let parts = key_suffix(&prefix, &key);
     let parts: Vec<&str> = parts.split(KEY_DELIMITER).collect();
     if parts.len() != 2 {
@@ -132,12 +132,24 @@ pub fn parts_from_key(database: &str, collection: &str, key: &str) -> (u64, i32)
 }
 
 #[inline(always)]
-pub fn key_prefix(database: &str, collection: &str) -> String {
+pub fn collection_entity_key_prefix(database: &str, collection: &str) -> String {
     format!(
         "{database}{delimiter}{collection}{delimiter}",
         database = database,
         delimiter = KEY_DELIMITER,
         collection = collection,
+    )
+}
+
+#[inline(always)]
+pub fn collection_object_key_prefix(database: &str, collection: &str) -> String {
+    // In order to have the keys sorted in the correct order,
+    // pad the left of the id with 0s up to the length of the
+    // longest u64.
+    format!(
+        "{prefix}objects{delimiter}",
+        prefix = collection_entity_key_prefix(database, collection),
+        delimiter = KEY_DELIMITER,
     )
 }
 
@@ -148,7 +160,7 @@ pub fn object_key_prefix(database: &str, collection: &str, id: u64) -> String {
     // longest u64.
     format!(
         "{prefix}{id:0>20}",
-        prefix = key_prefix(database, collection),
+        prefix = collection_object_key_prefix(database, collection),
         id = id,
     )
 }
@@ -177,8 +189,8 @@ pub fn field_key(database: &str, collection: &str, id: u64, tag: i32) -> String 
 #[inline(always)]
 pub fn index_prefix(database: &str, collection: &str) -> String {
     format!(
-        "{prefix}{delimiter}indexes",
-        prefix = key_prefix(database, collection),
+        "{prefix}indexes{delimiter}",
+        prefix = collection_entity_key_prefix(database, collection),
         delimiter = KEY_DELIMITER
     )
 }

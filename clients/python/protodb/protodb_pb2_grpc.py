@@ -6,6 +6,7 @@ from protodb.collection import get_info_pb2 as protodb_dot_collection_dot_get__i
 from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
+from protodb.index import create_pb2 as protodb_dot_index_dot_create__pb2
 from protodb.object import find_pb2 as protodb_dot_object_dot_find__pb2
 from protodb.object import insert_pb2 as protodb_dot_object_dot_insert__pb2
 from protodb.wasm import get_info_pb2 as protodb_dot_wasm_dot_get__info__pb2
@@ -23,16 +24,6 @@ class ProtoDBStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.CreateDatabase = channel.unary_unary(
-        '/protodb.ProtoDB/CreateDatabase',
-        request_serializer=protodb_dot_database_dot_create__pb2.CreateDatabaseRequest.SerializeToString,
-        response_deserializer=protodb_dot_database_dot_create__pb2.CreateDatabaseResponse.FromString,
-        )
-    self.ListDatabases = channel.unary_unary(
-        '/protodb.ProtoDB/ListDatabases',
-        request_serializer=protodb_dot_database_dot_list__pb2.ListDatabasesRequest.SerializeToString,
-        response_deserializer=protodb_dot_database_dot_list__pb2.ListDatabasesResponse.FromString,
-        )
     self.CreateCollection = channel.unary_unary(
         '/protodb.ProtoDB/CreateCollection',
         request_serializer=protodb_dot_collection_dot_create__pb2.CreateCollectionRequest.SerializeToString,
@@ -47,6 +38,21 @@ class ProtoDBStub(object):
         '/protodb.ProtoDB/ListCollections',
         request_serializer=protodb_dot_collection_dot_list__pb2.ListCollectionsRequest.SerializeToString,
         response_deserializer=protodb_dot_collection_dot_list__pb2.ListCollectionsResponse.FromString,
+        )
+    self.CreateDatabase = channel.unary_unary(
+        '/protodb.ProtoDB/CreateDatabase',
+        request_serializer=protodb_dot_database_dot_create__pb2.CreateDatabaseRequest.SerializeToString,
+        response_deserializer=protodb_dot_database_dot_create__pb2.CreateDatabaseResponse.FromString,
+        )
+    self.ListDatabases = channel.unary_unary(
+        '/protodb.ProtoDB/ListDatabases',
+        request_serializer=protodb_dot_database_dot_list__pb2.ListDatabasesRequest.SerializeToString,
+        response_deserializer=protodb_dot_database_dot_list__pb2.ListDatabasesResponse.FromString,
+        )
+    self.CreateIndex = channel.unary_unary(
+        '/protodb.ProtoDB/CreateIndex',
+        request_serializer=protodb_dot_index_dot_create__pb2.CreateIndexRequest.SerializeToString,
+        response_deserializer=protodb_dot_index_dot_create__pb2.CreateIndexResponse.FromString,
         )
     self.FindObject = channel.unary_unary(
         '/protodb.ProtoDB/FindObject',
@@ -79,20 +85,6 @@ class ProtoDBServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def CreateDatabase(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
-  def ListDatabases(self, request, context):
-    # missing associated documentation comment in .proto file
-    pass
-    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-    context.set_details('Method not implemented!')
-    raise NotImplementedError('Method not implemented!')
-
   def CreateCollection(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -108,6 +100,27 @@ class ProtoDBServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def ListCollections(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def CreateDatabase(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListDatabases(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def CreateIndex(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -152,16 +165,6 @@ class ProtoDBServicer(object):
 
 def add_ProtoDBServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'CreateDatabase': grpc.unary_unary_rpc_method_handler(
-          servicer.CreateDatabase,
-          request_deserializer=protodb_dot_database_dot_create__pb2.CreateDatabaseRequest.FromString,
-          response_serializer=protodb_dot_database_dot_create__pb2.CreateDatabaseResponse.SerializeToString,
-      ),
-      'ListDatabases': grpc.unary_unary_rpc_method_handler(
-          servicer.ListDatabases,
-          request_deserializer=protodb_dot_database_dot_list__pb2.ListDatabasesRequest.FromString,
-          response_serializer=protodb_dot_database_dot_list__pb2.ListDatabasesResponse.SerializeToString,
-      ),
       'CreateCollection': grpc.unary_unary_rpc_method_handler(
           servicer.CreateCollection,
           request_deserializer=protodb_dot_collection_dot_create__pb2.CreateCollectionRequest.FromString,
@@ -176,6 +179,21 @@ def add_ProtoDBServicer_to_server(servicer, server):
           servicer.ListCollections,
           request_deserializer=protodb_dot_collection_dot_list__pb2.ListCollectionsRequest.FromString,
           response_serializer=protodb_dot_collection_dot_list__pb2.ListCollectionsResponse.SerializeToString,
+      ),
+      'CreateDatabase': grpc.unary_unary_rpc_method_handler(
+          servicer.CreateDatabase,
+          request_deserializer=protodb_dot_database_dot_create__pb2.CreateDatabaseRequest.FromString,
+          response_serializer=protodb_dot_database_dot_create__pb2.CreateDatabaseResponse.SerializeToString,
+      ),
+      'ListDatabases': grpc.unary_unary_rpc_method_handler(
+          servicer.ListDatabases,
+          request_deserializer=protodb_dot_database_dot_list__pb2.ListDatabasesRequest.FromString,
+          response_serializer=protodb_dot_database_dot_list__pb2.ListDatabasesResponse.SerializeToString,
+      ),
+      'CreateIndex': grpc.unary_unary_rpc_method_handler(
+          servicer.CreateIndex,
+          request_deserializer=protodb_dot_index_dot_create__pb2.CreateIndexRequest.FromString,
+          response_serializer=protodb_dot_index_dot_create__pb2.CreateIndexResponse.SerializeToString,
       ),
       'FindObject': grpc.unary_unary_rpc_method_handler(
           servicer.FindObject,

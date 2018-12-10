@@ -8,6 +8,8 @@ pub mod server {
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
     };
+    use super::index;
+    use super::index::{CreateIndexRequest, CreateIndexResponse};
     use super::object;
     use super::object::{
         FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
@@ -32,14 +34,6 @@ pub mod server {
     }
 
     pub trait ProtoDb: Clone {
-        type CreateDatabaseFuture: futures::Future<
-            Item = grpc::Response<database::CreateDatabaseResponse>,
-            Error = grpc::Error,
-        >;
-        type ListDatabasesFuture: futures::Future<
-            Item = grpc::Response<database::ListDatabasesResponse>,
-            Error = grpc::Error,
-        >;
         type CreateCollectionFuture: futures::Future<
             Item = grpc::Response<collection::CreateCollectionResponse>,
             Error = grpc::Error,
@@ -50,6 +44,18 @@ pub mod server {
         >;
         type ListCollectionsFuture: futures::Future<
             Item = grpc::Response<collection::ListCollectionsResponse>,
+            Error = grpc::Error,
+        >;
+        type CreateDatabaseFuture: futures::Future<
+            Item = grpc::Response<database::CreateDatabaseResponse>,
+            Error = grpc::Error,
+        >;
+        type ListDatabasesFuture: futures::Future<
+            Item = grpc::Response<database::ListDatabasesResponse>,
+            Error = grpc::Error,
+        >;
+        type CreateIndexFuture: futures::Future<
+            Item = grpc::Response<index::CreateIndexResponse>,
             Error = grpc::Error,
         >;
         type FindObjectFuture: futures::Future<
@@ -73,16 +79,6 @@ pub mod server {
             Error = grpc::Error,
         >;
 
-        fn create_database(
-            &mut self,
-            request: grpc::Request<database::CreateDatabaseRequest>,
-        ) -> Self::CreateDatabaseFuture;
-
-        fn list_databases(
-            &mut self,
-            request: grpc::Request<database::ListDatabasesRequest>,
-        ) -> Self::ListDatabasesFuture;
-
         fn create_collection(
             &mut self,
             request: grpc::Request<collection::CreateCollectionRequest>,
@@ -97,6 +93,21 @@ pub mod server {
             &mut self,
             request: grpc::Request<collection::ListCollectionsRequest>,
         ) -> Self::ListCollectionsFuture;
+
+        fn create_database(
+            &mut self,
+            request: grpc::Request<database::CreateDatabaseRequest>,
+        ) -> Self::CreateDatabaseFuture;
+
+        fn list_databases(
+            &mut self,
+            request: grpc::Request<database::ListDatabasesRequest>,
+        ) -> Self::ListDatabasesFuture;
+
+        fn create_index(
+            &mut self,
+            request: grpc::Request<index::CreateIndexRequest>,
+        ) -> Self::CreateIndexFuture;
 
         fn find_object(
             &mut self,
@@ -154,20 +165,6 @@ pub mod server {
             use self::proto_db::Kind::*;
 
             match request.uri().path() {
-                "/protodb.ProtoDB/CreateDatabase" => {
-                    let service = proto_db::methods::CreateDatabase(self.proto_db.clone());
-                    let response = grpc::Grpc::unary(service, request);
-                    proto_db::ResponseFuture {
-                        kind: Ok(CreateDatabase(response)),
-                    }
-                }
-                "/protodb.ProtoDB/ListDatabases" => {
-                    let service = proto_db::methods::ListDatabases(self.proto_db.clone());
-                    let response = grpc::Grpc::unary(service, request);
-                    proto_db::ResponseFuture {
-                        kind: Ok(ListDatabases(response)),
-                    }
-                }
                 "/protodb.ProtoDB/CreateCollection" => {
                     let service = proto_db::methods::CreateCollection(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
@@ -187,6 +184,27 @@ pub mod server {
                     let response = grpc::Grpc::unary(service, request);
                     proto_db::ResponseFuture {
                         kind: Ok(ListCollections(response)),
+                    }
+                }
+                "/protodb.ProtoDB/CreateDatabase" => {
+                    let service = proto_db::methods::CreateDatabase(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(CreateDatabase(response)),
+                    }
+                }
+                "/protodb.ProtoDB/ListDatabases" => {
+                    let service = proto_db::methods::ListDatabases(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(ListDatabases(response)),
+                    }
+                }
+                "/protodb.ProtoDB/CreateIndex" => {
+                    let service = proto_db::methods::CreateIndex(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(CreateIndex(response)),
                     }
                 }
                 "/protodb.ProtoDB/FindObject" => {
@@ -273,6 +291,8 @@ pub mod server {
         };
         use super::super::database;
         use super::super::database::{CreateDatabaseRequest, ListDatabasesRequest};
+        use super::super::index;
+        use super::super::index::CreateIndexRequest;
         use super::super::object;
         use super::super::object::{FindObjectRequest, InsertObjectRequest};
         use super::super::wasm;
@@ -287,16 +307,6 @@ pub mod server {
             pub(super) kind: Result<
                 Kind<
                     grpc::unary::ResponseFuture<
-                        methods::CreateDatabase<T>,
-                        grpc::BoxBody,
-                        database::CreateDatabaseRequest,
-                    >,
-                    grpc::unary::ResponseFuture<
-                        methods::ListDatabases<T>,
-                        grpc::BoxBody,
-                        database::ListDatabasesRequest,
-                    >,
-                    grpc::unary::ResponseFuture<
                         methods::CreateCollection<T>,
                         grpc::BoxBody,
                         collection::CreateCollectionRequest,
@@ -310,6 +320,21 @@ pub mod server {
                         methods::ListCollections<T>,
                         grpc::BoxBody,
                         collection::ListCollectionsRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::CreateDatabase<T>,
+                        grpc::BoxBody,
+                        database::CreateDatabaseRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::ListDatabases<T>,
+                        grpc::BoxBody,
+                        database::ListDatabasesRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::CreateIndex<T>,
+                        grpc::BoxBody,
+                        index::CreateIndexRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::FindObject<T>,
@@ -352,24 +377,6 @@ pub mod server {
                 use self::Kind::*;
 
                 match self.kind {
-                    Ok(CreateDatabase(ref mut fut)) => {
-                        let response = try_ready!(fut.poll());
-                        let (head, body) = response.into_parts();
-                        let body = ResponseBody {
-                            kind: Ok(CreateDatabase(body)),
-                        };
-                        let response = http::Response::from_parts(head, body);
-                        Ok(response.into())
-                    }
-                    Ok(ListDatabases(ref mut fut)) => {
-                        let response = try_ready!(fut.poll());
-                        let (head, body) = response.into_parts();
-                        let body = ResponseBody {
-                            kind: Ok(ListDatabases(body)),
-                        };
-                        let response = http::Response::from_parts(head, body);
-                        Ok(response.into())
-                    }
                     Ok(CreateCollection(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
@@ -393,6 +400,33 @@ pub mod server {
                         let (head, body) = response.into_parts();
                         let body = ResponseBody {
                             kind: Ok(ListCollections(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(CreateDatabase(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(CreateDatabase(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(ListDatabases(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(ListDatabases(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(CreateIndex(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(CreateIndex(body)),
                         };
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
@@ -460,20 +494,6 @@ pub mod server {
                 Kind<
                     grpc::Encode<
                         grpc::unary::Once<
-                            <methods::CreateDatabase<T> as grpc::UnaryService<
-                                database::CreateDatabaseRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::ListDatabases<T> as grpc::UnaryService<
-                                database::ListDatabasesRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
                             <methods::CreateCollection<T> as grpc::UnaryService<
                                 collection::CreateCollectionRequest,
                             >>::Response,
@@ -490,6 +510,27 @@ pub mod server {
                         grpc::unary::Once<
                             <methods::ListCollections<T> as grpc::UnaryService<
                                 collection::ListCollectionsRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::CreateDatabase<T> as grpc::UnaryService<
+                                database::CreateDatabaseRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::ListDatabases<T> as grpc::UnaryService<
+                                database::ListDatabasesRequest,
+                            >>::Response,
+                        >,
+                    >,
+                    grpc::Encode<
+                        grpc::unary::Once<
+                            <methods::CreateIndex<T> as grpc::UnaryService<
+                                index::CreateIndexRequest,
                             >>::Response,
                         >,
                     >,
@@ -543,11 +584,12 @@ pub mod server {
                 use self::Kind::*;
 
                 match self.kind {
-                    Ok(CreateDatabase(ref v)) => v.is_end_stream(),
-                    Ok(ListDatabases(ref v)) => v.is_end_stream(),
                     Ok(CreateCollection(ref v)) => v.is_end_stream(),
                     Ok(GetCollectionInfo(ref v)) => v.is_end_stream(),
                     Ok(ListCollections(ref v)) => v.is_end_stream(),
+                    Ok(CreateDatabase(ref v)) => v.is_end_stream(),
+                    Ok(ListDatabases(ref v)) => v.is_end_stream(),
+                    Ok(CreateIndex(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
                     Ok(GetWasmModuleInfo(ref v)) => v.is_end_stream(),
@@ -561,11 +603,12 @@ pub mod server {
                 use self::Kind::*;
 
                 match self.kind {
-                    Ok(CreateDatabase(ref mut v)) => v.poll_data(),
-                    Ok(ListDatabases(ref mut v)) => v.poll_data(),
                     Ok(CreateCollection(ref mut v)) => v.poll_data(),
                     Ok(GetCollectionInfo(ref mut v)) => v.poll_data(),
                     Ok(ListCollections(ref mut v)) => v.poll_data(),
+                    Ok(CreateDatabase(ref mut v)) => v.poll_data(),
+                    Ok(ListDatabases(ref mut v)) => v.poll_data(),
+                    Ok(CreateIndex(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
                     Ok(GetWasmModuleInfo(ref mut v)) => v.poll_data(),
@@ -579,11 +622,12 @@ pub mod server {
                 use self::Kind::*;
 
                 match self.kind {
-                    Ok(CreateDatabase(ref mut v)) => v.poll_metadata(),
-                    Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
                     Ok(CreateCollection(ref mut v)) => v.poll_metadata(),
                     Ok(GetCollectionInfo(ref mut v)) => v.poll_metadata(),
                     Ok(ListCollections(ref mut v)) => v.poll_metadata(),
+                    Ok(CreateDatabase(ref mut v)) => v.poll_metadata(),
+                    Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
+                    Ok(CreateIndex(ref mut v)) => v.poll_metadata(),
                     Ok(FindObject(ref mut v)) => v.poll_metadata(),
                     Ok(InsertObject(ref mut v)) => v.poll_metadata(),
                     Ok(GetWasmModuleInfo(ref mut v)) => v.poll_metadata(),
@@ -615,22 +659,24 @@ pub mod server {
 
         #[derive(Debug, Clone)]
         pub(super) enum Kind<
-            CreateDatabase,
-            ListDatabases,
             CreateCollection,
             GetCollectionInfo,
             ListCollections,
+            CreateDatabase,
+            ListDatabases,
+            CreateIndex,
             FindObject,
             InsertObject,
             GetWasmModuleInfo,
             RegisterWasmModule,
             RunWasmModule,
         > {
-            CreateDatabase(CreateDatabase),
-            ListDatabases(ListDatabases),
             CreateCollection(CreateCollection),
             GetCollectionInfo(GetCollectionInfo),
             ListCollections(ListCollections),
+            CreateDatabase(CreateDatabase),
+            ListDatabases(ListDatabases),
+            CreateIndex(CreateIndex),
             FindObject(FindObject),
             InsertObject(InsertObject),
             GetWasmModuleInfo(GetWasmModuleInfo),
@@ -641,6 +687,7 @@ pub mod server {
         pub mod methods {
             use super::super::super::collection;
             use super::super::super::database;
+            use super::super::super::index;
             use super::super::super::object;
             use super::super::super::wasm;
             use super::super::collection::{
@@ -651,6 +698,7 @@ pub mod server {
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
                 ListDatabasesResponse,
             };
+            use super::super::index::{CreateIndexRequest, CreateIndexResponse};
             use super::super::object::{
                 FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
             };
@@ -660,50 +708,6 @@ pub mod server {
             };
             use super::super::ProtoDb;
             use tower_grpc::codegen::server::*;
-
-            pub struct CreateDatabase<T>(pub T);
-
-            impl<T> tower::Service<grpc::Request<database::CreateDatabaseRequest>> for CreateDatabase<T>
-            where
-                T: ProtoDb,
-            {
-                type Response = grpc::Response<database::CreateDatabaseResponse>;
-                type Error = grpc::Error;
-                type Future = T::CreateDatabaseFuture;
-
-                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
-                    Ok(futures::Async::Ready(()))
-                }
-
-                fn call(
-                    &mut self,
-                    request: grpc::Request<database::CreateDatabaseRequest>,
-                ) -> Self::Future {
-                    self.0.create_database(request)
-                }
-            }
-
-            pub struct ListDatabases<T>(pub T);
-
-            impl<T> tower::Service<grpc::Request<database::ListDatabasesRequest>> for ListDatabases<T>
-            where
-                T: ProtoDb,
-            {
-                type Response = grpc::Response<database::ListDatabasesResponse>;
-                type Error = grpc::Error;
-                type Future = T::ListDatabasesFuture;
-
-                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
-                    Ok(futures::Async::Ready(()))
-                }
-
-                fn call(
-                    &mut self,
-                    request: grpc::Request<database::ListDatabasesRequest>,
-                ) -> Self::Future {
-                    self.0.list_databases(request)
-                }
-            }
 
             pub struct CreateCollection<T>(pub T);
 
@@ -768,6 +772,72 @@ pub mod server {
                     request: grpc::Request<collection::ListCollectionsRequest>,
                 ) -> Self::Future {
                     self.0.list_collections(request)
+                }
+            }
+
+            pub struct CreateDatabase<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<database::CreateDatabaseRequest>> for CreateDatabase<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<database::CreateDatabaseResponse>;
+                type Error = grpc::Error;
+                type Future = T::CreateDatabaseFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<database::CreateDatabaseRequest>,
+                ) -> Self::Future {
+                    self.0.create_database(request)
+                }
+            }
+
+            pub struct ListDatabases<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<database::ListDatabasesRequest>> for ListDatabases<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<database::ListDatabasesResponse>;
+                type Error = grpc::Error;
+                type Future = T::ListDatabasesFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<database::ListDatabasesRequest>,
+                ) -> Self::Future {
+                    self.0.list_databases(request)
+                }
+            }
+
+            pub struct CreateIndex<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<index::CreateIndexRequest>> for CreateIndex<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<index::CreateIndexResponse>;
+                type Error = grpc::Error;
+                type Future = T::CreateIndexFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<index::CreateIndexRequest>,
+                ) -> Self::Future {
+                    self.0.create_index(request)
                 }
             }
 
@@ -1003,6 +1073,36 @@ pub mod database {
         pub enum ErrorCode {
             NoError = 0,
             InternalError = 1,
+        }
+    }
+
+}
+pub mod index {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateIndexRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(int32, tag = "3")]
+        pub field: i32,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateIndexResponse {
+        #[prost(enumeration = "create_index_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(uint64, tag = "2")]
+        pub index_id: u64,
+    }
+    pub mod create_index_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            InvalidField = 4,
+            UnsupportedFieldType = 5,
         }
     }
 

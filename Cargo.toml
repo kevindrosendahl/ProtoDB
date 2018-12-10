@@ -8,6 +8,7 @@ edition = "2018"
 members = [
     "clients/rust",
     "crates/protoctl",
+    "crates/rocksdb-explorer",
     "crates/schema",
     "crates/wasm",
     "examples/wasm",

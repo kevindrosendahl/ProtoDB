@@ -1069,6 +1069,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "rocksdb-explorer"
+version = "0.1.0"
+dependencies = [
+ "rocksdb 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"

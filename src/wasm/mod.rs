@@ -179,7 +179,8 @@ impl ProtoDBModuleInstance {
     }
 }
 
-type InstanceIterators = HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>;
+type InstanceIterators =
+    HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>;
 
 struct ProtoDBExternals {
     module_ref: ModuleRef,

@@ -1,30 +1,38 @@
-use std::{cell::RefCell, collections::HashSet, sync::Arc};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, RwLock,
+    },
+};
 
 use super::super::{
+    index::KVIndexAccessMethod,
     keys::*,
     store::{KVStore, KVStoreBytes},
 };
-use super::index::KVIndexCatalog;
 use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
         errors::collection::{FindObjectError, InsertObjectError},
-        index::IndexCatalog,
     },
+    index::{errors::BuildIndexError, IndexAccessMethod},
     schema::{errors::SchemaError, Schema},
     storage::errors::InternalStorageEngineError,
 };
 
 use prost_types::DescriptorProto;
 
-#[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
     kv_store: Arc<dyn KVStore>,
 
     database: String,
     name: String,
     schema: Schema,
-    indexes: Arc<KVIndexCatalog>,
+
+    index_id_counter: AtomicUsize,
+    indexes: Arc<RwLock<HashMap<usize, Arc<KVIndexAccessMethod>>>>,
 }
 
 impl KVCollectionCatalogEntry {
@@ -41,7 +49,9 @@ impl KVCollectionCatalogEntry {
             database: database.clone(),
             name: name.clone(),
             schema: schema.clone(),
-            indexes: Arc::new(KVIndexCatalog::new(kv_store, database, name, schema)),
+
+            index_id_counter: AtomicUsize::new(1),
+            indexes: Default::default(),
         })
     }
 }
@@ -55,16 +65,53 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         &self.schema
     }
 
-    fn indexes(&self) -> Arc<dyn IndexCatalog> {
-        self.indexes.clone()
+    fn create_index(&self, field: i32) -> Result<usize, InternalStorageEngineError> {
+        let index_id = self.index_id_counter.fetch_add(1, Ordering::SeqCst);
+        let index = KVIndexAccessMethod::new(
+            self.kv_store.clone(),
+            self.database.clone(),
+            self.name.clone(),
+            index_id,
+            self.schema.clone(),
+            field,
+        );
+
+        let mut fields = HashSet::with_capacity(2);
+        fields.insert(field);
+        fields.insert(self.schema.id_field);
+        index
+            .build(self.find_all(Some(fields)))
+            .map_err(|err| match err {
+                BuildIndexError::InternalStorageEngineError(err) => err,
+            })?;
+
+        let indexes = self.indexes.clone();
+        let mut indexes = indexes.write().unwrap();
+        indexes.insert(index_id, Arc::new(index));
+
+        Ok(index_id)
+    }
+
+    fn index(&self, id: usize) -> Option<Arc<dyn IndexAccessMethod>> {
+        let indexes = self.indexes.clone();
+        let indexes = indexes.read().unwrap();
+        indexes
+            .get(&id)
+            .cloned()
+            .map(|index| index as Arc<dyn IndexAccessMethod>)
     }
 
     fn find_all(
         &self,
         fields: Option<HashSet<i32>>,
     ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
-        Box::new(FindAll::new(self.clone(), fields))
-            as Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>
+        Box::new(FindAll::new(
+            self.kv_store.clone(),
+            self.database.clone(),
+            self.name.clone(),
+            self.schema.clone(),
+            fields,
+        )) as Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>
     }
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
@@ -139,11 +186,10 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 struct FindAll {
     inner: Box<dyn Iterator<Item = KVStoreBytes>>,
 
-    // should probably take a reference to the collection,
-    // but cloning the KVCollectionCatalogEntry shouldn't be _too_
-    // expensive and should be fine since most of its important members are Arcs,
-    // and easier for now than getting the lifetime right (if possible)
-    collection: KVCollectionCatalogEntry,
+    // FIXME: pass in a reference to these
+    database: String,
+    collection: String,
+    schema: Schema,
 
     fields: Option<HashSet<i32>>,
 
@@ -153,14 +199,23 @@ struct FindAll {
 }
 
 impl FindAll {
-    fn new(collection: KVCollectionCatalogEntry, fields: Option<HashSet<i32>>) -> Self {
-        let start = key_prefix(&collection.database, &collection.name);
+    fn new(
+        kv_store: Arc<dyn KVStore>,
+        database: String,
+        collection: String,
+        schema: Schema,
+        fields: Option<HashSet<i32>>,
+    ) -> Self {
+        let start = collection_object_key_prefix(&database, &collection);
         let (start, end) = delimiter_prefix_bound(start);
 
-        let kv_store = collection.kv_store.clone();
         FindAll {
             inner: kv_store.bounded_prefix_iterator(&start, &end),
+
+            database,
             collection,
+            schema,
+
             fields,
             curr_id: 0,
             curr_object: Default::default(),
@@ -199,9 +254,9 @@ impl Iterator for FindAll {
 
             // Get the key/value information from the info returned by the iterator.
             let (key, value) = next.unwrap();
-            let (id, tag) = parts_from_key(
-                &self.collection.database,
-                &self.collection.name,
+            let (id, tag) = object_id_and_field_from_key(
+                &self.database,
+                &self.collection,
                 &String::from_utf8_lossy(&key),
             );
 
@@ -229,7 +284,7 @@ impl Iterator for FindAll {
             };
             if valid {
                 let mut buf = Vec::new();
-                let wire_type = self.collection.schema.wire_type(tag).unwrap();
+                let wire_type = self.schema.wire_type(tag).unwrap();
                 Schema::encode_field(tag, wire_type, &value, &mut buf);
                 self.curr_object.borrow_mut().append(&mut buf);
             }

@@ -1,17 +1,18 @@
 use std::{collections::HashSet, sync::Arc};
 
-use super::{
-    errors::collection::{FindObjectError, InsertObjectError},
-    index::IndexCatalog,
+use super::errors::collection::{FindObjectError, InsertObjectError};
+use crate::{
+    index::IndexAccessMethod, schema::Schema, storage::errors::InternalStorageEngineError,
 };
-use crate::{schema::Schema, storage::errors::InternalStorageEngineError};
 
 pub trait CollectionCatalogEntry {
     fn name(&self) -> &str;
 
     fn schema(&self) -> &Schema;
 
-    fn indexes(&self) -> Arc<dyn IndexCatalog>;
+    fn create_index(&self, field: i32) -> Result<usize, InternalStorageEngineError>;
+
+    fn index(&self, id: usize) -> Option<Arc<dyn IndexAccessMethod>>;
 
     fn find_all(
         &self,

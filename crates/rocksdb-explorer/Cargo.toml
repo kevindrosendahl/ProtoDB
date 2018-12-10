@@ -1,0 +1,8 @@
+[package]
+name = "rocksdb-explorer"
+version = "0.1.0"
+authors = ["Kevin Rosendahl <kevindrosendahl@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+rocksdb = "0.10"

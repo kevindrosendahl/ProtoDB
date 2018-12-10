@@ -1,5 +1,6 @@
 mod collection;
 mod database;
+mod index;
 mod object;
 mod wasm;
 
@@ -8,8 +9,8 @@ use std::{sync::Arc, time::Instant};
 use super::generated::{
     protodb,
     protodb::{
-        collection as protodb_collection, database as protodb_database, object as protodb_object,
-        wasm as protodb_wasm,
+        collection as protodb_collection, database as protodb_database, index as protodb_index,
+        object as protodb_object, wasm as protodb_wasm,
     },
 };
 
@@ -52,24 +53,6 @@ macro_rules! method_handler {
 
 impl protodb::server::ProtoDb for Handler {
     method_handler!(
-        "create database",
-        create_database,
-        handle_create_database,
-        CreateDatabaseFuture,
-        protodb_database::CreateDatabaseRequest,
-        protodb_database::CreateDatabaseResponse
-    );
-
-    method_handler!(
-        "list databases",
-        list_databases,
-        handle_list_databases,
-        ListDatabasesFuture,
-        protodb_database::ListDatabasesRequest,
-        protodb_database::ListDatabasesResponse
-    );
-
-    method_handler!(
         "create collection",
         create_collection,
         handle_create_collection,
@@ -94,6 +77,33 @@ impl protodb::server::ProtoDb for Handler {
         GetCollectionInfoFuture,
         protodb_collection::GetCollectionInfoRequest,
         protodb_collection::GetCollectionInfoResponse
+    );
+
+    method_handler!(
+        "create database",
+        create_database,
+        handle_create_database,
+        CreateDatabaseFuture,
+        protodb_database::CreateDatabaseRequest,
+        protodb_database::CreateDatabaseResponse
+    );
+
+    method_handler!(
+        "list databases",
+        list_databases,
+        handle_list_databases,
+        ListDatabasesFuture,
+        protodb_database::ListDatabasesRequest,
+        protodb_database::ListDatabasesResponse
+    );
+
+    method_handler!(
+        "create index",
+        create_index,
+        handle_create_index,
+        CreateIndexFuture,
+        protodb_index::CreateIndexRequest,
+        protodb_index::CreateIndexResponse
     );
 
     method_handler!(
