@@ -402,7 +402,7 @@ impl Externals for ProtoDBExternals {
 
                 let iter_id: u32 = args.nth(1);
                 let iter_id = iter_id as usize;
-                let state = self.index_iterators.get(&iter_id).unwrap();
+                let state = &self.index_iterators[&iter_id];
 
                 self.pass_u64(state.last_id, ret);
 

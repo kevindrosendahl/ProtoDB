@@ -44,11 +44,11 @@ impl KVCollectionCatalogEntry {
     ) -> Result<KVCollectionCatalogEntry, SchemaError> {
         let schema = Schema::new(descriptor)?;
         Ok(KVCollectionCatalogEntry {
-            kv_store: kv_store.clone(),
+            kv_store,
 
-            database: database.clone(),
-            name: name.clone(),
-            schema: schema.clone(),
+            database,
+            name,
+            schema,
 
             index_id_counter: AtomicUsize::new(1),
             indexes: Default::default(),
@@ -106,7 +106,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         fields: Option<HashSet<i32>>,
     ) -> Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>> {
         Box::new(FindAll::new(
-            self.kv_store.clone(),
+            &self.kv_store,
             self.database.clone(),
             self.name.clone(),
             self.schema.clone(),
@@ -200,7 +200,7 @@ struct FindAll {
 
 impl FindAll {
     fn new(
-        kv_store: Arc<dyn KVStore>,
+        kv_store: &Arc<dyn KVStore>,
         database: String,
         collection: String,
         schema: Schema,
