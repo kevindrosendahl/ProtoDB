@@ -13,9 +13,9 @@ pub struct InMemoryStorageEngine {
 }
 
 impl InMemoryStorageEngine {
-    pub fn new() -> Result<InMemoryStorageEngine, InternalStorageEngineError> {
+    pub fn try_new() -> Result<InMemoryStorageEngine, InternalStorageEngineError> {
         let store = Arc::new(kv_store::InMemoryKVStore::default());
-        let catalog = KVDatabaseCatalog::new(store)?;
+        let catalog = KVDatabaseCatalog::try_new(store)?;
         Ok(InMemoryStorageEngine {
             catalog: Arc::new(catalog),
         })

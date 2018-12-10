@@ -29,7 +29,7 @@ pub struct KVDatabaseCatalog {
 }
 
 impl KVDatabaseCatalog {
-    pub fn new(
+    pub fn try_new(
         kv_store: Arc<dyn KVStore>,
     ) -> Result<KVDatabaseCatalog, InternalStorageEngineError> {
         let catalog = KVDatabaseCatalog {
@@ -158,7 +158,7 @@ impl<'a> KVDatabaseCatalogEntry {
             ))
         });
 
-        let entry = KVCollectionCatalogEntry::new(
+        let entry = KVCollectionCatalogEntry::try_new(
             self.kv_store.clone(),
             self.name.clone(),
             name.clone(),
@@ -200,7 +200,7 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
             return Err(CreateCollectionError::CollectionExists);
         }
 
-        let entry = KVCollectionCatalogEntry::new(
+        let entry = KVCollectionCatalogEntry::try_new(
             self.kv_store.clone(),
             self.name.clone(),
             name.to_string(),

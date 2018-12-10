@@ -28,7 +28,7 @@ pub struct KVCollectionCatalogEntry {
 }
 
 impl KVCollectionCatalogEntry {
-    pub fn new(
+    pub fn try_new(
         kv_store: Arc<dyn KVStore>,
         database: String,
         name: String,

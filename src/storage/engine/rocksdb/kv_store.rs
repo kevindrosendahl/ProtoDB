@@ -11,7 +11,7 @@ pub struct RocksDBKVStore {
 }
 
 impl RocksDBKVStore {
-    pub fn new(path: &str) -> Result<RocksDBKVStore, rocksdb::Error> {
+    pub fn try_new(path: &str) -> Result<RocksDBKVStore, rocksdb::Error> {
         Ok(RocksDBKVStore {
             inner: Arc::new(rocksdb::DB::open_default(path)?),
         })

@@ -13,9 +13,9 @@ pub struct RocksDBStorageEngine {
 }
 
 impl RocksDBStorageEngine {
-    pub fn new(path: &str) -> Result<RocksDBStorageEngine, InternalStorageEngineError> {
-        let store = kv_store::RocksDBKVStore::new(path).map_err(|err| err.into())?;
-        let catalog = KVDatabaseCatalog::new(Arc::new(store))?;
+    pub fn try_new(path: &str) -> Result<RocksDBStorageEngine, InternalStorageEngineError> {
+        let store = kv_store::RocksDBKVStore::try_new(path).map_err(|err| err.into())?;
+        let catalog = KVDatabaseCatalog::try_new(Arc::new(store))?;
         Ok(RocksDBStorageEngine {
             catalog: Arc::new(catalog),
         })
