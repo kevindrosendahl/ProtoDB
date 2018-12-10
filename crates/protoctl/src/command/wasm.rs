@@ -216,7 +216,10 @@ fn register_module(
         .clone();
 
     CLIENT
-        .with(|c| c.borrow_mut().register_wasm_module(database, name, metadata, wasm, descriptor))
+        .with(|c| {
+            c.borrow_mut()
+                .register_wasm_module(database, name, metadata, wasm, descriptor)
+        })
         .and_then(|response| {
             use protodb_client::generated::protodb::wasm::register_module_response::ErrorCode;
 

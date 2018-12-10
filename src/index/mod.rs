@@ -1,13 +1,18 @@
 pub mod errors;
 
-use crate::schema::DecodedIdObject;
+use crate::{schema::DecodedIdObject, storage::errors::InternalStorageEngineError};
+
+use protodb_schema::encoding::FieldValue;
 
 pub trait IndexAccessMethod {
-    fn build(&self) -> Result<(), errors::BuildIndexError>;
+    fn build(
+        &self,
+        objects: Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>,
+    ) -> Result<(), errors::BuildIndexError>;
 
     fn insert(&self, obj: DecodedIdObject) -> Result<(), errors::IndexInsertError>;
 
-    fn iter(&self) -> Box<dyn IndexAccessMethodIterator<Item = u64>>;
+    fn iter(&self, mode: IteratorMode) -> Box<dyn Iterator<Item = (FieldValue, u64)>>;
 }
 
 pub enum Direction {
@@ -15,11 +20,7 @@ pub enum Direction {
     Forward,
 }
 
-pub enum IteratorMode {
-    Direction(Direction),
-    From((u64, Direction)),
-}
-
-pub trait IndexAccessMethodIterator: Iterator<Item = u64> {
-    fn set_mode(&mut self, mode: IteratorMode);
+pub struct IteratorMode {
+    pub direction: Direction,
+    pub from: Option<FieldValue>,
 }

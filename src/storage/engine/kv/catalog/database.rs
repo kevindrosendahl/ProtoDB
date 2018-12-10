@@ -3,10 +3,11 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use super::super::store::{KVStore, KVStoreWriteBatch};
-use super::{
-    collection::KVCollectionCatalogEntry, delimiter_prefix_bound, key_suffix, KEY_DELIMITER,
+use super::super::{
+    keys::*,
+    store::{KVStore, KVStoreWriteBatch},
 };
+use super::collection::KVCollectionCatalogEntry;
 use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
@@ -20,10 +21,6 @@ use crate::{
 
 use prost::Message;
 use prost_types::DescriptorProto;
-
-const SYSTEM_KEY_PREFIX: &str = "__system";
-// FIXME: make this const or lazy_static
-//const DATABASES_PREFIX: &str = SYSTEM_PREFIX + KEY_DELIMITER + DATABASES_DELIMITER + KEY_DELIMITER;
 
 pub struct KVDatabaseCatalog {
     kv_store: Arc<dyn KVStore>,
@@ -270,81 +267,4 @@ impl DatabaseCatalogEntry for KVDatabaseCatalogEntry {
         let modules = modules.read().unwrap();
         modules.get(name).cloned()
     }
-}
-
-#[inline(always)]
-// FIXME: make this const or lazy_static
-fn databases_key_prefix() -> String {
-    format!(
-        "{system_prefix}{delimiter}databases{delimiter}",
-        system_prefix = SYSTEM_KEY_PREFIX,
-        delimiter = KEY_DELIMITER,
-    )
-}
-
-#[inline(always)]
-fn database_key(name: &str) -> String {
-    format!(
-        "{databases_prefix}{name}",
-        databases_prefix = databases_key_prefix(),
-        name = name,
-    )
-}
-
-#[inline(always)]
-fn database_from_key(key: &str) -> String {
-    let prefix = databases_key_prefix();
-    key_suffix(&prefix, key)
-}
-
-#[inline(always)]
-fn database_key_prefix(name: &str) -> String {
-    format!(
-        "{system_prefix}{delimiter}database{delimiter}{name}{delimiter}",
-        system_prefix = SYSTEM_KEY_PREFIX,
-        delimiter = KEY_DELIMITER,
-        name = name,
-    )
-}
-
-#[inline(always)]
-fn collections_key_prefix(database: &str) -> String {
-    format!(
-        "{database_prefix}collections{delimiter}",
-        database_prefix = database_key_prefix(database),
-        delimiter = KEY_DELIMITER,
-    )
-}
-
-#[inline(always)]
-fn collection_key(database: &str, name: &str) -> String {
-    format!(
-        "{collections_prefix}{name}",
-        collections_prefix = collections_key_prefix(database),
-        name = name,
-    )
-}
-
-#[inline(always)]
-fn collection_from_key(database: &str, key: &str) -> String {
-    let prefix = collections_key_prefix(database);
-    key_suffix(&prefix, key)
-}
-
-#[inline(always)]
-fn collection_key_prefix(database: &str, name: &str) -> String {
-    format!(
-        "{database_prefix}collection{delimiter}{name}{delimiter}",
-        database_prefix = database_key_prefix(database),
-        delimiter = KEY_DELIMITER,
-        name = name,
-    )
-}
-
-#[inline(always)]
-fn descriptor_key(database: &str, collection: &str) -> String {
-    format!(
-        "{collection_prefix}descriptor",
-        collection_prefix = collection_key_prefix(database, collection),
-    )
 }

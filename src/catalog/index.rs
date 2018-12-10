@@ -9,7 +9,7 @@ pub trait IndexCatalog {
 }
 
 pub trait IndexCatalogEntry {
-    fn id(&self) -> u64;
+    fn id(&self) -> usize;
 
     fn access_method(&self) -> Arc<dyn IndexAccessMethod>;
 }

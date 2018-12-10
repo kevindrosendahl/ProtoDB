@@ -102,7 +102,7 @@ impl ProtoDBModuleInstance {
 
         let memory_export = module_ref
             .export_by_name(MEMORY_EXPORT)
-            .expect(&format!("failed to find {} export", MEMORY_EXPORT));
+            .unwrap_or_else(|| panic!("failed to find {} export", MEMORY_EXPORT));
 
         let externals = ProtoDBExternals {
             module_ref: module_ref.clone(),
@@ -126,7 +126,7 @@ impl ProtoDBModuleInstance {
         let ret_val = self
             .module_ref
             .invoke_export(GLOBAL_ARGUMENT_PTR_EXPORT, &[], &mut NopExternals)
-            .expect(&format!("failed to execute {}", GLOBAL_ARGUMENT_PTR_EXPORT))
+            .unwrap_or_else(|_| panic!("failed to execute {}", GLOBAL_ARGUMENT_PTR_EXPORT))
             .unwrap();
 
         let ret_ptr = match ret_val {
@@ -145,7 +145,7 @@ impl ProtoDBModuleInstance {
                 &[RuntimeValue::I32(ret_ptr)],
                 &mut self.externals,
             )
-            .expect(&format!("failed to execute {}", RUN_EXPORT));
+            .unwrap_or_else(|_| panic!("failed to execute {}", RUN_EXPORT));
         assert_eq!(ret_val, None);
 
         // Read in the result.
@@ -168,24 +168,25 @@ impl ProtoDBModuleInstance {
                 &[RuntimeValue::I32(guest_ptr), RuntimeValue::I32(len)],
                 &mut NopExternals,
             )
-            .expect(&format!("failed to execute {}", FREE_EXPORT));
+            .unwrap_or_else(|_| panic!("failed to execute {}", FREE_EXPORT));
         assert_eq!(ret_val, None);
     }
 
     fn get_memory(&self) -> &MemoryRef {
         self.memory_export
             .as_memory()
-            .expect(&format!("{} export is not of type 'memory'", MEMORY_EXPORT))
+            .unwrap_or_else(|| panic!("{} export is not of type 'memory'", MEMORY_EXPORT))
     }
 }
+
+type InstanceIterators = HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>;
 
 struct ProtoDBExternals {
     module_ref: ModuleRef,
     memory_export: ExternVal,
 
     storage_engine: Arc<dyn StorageEngine>,
-    iterators:
-        HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>,
+    iterators: InstanceIterators,
     iterator_counter: AtomicUsize,
 }
 
@@ -193,7 +194,7 @@ impl ProtoDBExternals {
     fn get_memory(&self) -> &MemoryRef {
         self.memory_export
             .as_memory()
-            .expect(&format!("{} export is not of type 'memory'", MEMORY_EXPORT))
+            .unwrap_or_else(|| panic!("{} export is not of type 'memory'", MEMORY_EXPORT))
     }
 
     fn get_string(&self, ptr: u32, len: usize) -> String {
@@ -209,7 +210,7 @@ impl ProtoDBExternals {
                 &[RuntimeValue::I32(len as i32)],
                 &mut NopExternals,
             )
-            .expect(&format!("failed to execute {}", MALLOC_EXPORT))
+            .unwrap_or_else(|_| panic!("failed to execute {}", MALLOC_EXPORT))
             .unwrap();
 
         match ret_val {
@@ -329,7 +330,7 @@ impl Externals for ProtoDBExternals {
                 println!("message from wasm: {}", message);
                 Ok(None)
             }
-            _ => panic!("unknown function index {}",),
+            _ => panic!("unknown function index {}", index),
         }
     }
 }

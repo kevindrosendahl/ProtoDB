@@ -1,26 +1,25 @@
-use std::{cell::RefCell, collections::HashSet, io::Cursor, sync::Arc};
+use std::{cell::RefCell, collections::HashSet, sync::Arc};
 
-use super::super::store::{KVStore, KVStoreBytes};
-use super::{delimiter_prefix_bound, index::KVIndexCatalog, key_suffix, KEY_DELIMITER};
+use super::super::{
+    keys::*,
+    store::{KVStore, KVStoreBytes},
+};
+use super::index::KVIndexCatalog;
 use crate::{
     catalog::{
         collection::CollectionCatalogEntry,
         errors::collection::{FindObjectError, InsertObjectError},
         index::IndexCatalog,
     },
-    schema::{
-        encoding::FieldValue, errors::SchemaError, DecodedIdObject, DecodedObjectBuilder, Schema,
-    },
+    schema::{errors::SchemaError, Schema},
     storage::errors::InternalStorageEngineError,
 };
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 use prost_types::DescriptorProto;
 
 #[derive(Clone)]
 pub struct KVCollectionCatalogEntry {
     kv_store: Arc<dyn KVStore>,
-    key_generator: CollectionKeyGenerator,
 
     database: String,
     name: String,
@@ -38,15 +37,11 @@ impl KVCollectionCatalogEntry {
         let schema = Schema::new(descriptor)?;
         Ok(KVCollectionCatalogEntry {
             kv_store: kv_store.clone(),
-            key_generator: CollectionKeyGenerator {
-                database: database.clone(),
-                collection: name.clone(),
-            },
 
             database: database.clone(),
             name: name.clone(),
-            schema,
-            indexes: Arc::new(KVIndexCatalog::new(kv_store, database, name)),
+            schema: schema.clone(),
+            indexes: Arc::new(KVIndexCatalog::new(kv_store, database, name, schema)),
         })
     }
 }
@@ -74,7 +69,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
 
     fn find_object(&self, id: u64) -> Result<Option<Vec<u8>>, FindObjectError> {
         // get the key bounds for the object
-        let (start, end) = delimiter_prefix_bound(self.key_generator.field_key_prefix(id));
+        let (start, end) = delimiter_prefix_bound(field_key_prefix(&self.database, &self.name, id));
 
         // allocate the buffer that we'll be encoding the message into
         let mut buf = Vec::new();
@@ -83,10 +78,12 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         // encoding the values into the buffer if the tag for the field is found in
         // the schema
         for (key, value) in self.kv_store.clone().bounded_prefix_iterator(&start, &end) {
-            // FIXME: handle this error
-            let tag = self
-                .key_generator
-                .tag_from_key(&String::from_utf8(key.to_vec()).unwrap(), id);
+            let tag = tag_from_key(
+                &self.database,
+                &self.name,
+                &String::from_utf8_lossy(&key),
+                id,
+            );
             let wire_type = match self.schema.wire_type(tag) {
                 Some(wire_type) => wire_type,
                 // this indicates there's a field in the cache that isn't in the schema
@@ -106,11 +103,8 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
     fn insert_object(&self, object: &[u8]) -> Result<(), InsertObjectError> {
         // decode the object and retrieve the key for this object's id
         let decoded = self.schema.decoded_object(object)?;
-        let id_key = self
-            .key_generator
-            .field_key(decoded.id, self.schema.id_field)
-            .as_bytes()
-            .to_vec();
+        let id_key =
+            field_key(&self.database, &self.name, decoded.id, self.schema.id_field).into_bytes();
 
         // check to see if an object with this id already exists in the store
         let store = self.kv_store.clone();
@@ -123,7 +117,7 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
         let mut batch = Vec::new();
         for (tag, value) in decoded.fields_iter() {
             batch.push((
-                self.key_generator.field_key(decoded.id, *tag),
+                field_key(&self.database, &self.name, decoded.id, *tag),
                 Schema::encode_value(value.clone()),
             ));
         }
@@ -139,71 +133,6 @@ impl CollectionCatalogEntry for KVCollectionCatalogEntry {
                     .collect(),
             )
             .map_err(|err| err.into())
-    }
-}
-
-#[derive(Clone)]
-struct CollectionKeyGenerator {
-    database: String,
-    collection: String,
-}
-
-impl CollectionKeyGenerator {
-    #[inline(always)]
-    fn tag_from_key(&self, key: &str, id: u64) -> i32 {
-        let prefix = self.field_key_prefix(id);
-        let tag = key_suffix(&prefix, &key);
-        tag.parse().unwrap()
-    }
-
-    #[inline(always)]
-    fn parts_from_key(&self, key: &str) -> (u64, i32) {
-        let prefix = self.key_prefix();
-        let parts = key_suffix(&prefix, &key);
-        let parts: Vec<&str> = parts.split(KEY_DELIMITER).collect();
-        if parts.len() != 2 {
-            panic!("corrupted key: {}", key);
-        }
-        (parts[0].parse().unwrap(), parts[1].parse().unwrap())
-    }
-
-    #[inline(always)]
-    fn key_prefix(&self) -> String {
-        format!(
-            "{database}{delimiter}{collection}{delimiter}",
-            database = self.database,
-            delimiter = KEY_DELIMITER,
-            collection = self.collection,
-        )
-    }
-
-    #[inline(always)]
-    fn object_key_prefix(&self, id: u64) -> String {
-        // In order to have the keys sorted in the correct order,
-        // pad the left of the id with 0s up to the length of the
-        // longest u64.
-        format!("{prefix}{id:0>20}", prefix = self.key_prefix(), id = id,)
-    }
-
-    #[inline(always)]
-    fn field_key_prefix(&self, id: u64) -> String {
-        format!(
-            "{prefix}{delimiter}",
-            prefix = self.object_key_prefix(id),
-            delimiter = KEY_DELIMITER,
-        )
-    }
-
-    #[inline(always)]
-    fn field_key(&self, id: u64, tag: i32) -> String {
-        // In order to have the keys sorted in the correct order,
-        // pad the left of the id with 0s up to the length of the
-        // longest i32.
-        format!(
-            "{prefix}{tag:0>10}",
-            prefix = self.field_key_prefix(id),
-            tag = tag,
-        )
     }
 }
 
@@ -225,14 +154,12 @@ struct FindAll {
 
 impl FindAll {
     fn new(collection: KVCollectionCatalogEntry, fields: Option<HashSet<i32>>) -> Self {
-        let start = collection.key_generator.key_prefix();
-        let mut end = start.clone().into_bytes();
-        let delimiter_byte = end.pop().unwrap();
-        end.push(delimiter_byte + 1);
+        let start = key_prefix(&collection.database, &collection.name);
+        let (start, end) = delimiter_prefix_bound(start);
 
         let kv_store = collection.kv_store.clone();
         FindAll {
-            inner: kv_store.bounded_prefix_iterator(&start.into_bytes(), &end),
+            inner: kv_store.bounded_prefix_iterator(&start, &end),
             collection,
             fields,
             curr_id: 0,
@@ -271,11 +198,12 @@ impl Iterator for FindAll {
             }
 
             // Get the key/value information from the info returned by the iterator.
-            let (key, mut value) = next.unwrap();
-            let (id, tag) = self
-                .collection
-                .key_generator
-                .parts_from_key(&String::from_utf8(key).unwrap());
+            let (key, value) = next.unwrap();
+            let (id, tag) = parts_from_key(
+                &self.collection.database,
+                &self.collection.name,
+                &String::from_utf8_lossy(&key),
+            );
 
             // If this is the first object we're seeing, set curr_id to its id.
             if self.curr_id == 0 {

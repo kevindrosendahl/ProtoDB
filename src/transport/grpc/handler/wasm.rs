@@ -59,7 +59,8 @@ impl Handler {
             .get_database_entry(&request.get_ref().database)
             .ok_or(wasm::register_module_response::ErrorCode::InvalidDatabase)
             .and_then(|db: Arc<dyn DatabaseCatalogEntry>| {
-                Ok(db.create_wasm_module(&request.get_ref().name, module))
+                db.create_wasm_module(&request.get_ref().name, module);
+                Ok(())
             })
             .and(Ok(wasm::RegisterModuleResponse {
                 error_code: wasm::register_module_response::ErrorCode::NoError as i32,

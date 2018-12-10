@@ -4,10 +4,7 @@ use super::{
     errors::collection::{FindObjectError, InsertObjectError},
     index::IndexCatalog,
 };
-use crate::{
-    schema::{DecodedIdObject, Schema},
-    storage::errors::InternalStorageEngineError,
-};
+use crate::{schema::Schema, storage::errors::InternalStorageEngineError};
 
 pub trait CollectionCatalogEntry {
     fn name(&self) -> &str;
