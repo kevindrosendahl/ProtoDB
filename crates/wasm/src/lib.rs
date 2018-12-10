@@ -15,6 +15,13 @@ pub trait ProtoDB {
     fn find_objects(&self, collection: &str) -> Box<dyn Iterator<Item = Vec<u8>>>;
 
     fn find_object(&self, collection: &str, id: u64) -> Option<Vec<u8>>;
+
+    fn index_iter(
+        &self,
+        collection: &str,
+        index_id: usize,
+        from: Option<u32>,
+    ) -> Box<dyn Iterator<Item = (u32, u64)>>;
 }
 
 #[wasm_bindgen]
@@ -23,10 +30,14 @@ extern "C" {
 
     fn find_objects_iter(collection: &str) -> usize;
 
-    // FIXME: should return a Result<Option<Vec<u8>>, Error>
     fn find_objects_iter_next(id: usize) -> Option<Vec<u8>>;
 
     fn find_object(collection: &str, id: u64) -> Option<Vec<u8>>;
+
+    fn index_iter(collection: &str, index_id: usize, from: Option<u32>) -> usize;
+
+    fn index_iter_next_value(id: usize) -> Option<u32>;
+    fn index_iter_next_id(id: usize) -> u64;
 }
 
 #[doc(hidden)]
@@ -42,6 +53,17 @@ impl ProtoDB for ProtoDBImpl {
     fn find_object(&self, collection: &str, id: u64) -> Option<Vec<u8>> {
         find_object(collection, id)
     }
+
+    fn index_iter(
+        &self,
+        collection: &str,
+        index_id: usize,
+        from: Option<u32>,
+    ) -> Box<dyn Iterator<Item = (u32, u64)>> {
+        let id = index_iter(collection, index_id, from);
+        let iter = ProtoDBIndexIterator { id };
+        Box::new(iter) as Box<dyn Iterator<Item = (u32, u64)>>
+    }
 }
 
 struct ProtoDBFindObjectsIterator {
@@ -53,6 +75,19 @@ impl Iterator for ProtoDBFindObjectsIterator {
 
     fn next(&mut self) -> Option<Self::Item> {
         find_objects_iter_next(self.id)
+    }
+}
+
+struct ProtoDBIndexIterator {
+    id: usize,
+}
+
+impl Iterator for ProtoDBIndexIterator {
+    type Item = (u32, u64);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let value = index_iter_next_value(self.id)?;
+        Some((value, index_iter_next_id(self.id)))
     }
 }
 

@@ -22,6 +22,11 @@ lazy_static! {
         Regex::new("__wbg_findobjectsiter_([a-f0-9]{16})").unwrap();
     static ref FIND_OBJECT_ITER_NEXT_BINDGEN_RE: Regex =
         Regex::new("__wbg_findobjectsiternext_([a-f0-9]{16})").unwrap();
+    static ref INDEX_ITER_BINDGEN_RE: Regex = Regex::new("__wbg_indexiter_([a-f0-9]{16})").unwrap();
+    static ref INDEX_ITER_NEXT_VALUE_BINDGEN_RE: Regex =
+        Regex::new("__wbg_indexiternextvalue_([a-f0-9]{16})").unwrap();
+    static ref INDEX_ITER_NEXT_ID_BINDGEN_RE: Regex =
+        Regex::new("__wbg_indexiternextid_([a-f0-9]{16})").unwrap();
     static ref LOG_BINDGEN_RE: Regex = Regex::new("__wbg_log_([a-f0-9]{16})").unwrap();
 }
 
@@ -159,6 +164,27 @@ fn register_module(
         .or(Some(""))
         .unwrap();
 
+    let index_iter_bindgen_hash = INDEX_ITER_BINDGEN_RE
+        .captures(&js)
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
+
+    let index_iter_next_value_bindgen_hash = INDEX_ITER_NEXT_VALUE_BINDGEN_RE
+        .captures(&js)
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
+
+    let index_iter_next_id_bindgen_hash = INDEX_ITER_NEXT_ID_BINDGEN_RE
+        .captures(&js)
+        .and_then(|c| c.get(1))
+        .and_then(|m| Some(m.as_str()))
+        .or(Some(""))
+        .unwrap();
+
     let log_bindgen_hash = LOG_BINDGEN_RE
         .captures(&js)
         .and_then(|c| c.get(1))
@@ -169,10 +195,13 @@ fn register_module(
     let metadata = ModuleMetadata {
         name: format!("./{}", crate_name),
         bindgen_import_hashes: Some(BindgenImportHashes {
+            log: log_bindgen_hash.to_string(),
             find_object: find_object_bindgen_hash.to_string(),
             find_objects_iter: find_object_iter_bindgen_hash.to_string(),
             find_objects_iter_next: find_object_iter_next_bindgen_hash.to_string(),
-            log: log_bindgen_hash.to_string(),
+            index_iter: index_iter_bindgen_hash.to_string(),
+            index_iter_next_value: index_iter_next_value_bindgen_hash.to_string(),
+            index_iter_next_id: index_iter_next_id_bindgen_hash.to_string(),
         }),
     };
 

@@ -42,6 +42,7 @@ impl Handler {
     ) -> wasm::RegisterModuleResponse {
         let metadata = request.get_ref().metadata.clone().unwrap();
         let bindgen_import_hashes = metadata.bindgen_import_hashes.unwrap();
+        println!("{:?}", bindgen_import_hashes);
         let module = ProtoDBModule::new(
             request.get_ref().wasm.clone(),
             metadata.name,
@@ -50,6 +51,9 @@ impl Handler {
                 find_object: bindgen_import_hashes.find_object,
                 find_object_iter: bindgen_import_hashes.find_objects_iter,
                 find_object_iter_next: bindgen_import_hashes.find_objects_iter_next,
+                index_iter: bindgen_import_hashes.index_iter,
+                index_iter_next_id: bindgen_import_hashes.index_iter_next_id,
+                index_iter_next_value: bindgen_import_hashes.index_iter_next_value,
             },
             request.get_ref().result_schema.clone().unwrap(),
         );

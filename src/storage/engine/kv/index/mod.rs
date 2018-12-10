@@ -113,23 +113,21 @@ impl KVIndexAccessMethodIterator {
         index_id: usize,
         field_type: Type,
     ) -> Self {
-        let start_value = match mode.from {
-            Some(value) => value,
-            None => {
-                // FIXME: handle more field types
-                match field_type {
-                    Type::Int32 => FieldValue::Int32(0),
-                    Type::Uint32 => FieldValue::Uint32(0),
-                    Type::Int64 => FieldValue::Int64(0),
-                    Type::Uint64 => FieldValue::Uint64(0),
-                    // FIXME: handle this better
-                    _ => panic!("unindexible FieldValue type"),
-                }
-            }
+        let index_start = index_key_prefix(&database, &collection, index_id);
+        let (start, end) = delimiter_prefix_bound(index_start);
+
+        let start= match mode.from {
+            Some(value) => index_object_key_prefix(&database, &collection, index_id, &value).into_bytes(),
+            None => start
         };
 
-        let start = index_object_key_prefix(&database, &collection, index_id, &start_value);
-        let (start, end) = delimiter_prefix_bound(start);
+
+
+
+//        let (start, end) = delimiter_prefix_bound(start);
+
+        let _start = String::from_utf8(start.clone()).unwrap();
+        let _end = String::from_utf8(end.clone()).unwrap();
 
         KVIndexAccessMethodIterator {
             inner: kv_store.bounded_prefix_iterator(&start, &end),

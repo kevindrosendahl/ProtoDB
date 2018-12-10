@@ -201,10 +201,9 @@ pub fn index_key_prefix(database: &str, collection: &str, index_id: usize) -> St
     // pad the left of the id with 0s up to the length of the
     // longest usize (N.B. this currently assumes usize == u64)
     format!(
-        "{prefix}{index_id:0>20}{delimiter}",
+        "{prefix}{index_id:0>20}",
         prefix = index_prefix(database, collection),
         index_id = index_id,
-        delimiter = KEY_DELIMITER,
     )
 }
 
@@ -225,8 +224,9 @@ pub fn index_object_key_prefix(
         _ => panic!("unindexible FieldValue type"),
     };
     format!(
-        "{prefix}{value}",
+        "{prefix}{delimiter}{value}",
         prefix = index_key_prefix(database, collection, index_id),
+        delimiter = KEY_DELIMITER,
         value = value,
     )
 }
@@ -255,7 +255,8 @@ pub fn value_and_id_from_index_key(
     field_type: Type,
     key: &str,
 ) -> (FieldValue, u64) {
-    let prefix = index_key_prefix(database, collection, index_id);
+    let mut prefix = index_key_prefix(database, collection, index_id);
+    prefix.push(KEY_DELIMITER);
     let suffix = key_suffix(&prefix, key);
 
     let mut suffix_parts = suffix.split(KEY_DELIMITER);

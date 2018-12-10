@@ -8,6 +8,8 @@ pub mod client {
     use super::database::{
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
     };
+    use super::index;
+    use super::index::{CreateIndexRequest, CreateIndexResponse};
     use super::object;
     use super::object::{
         FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
@@ -35,32 +37,6 @@ pub mod client {
             T: tower::HttpService<R>,
         {
             self.inner.poll_ready()
-        }
-
-        pub fn create_database<R>(
-            &mut self,
-            request: grpc::Request<database::CreateDatabaseRequest>,
-        ) -> grpc::unary::ResponseFuture<database::CreateDatabaseResponse, T::Future, T::ResponseBody>
-        where
-            T: tower::HttpService<R>,
-            T::ResponseBody: grpc::Body,
-            grpc::unary::Once<database::CreateDatabaseRequest>: grpc::Encodable<R>,
-        {
-            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/CreateDatabase");
-            self.inner.unary(request, path)
-        }
-
-        pub fn list_databases<R>(
-            &mut self,
-            request: grpc::Request<database::ListDatabasesRequest>,
-        ) -> grpc::unary::ResponseFuture<database::ListDatabasesResponse, T::Future, T::ResponseBody>
-        where
-            T: tower::HttpService<R>,
-            T::ResponseBody: grpc::Body,
-            grpc::unary::Once<database::ListDatabasesRequest>: grpc::Encodable<R>,
-        {
-            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListDatabases");
-            self.inner.unary(request, path)
         }
 
         pub fn create_collection<R>(
@@ -111,6 +87,45 @@ pub mod client {
             grpc::unary::Once<collection::ListCollectionsRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListCollections");
+            self.inner.unary(request, path)
+        }
+
+        pub fn create_database<R>(
+            &mut self,
+            request: grpc::Request<database::CreateDatabaseRequest>,
+        ) -> grpc::unary::ResponseFuture<database::CreateDatabaseResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<database::CreateDatabaseRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/CreateDatabase");
+            self.inner.unary(request, path)
+        }
+
+        pub fn list_databases<R>(
+            &mut self,
+            request: grpc::Request<database::ListDatabasesRequest>,
+        ) -> grpc::unary::ResponseFuture<database::ListDatabasesResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<database::ListDatabasesRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListDatabases");
+            self.inner.unary(request, path)
+        }
+
+        pub fn create_index<R>(
+            &mut self,
+            request: grpc::Request<index::CreateIndexRequest>,
+        ) -> grpc::unary::ResponseFuture<index::CreateIndexResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<index::CreateIndexRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/CreateIndex");
             self.inner.unary(request, path)
         }
 
@@ -307,6 +322,36 @@ pub mod database {
     }
 
 }
+pub mod index {
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateIndexRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(int32, tag = "3")]
+        pub field: i32,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct CreateIndexResponse {
+        #[prost(enumeration = "create_index_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(uint64, tag = "2")]
+        pub index_id: u64,
+    }
+    pub mod create_index_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            InvalidField = 4,
+            UnsupportedFieldType = 5,
+        }
+    }
+
+}
 pub mod object {
     #[derive(Clone, PartialEq, Message)]
     pub struct FindObjectRequest {
@@ -433,6 +478,12 @@ pub mod wasm {
                 pub find_objects_iter: String,
                 #[prost(string, tag = "4")]
                 pub find_objects_iter_next: String,
+                #[prost(string, tag = "5")]
+                pub index_iter: String,
+                #[prost(string, tag = "6")]
+                pub index_iter_next_value: String,
+                #[prost(string, tag = "7")]
+                pub index_iter_next_id: String,
             }
         }
     }

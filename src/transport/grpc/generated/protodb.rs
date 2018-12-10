@@ -1233,6 +1233,12 @@ pub mod wasm {
                 pub find_objects_iter: String,
                 #[prost(string, tag = "4")]
                 pub find_objects_iter_next: String,
+                #[prost(string, tag = "5")]
+                pub index_iter: String,
+                #[prost(string, tag = "6")]
+                pub index_iter_next_value: String,
+                #[prost(string, tag = "7")]
+                pub index_iter_next_id: String,
             }
         }
     }

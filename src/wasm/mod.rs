@@ -7,10 +7,14 @@ use std::{
     },
 };
 
-use crate::storage::{errors::InternalStorageEngineError, StorageEngine};
+use crate::{
+    index::{Direction, IteratorMode},
+    storage::{errors::InternalStorageEngineError, StorageEngine},
+};
 
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 use prost_types::DescriptorProto;
+use protodb_schema::encoding::FieldValue;
 use wasmi::{
     Error as InterpreterError, ExternVal, Externals, FuncInstance, FuncRef, ImportsBuilder,
     MemoryRef, Module, ModuleImportResolver, ModuleInstance, ModuleRef, NopExternals, RuntimeArgs,
@@ -34,6 +38,12 @@ static FIND_OBJECTS_ITER_NEXT_IMPORT_PREFIX: &'static str = "__wbg_findobjectsit
 const FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX: usize = 3;
 static LOG_IMPORT_PREFIX: &'static str = "__wbg_log_";
 const LOG_IMPORT_INDEX: usize = 4;
+static INDEX_ITER_IMPORT_PREFIX: &'static str = "__wbg_indexiter_";
+const INDEX_ITER_IMPORT_INDEX: usize = 5;
+static INDEX_ITER_NEXT_ID_IMPORT_PREFIX: &'static str = "__wbg_indexiternextid_";
+const INDEX_ITER_NEXT_ID_IMPORT_INDEX: usize = 6;
+static INDEX_ITER_NEXT_VALUE_IMPORT_PREFIX: &'static str = "__wbg_indexiternextvalue_";
+const INDEX_ITER_NEXT_VALUE_IMPORT_INDEX: usize = 7;
 
 pub struct ProtoDBModule {
     wasm_module: Module,
@@ -58,12 +68,15 @@ impl ProtoDBModule {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ProtoDBModuleImportHashes {
     pub log: String,
     pub find_object: String,
     pub find_object_iter: String,
     pub find_object_iter_next: String,
+    pub index_iter: String,
+    pub index_iter_next_id: String,
+    pub index_iter_next_value: String,
 }
 
 pub struct Interpreter {
@@ -109,8 +122,10 @@ impl ProtoDBModuleInstance {
             memory_export: memory_export.clone(),
 
             storage_engine,
-            iterators: HashMap::new(),
-            iterator_counter: ATOMIC_USIZE_INIT,
+            find_object_iterators: HashMap::new(),
+            find_object_iterator_counter: ATOMIC_USIZE_INIT,
+            index_iterators: HashMap::new(),
+            index_iterator_counter: ATOMIC_USIZE_INIT,
         };
 
         ProtoDBModuleInstance {
@@ -179,16 +194,26 @@ impl ProtoDBModuleInstance {
     }
 }
 
-type InstanceIterators =
+type ExternalsFindObjectIterators =
     HashMap<usize, Box<dyn Iterator<Item = Result<Vec<u8>, InternalStorageEngineError>>>>;
+
+struct IndexIteratorState {
+    inner: Box<dyn Iterator<Item = (FieldValue, u64)>>,
+    last_id: u64,
+}
+
+type ExternalsIndexIterators = HashMap<usize, IndexIteratorState>;
 
 struct ProtoDBExternals {
     module_ref: ModuleRef,
     memory_export: ExternVal,
 
     storage_engine: Arc<dyn StorageEngine>,
-    iterators: InstanceIterators,
-    iterator_counter: AtomicUsize,
+    find_object_iterators: ExternalsFindObjectIterators,
+    find_object_iterator_counter: AtomicUsize,
+
+    index_iterators: ExternalsIndexIterators,
+    index_iterator_counter: AtomicUsize,
 }
 
 impl ProtoDBExternals {
@@ -224,6 +249,12 @@ impl ProtoDBExternals {
         let ptr = self.malloc(arr.len());
         self.get_memory().set(ptr, arr).unwrap();
         ptr
+    }
+
+    fn pass_u64(&self, value: u64, ptr: u32) {
+        let mut buf = Vec::new();
+        buf.write_u64::<LittleEndian>(value).unwrap();
+        self.get_memory().set(ptr, &buf).unwrap();
     }
 
     fn u64_shim(first: u32, second: u32) -> u64 {
@@ -287,7 +318,9 @@ impl Externals for ProtoDBExternals {
                 let collection = self.get_string(collection_ptr, collection_len as usize);
 
                 // Get id.
-                let iter_id = self.iterator_counter.fetch_add(1, Ordering::SeqCst);
+                let iter_id = self
+                    .find_object_iterator_counter
+                    .fetch_add(1, Ordering::SeqCst);
 
                 // Look up the object.
                 let iter = self
@@ -299,7 +332,7 @@ impl Externals for ProtoDBExternals {
                     .unwrap()
                     .find_all(None);
 
-                self.iterators.insert(iter_id, iter);
+                self.find_object_iterators.insert(iter_id, iter);
                 Ok(Some(RuntimeValue::I32(iter_id as i32)))
             }
             FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX => {
@@ -307,7 +340,7 @@ impl Externals for ProtoDBExternals {
 
                 let iter_id: u32 = args.nth(1);
                 let iter_id = iter_id as usize;
-                let iter = self.iterators.get_mut(&iter_id).unwrap();
+                let iter = self.find_object_iterators.get_mut(&iter_id).unwrap();
 
                 let (ptr, len) = match iter.next() {
                     Some(object) => {
@@ -331,6 +364,75 @@ impl Externals for ProtoDBExternals {
                 println!("message from wasm: {}", message);
                 Ok(None)
             }
+            INDEX_ITER_IMPORT_INDEX => {
+                // Get collection name.
+                let collection_ptr: u32 = args.nth(0);
+                let collection_len: u32 = args.nth(1);
+                let collection = self.get_string(collection_ptr, collection_len as usize);
+
+                let index_id: u32 = args.nth(2);
+
+                // Get id.
+                let iter_id = self.index_iterator_counter.fetch_add(1, Ordering::SeqCst);
+
+                // Look up the object.
+                let iter = self
+                    .storage_engine
+                    .catalog()
+                    .get_database_entry("dev")
+                    .unwrap()
+                    .get_collection_entry(&collection)
+                    .unwrap()
+                    .index(index_id as usize)
+                    .unwrap()
+                    .iter(IteratorMode {
+                        direction: Direction::Forward,
+                        from: None,
+                    });
+
+                let iterator_state = IndexIteratorState {
+                    inner: iter,
+                    last_id: 0,
+                };
+                self.index_iterators.insert(iter_id, iterator_state);
+                Ok(Some(RuntimeValue::I32(iter_id as i32)))
+            }
+            INDEX_ITER_NEXT_ID_IMPORT_INDEX => {
+                let ret: u32 = args.nth(0);
+
+                let iter_id: u32 = args.nth(1);
+                let iter_id = iter_id as usize;
+                let state = self.index_iterators.get(&iter_id).unwrap();
+
+                self.pass_u64(state.last_id, ret);
+
+                Ok(None)
+            },
+            INDEX_ITER_NEXT_VALUE_IMPORT_INDEX => {
+                let ret: u32 = args.nth(0);
+
+                let iter_id: u32 = args.nth(1);
+                let iter_id = iter_id as usize;
+                let state = self.index_iterators.get_mut(&iter_id).unwrap();
+
+                let (valid, value) = match state.inner.next() {
+                    None => (0, 0),
+                    Some((field_value, id)) => {
+                        state.last_id = id;
+                        let value = match field_value {
+                            FieldValue::Uint32(value) => value,
+                            _ => panic!("unsupported index iterator FieldValue type"),
+                        };
+                        (1, value)
+                    }
+                };
+
+                // Pass the value down to the guest
+                self.get_memory().set_value(ret, valid).unwrap();
+                self.get_memory().set_value(ret + 4, value).unwrap();
+
+                Ok(None)
+            },
             _ => panic!("unknown function index {}", index),
         }
     }
@@ -390,6 +492,46 @@ impl ModuleImportResolver for ProtoDBModuleImportResolver {
             return Ok(FuncInstance::alloc_host(
                 Signature::new(&[ValueType::I32, ValueType::I32][..], None),
                 FIND_OBJECTS_ITER_NEXT_IMPORT_INDEX,
+            ));
+        }
+
+        if field_name == format!("{}{}", INDEX_ITER_IMPORT_PREFIX, self.hashes.index_iter) {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(
+                    &[
+                        ValueType::I32,
+                        ValueType::I32,
+                        ValueType::I32,
+                        ValueType::I32,
+                        ValueType::I32,
+                    ][..],
+                    Some(ValueType::I32),
+                ),
+                INDEX_ITER_IMPORT_INDEX,
+            ));
+        }
+
+        if field_name
+            == format!(
+                "{}{}",
+                INDEX_ITER_NEXT_ID_IMPORT_PREFIX, self.hashes.index_iter_next_id
+            )
+        {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(&[ValueType::I32, ValueType::I32][..], None),
+                INDEX_ITER_NEXT_ID_IMPORT_INDEX,
+            ));
+        }
+
+        if field_name
+            == format!(
+                "{}{}",
+                INDEX_ITER_NEXT_VALUE_IMPORT_PREFIX, self.hashes.index_iter_next_value
+            )
+        {
+            return Ok(FuncInstance::alloc_host(
+                Signature::new(&[ValueType::I32, ValueType::I32][..], None),
+                INDEX_ITER_NEXT_VALUE_IMPORT_INDEX,
             ));
         }
 
