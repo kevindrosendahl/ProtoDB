@@ -189,4 +189,4 @@ Currently, there are provided [Python](clients/python) and [Rust](clients/rust) 
 
 ### WebAssembly
 
-The [`protodb-wasm`](crates/wasm) crate provides a library for 
+The [`protodb-wasm`](crates/wasm) crate provides a library for writing WebAssembly modules that can be run from within ProtoDB. See the [example](#webassembly) for more information.
