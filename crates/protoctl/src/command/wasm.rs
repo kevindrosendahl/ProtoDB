@@ -34,19 +34,22 @@ lazy_static! {
 pub enum Wasm {
     #[structopt(name = "register")]
     Register {
+        #[structopt(long = "database", short = "d")]
         database: String,
 
+        #[structopt(long = "name", short = "n")]
         name: String,
 
-        #[structopt(name = "crate", parse(from_os_str))]
+        #[structopt(long = "crate", short = "s", parse(from_os_str))]
         crate_: PathBuf,
 
         #[structopt(long = "package", short = "p")]
         package: Option<String>,
 
-        #[structopt(parse(from_os_str))]
+        #[structopt(long = "schema-file", parse(from_os_str))]
         result_schema_file: PathBuf,
 
+        #[structopt(long = "schema-message")]
         result_schema_message: String,
 
         #[structopt(long = "include", short = "i", parse(from_os_str))]
@@ -54,7 +57,13 @@ pub enum Wasm {
     },
 
     #[structopt(name = "run")]
-    Run { database: String, name: String },
+    Run {
+        #[structopt(long = "database", short = "d")]
+        database: String,
+
+        #[structopt(long = "name", short = "n")]
+        name: String
+    },
 }
 
 pub fn run_wasm(wasm: Wasm) {
