@@ -127,17 +127,19 @@ def find_user(client, id):
     if response.error_code == FindObjectResponse.NO_ERROR:
         user = User()
         user.ParseFromString(response.object)
-        print('''found user {}:
+
+        format_str = '''found user {}:
     id: {}
     first name: {}
     last name: {}
     age: {}
-    email address: {}'''.format(id,
-                      user.id,
-                      user.first_name,
-                      user.last_name,
-                      user.age,
-                      user.email_address))
+    email address: {}'''
+        print(format_str.format(id,
+                                user.id,
+                                user.first_name,
+                                user.last_name,
+                                user.age,
+                                user.email_address))
         return
 
     error_code_str = FindObjectResponse.ErrorCode.Name(response.error_code)
