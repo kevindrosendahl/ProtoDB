@@ -44,7 +44,7 @@ message User {
 
 ### Basic Python script
 
-[`example.py`](examples/basic/example.py) provides a simple script showing how to do some basic DDL operations as well as inserting and retrieving some users.
+[`example.py`](examples/basic/example.py) provides a simple script showing how to do create a database `dev` with a collection `users` (which has `User` as its schema), as well as inserting and retrieving some users.
 
 Note specifically that the `User` class was generated from `user.proto`, and that the `protodb.client.Client` used is mostly auto generated from `protodb.proto`.
 
