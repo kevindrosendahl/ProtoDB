@@ -3,11 +3,11 @@
 set -e
 
 python -m grpc_tools.protoc \
-    -I ../../proto \
+    -I ../../protos \
     --python_out=. \
     --grpc_python_out=. \
-    ../../proto/protodb/*.proto \
-    ../../proto/protodb/**/*.proto
+    ../../protos/protodb/*.proto \
+    ../../protos/protodb/**/*.proto
 
 generated_paths=( "" "collection/" "database/" "index/" "object/" "wasm/" )
 for path in "${generated_paths[@]}"

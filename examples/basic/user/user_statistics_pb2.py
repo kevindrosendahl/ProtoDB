@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='protodb.examples.user_statistics',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x15user_statistics.proto\x12 protodb.examples.user_statistics\"y\n\x0eUserStatistics\x12\x11\n\tnum_users\x18\x01 \x01(\r\x12\x10\n\x08\x61ge_mean\x18\x02 \x01(\x01\x12\x13\n\x0b\x61ge_std_dev\x18\x03 \x01(\x01\x12\x14\n\x0c\x61ge_variance\x18\x04 \x01(\x01\x12\x17\n\x0f\x61ge_cardinality\x18\x05 \x01(\x04\x62\x06proto3')
+  serialized_pb=_b('\n\x15user_statistics.proto\x12 protodb.examples.user_statistics\"\x99\x01\n\x0eUserStatistics\x12\x11\n\tnum_users\x18\x01 \x01(\r\x12\x10\n\x08\x61ge_mean\x18\x02 \x01(\x01\x12\x13\n\x0b\x61ge_std_dev\x18\x03 \x01(\x01\x12\x14\n\x0c\x61ge_variance\x18\x04 \x01(\x01\x12\x17\n\x0f\x61ge_cardinality\x18\x05 \x01(\x04\x12\x1e\n\x16youngest_email_address\x18\x06 \x01(\tb\x06proto3')
 )
 
 
@@ -67,6 +67,13 @@ _USERSTATISTICS = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='youngest_email_address', full_name='protodb.examples.user_statistics.UserStatistics.youngest_email_address', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -79,8 +86,8 @@ _USERSTATISTICS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=59,
-  serialized_end=180,
+  serialized_start=60,
+  serialized_end=213,
 )
 
 DESCRIPTOR.message_types_by_name['UserStatistics'] = _USERSTATISTICS

@@ -4,11 +4,11 @@ use std::{env, fs, io::prelude::*, process::Command};
 fn main() {
     // Build protod
     let subdirectories = vec!["collection", "database", "index", "object", "wasm"];
-    let mut dirs: Vec<String> = vec!["./proto/protodb".to_string()];
+    let mut dirs: Vec<String> = vec!["./protos/protodb".to_string()];
     dirs.extend::<Vec<String>>(
         subdirectories
             .iter()
-            .map(|d| format!("./proto/protodb/{}", d))
+            .map(|d| format!("./protos/protodb/{}", d))
             .collect(),
     );
     let protos = read_protos_dirs(&dirs);
@@ -16,7 +16,7 @@ fn main() {
     tower_grpc_build::Config::new()
         .enable_server(true)
         .enable_client(false)
-        .build(&protos, &["proto".to_string()])
+        .build(&protos, &["protos".to_string()])
         .unwrap_or_else(|e| panic!("protobuf compilation failed: {}", e));
 
     fix_generated_grpc(&subdirectories);

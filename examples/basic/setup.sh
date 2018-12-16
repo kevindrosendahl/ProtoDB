@@ -9,7 +9,6 @@ popd
 mkdir -p user
 
 protoc -I ../protos \
-        -I ../../proto \
         -I /usr/local/include \
         --python_out=user \
         ../protos/*.proto

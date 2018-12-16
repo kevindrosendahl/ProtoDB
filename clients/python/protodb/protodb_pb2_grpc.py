@@ -7,6 +7,8 @@ from protodb.collection import list_pb2 as protodb_dot_collection_dot_list__pb2
 from protodb.database import create_pb2 as protodb_dot_database_dot_create__pb2
 from protodb.database import list_pb2 as protodb_dot_database_dot_list__pb2
 from protodb.index import create_pb2 as protodb_dot_index_dot_create__pb2
+from protodb.index import get_pb2 as protodb_dot_index_dot_get__pb2
+from protodb.index import list_pb2 as protodb_dot_index_dot_list__pb2
 from protodb.object import find_pb2 as protodb_dot_object_dot_find__pb2
 from protodb.object import insert_pb2 as protodb_dot_object_dot_insert__pb2
 from protodb.wasm import get_info_pb2 as protodb_dot_wasm_dot_get__info__pb2
@@ -53,6 +55,16 @@ class ProtoDBStub(object):
         '/protodb.ProtoDB/CreateIndex',
         request_serializer=protodb_dot_index_dot_create__pb2.CreateIndexRequest.SerializeToString,
         response_deserializer=protodb_dot_index_dot_create__pb2.CreateIndexResponse.FromString,
+        )
+    self.GetIndex = channel.unary_unary(
+        '/protodb.ProtoDB/GetIndex',
+        request_serializer=protodb_dot_index_dot_get__pb2.GetIndexRequest.SerializeToString,
+        response_deserializer=protodb_dot_index_dot_get__pb2.GetIndexResponse.FromString,
+        )
+    self.ListIndexes = channel.unary_unary(
+        '/protodb.ProtoDB/ListIndexes',
+        request_serializer=protodb_dot_index_dot_list__pb2.ListIndexesRequest.SerializeToString,
+        response_deserializer=protodb_dot_index_dot_list__pb2.ListIndexesResponse.FromString,
         )
     self.FindObject = channel.unary_unary(
         '/protodb.ProtoDB/FindObject',
@@ -127,6 +139,20 @@ class ProtoDBServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def GetIndex(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def ListIndexes(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def FindObject(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -194,6 +220,16 @@ def add_ProtoDBServicer_to_server(servicer, server):
           servicer.CreateIndex,
           request_deserializer=protodb_dot_index_dot_create__pb2.CreateIndexRequest.FromString,
           response_serializer=protodb_dot_index_dot_create__pb2.CreateIndexResponse.SerializeToString,
+      ),
+      'GetIndex': grpc.unary_unary_rpc_method_handler(
+          servicer.GetIndex,
+          request_deserializer=protodb_dot_index_dot_get__pb2.GetIndexRequest.FromString,
+          response_serializer=protodb_dot_index_dot_get__pb2.GetIndexResponse.SerializeToString,
+      ),
+      'ListIndexes': grpc.unary_unary_rpc_method_handler(
+          servicer.ListIndexes,
+          request_deserializer=protodb_dot_index_dot_list__pb2.ListIndexesRequest.FromString,
+          response_serializer=protodb_dot_index_dot_list__pb2.ListIndexesResponse.SerializeToString,
       ),
       'FindObject': grpc.unary_unary_rpc_method_handler(
           servicer.FindObject,

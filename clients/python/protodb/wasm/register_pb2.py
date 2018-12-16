@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   name='protodb/wasm/register.proto',
   package='protodb.wasm',
   syntax='proto3',
-  serialized_pb=_b('\n\x1bprotodb/wasm/register.proto\x12\x0cprotodb.wasm\x1a google/protobuf/descriptor.proto\"\xc0\x03\n\x15RegisterModuleRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x44\n\x08metadata\x18\x03 \x01(\x0b\x32\x32.protodb.wasm.RegisterModuleRequest.ModuleMetadata\x12\x0c\n\x04wasm\x18\x04 \x01(\x0c\x12\x37\n\rresult_schema\x18\x05 \x01(\x0b\x32 .google.protobuf.DescriptorProto\x1a\xf9\x01\n\x0eModuleMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x65\n\x15\x62indgen_import_hashes\x18\x02 \x01(\x0b\x32\x46.protodb.wasm.RegisterModuleRequest.ModuleMetadata.BindgenImportHashes\x1ar\n\x13\x42indgenImportHashes\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x13\n\x0b\x66ind_object\x18\x02 \x01(\t\x12\x19\n\x11\x66ind_objects_iter\x18\x03 \x01(\t\x12\x1e\n\x16\x66ind_objects_iter_next\x18\x04 \x01(\t\"\xb4\x01\n\x16RegisterModuleResponse\x12\x42\n\nerror_code\x18\x01 \x01(\x0e\x32..protodb.wasm.RegisterModuleResponse.ErrorCode\"V\n\tErrorCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x14\n\x10INVALID_DATABASE\x10\x02\x12\x11\n\rMODULE_EXISTS\x10\x03\x62\x06proto3')
+  serialized_pb=_b('\n\x1bprotodb/wasm/register.proto\x12\x0cprotodb.wasm\x1a google/protobuf/descriptor.proto\"\x90\x04\n\x15RegisterModuleRequest\x12\x10\n\x08\x64\x61tabase\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x44\n\x08metadata\x18\x03 \x01(\x0b\x32\x32.protodb.wasm.RegisterModuleRequest.ModuleMetadata\x12\x0c\n\x04wasm\x18\x04 \x01(\x0c\x12\x37\n\rresult_schema\x18\x05 \x01(\x0b\x32 .google.protobuf.DescriptorProto\x1a\xc9\x02\n\x0eModuleMetadata\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x65\n\x15\x62indgen_import_hashes\x18\x02 \x01(\x0b\x32\x46.protodb.wasm.RegisterModuleRequest.ModuleMetadata.BindgenImportHashes\x1a\xc1\x01\n\x13\x42indgenImportHashes\x12\x0b\n\x03log\x18\x01 \x01(\t\x12\x13\n\x0b\x66ind_object\x18\x02 \x01(\t\x12\x19\n\x11\x66ind_objects_iter\x18\x03 \x01(\t\x12\x1e\n\x16\x66ind_objects_iter_next\x18\x04 \x01(\t\x12\x12\n\nindex_iter\x18\x05 \x01(\t\x12\x1d\n\x15index_iter_next_value\x18\x06 \x01(\t\x12\x1a\n\x12index_iter_next_id\x18\x07 \x01(\t\"\xb4\x01\n\x16RegisterModuleResponse\x12\x42\n\nerror_code\x18\x01 \x01(\x0e\x32..protodb.wasm.RegisterModuleResponse.ErrorCode\"V\n\tErrorCode\x12\x0c\n\x08NO_ERROR\x10\x00\x12\x12\n\x0eINTERNAL_ERROR\x10\x01\x12\x14\n\x10INVALID_DATABASE\x10\x02\x12\x11\n\rMODULE_EXISTS\x10\x03\x62\x06proto3')
   ,
   dependencies=[google_dot_protobuf_dot_descriptor__pb2.DESCRIPTOR,])
 
@@ -51,8 +51,8 @@ _REGISTERMODULERESPONSE_ERRORCODE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   options=None,
-  serialized_start=625,
-  serialized_end=711,
+  serialized_start=705,
+  serialized_end=791,
 )
 _sym_db.RegisterEnumDescriptor(_REGISTERMODULERESPONSE_ERRORCODE)
 
@@ -92,6 +92,27 @@ _REGISTERMODULEREQUEST_MODULEMETADATA_BINDGENIMPORTHASHES = _descriptor.Descript
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='index_iter', full_name='protodb.wasm.RegisterModuleRequest.ModuleMetadata.BindgenImportHashes.index_iter', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='index_iter_next_value', full_name='protodb.wasm.RegisterModuleRequest.ModuleMetadata.BindgenImportHashes.index_iter_next_value', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='index_iter_next_id', full_name='protodb.wasm.RegisterModuleRequest.ModuleMetadata.BindgenImportHashes.index_iter_next_id', index=6,
+      number=7, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -104,8 +125,8 @@ _REGISTERMODULEREQUEST_MODULEMETADATA_BINDGENIMPORTHASHES = _descriptor.Descript
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=414,
-  serialized_end=528,
+  serialized_start=415,
+  serialized_end=608,
 )
 
 _REGISTERMODULEREQUEST_MODULEMETADATA = _descriptor.Descriptor(
@@ -142,7 +163,7 @@ _REGISTERMODULEREQUEST_MODULEMETADATA = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=279,
-  serialized_end=528,
+  serialized_end=608,
 )
 
 _REGISTERMODULEREQUEST = _descriptor.Descriptor(
@@ -200,7 +221,7 @@ _REGISTERMODULEREQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=80,
-  serialized_end=528,
+  serialized_end=608,
 )
 
 
@@ -231,8 +252,8 @@ _REGISTERMODULERESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=531,
-  serialized_end=711,
+  serialized_start=611,
+  serialized_end=791,
 )
 
 _REGISTERMODULEREQUEST_MODULEMETADATA_BINDGENIMPORTHASHES.containing_type = _REGISTERMODULEREQUEST_MODULEMETADATA

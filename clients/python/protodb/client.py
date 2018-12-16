@@ -4,6 +4,8 @@ from google.protobuf.descriptor_pb2 import DescriptorProto
 
 from protodb import protodb_pb2_grpc
 from protodb.index.create_pb2 import CreateIndexRequest
+from protodb.index.get_pb2 import GetIndexRequest
+from protodb.index.list_pb2 import ListIndexesRequest
 from protodb.collection.create_pb2 import CreateCollectionRequest
 from protodb.collection.list_pb2 import ListCollectionsRequest
 from protodb.database.create_pb2 import CreateDatabaseRequest
@@ -21,6 +23,14 @@ class Client:
     def create_index(self, database, collection, field):
         request = CreateIndexRequest(database=database, collection=collection, field=field)
         return self.stub.CreateIndex(request)
+
+    def get_index(self, database, collection, id):
+        request = GetIndexRequest(database=database, collection=collection, id=id)
+        return self.stub.GetIndex(request)
+
+    def list_indexes(self, database, collection):
+        request = ListIndexesRequest(database=database, collection=collection)
+        return self.stub.ListIndexes(request)
 
     def create_collection(self, database, name, descriptor):
         descriptor_proto = DescriptorProto()

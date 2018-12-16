@@ -12,7 +12,7 @@ ProtoDB is an ***experimental*** database exploring:
 
 ## Current Status
 
-The full ProtoDB API can be found in [protodb.proto](proto/protodb/protodb.proto).
+The full ProtoDB API can be found in [protodb.proto](protos/protodb/protodb.proto).
 
 ProtoDB supports
 - database creation
