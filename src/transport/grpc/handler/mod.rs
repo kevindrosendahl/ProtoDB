@@ -107,6 +107,24 @@ impl protodb::server::ProtoDb for Handler {
     );
 
     method_handler!(
+        "get index",
+        get_index,
+        handle_get_index,
+        GetIndexFuture,
+        protodb_index::GetIndexRequest,
+        protodb_index::GetIndexResponse
+    );
+
+    method_handler!(
+        "list indexes",
+        list_indexes,
+        handle_list_indexes,
+        ListIndexesFuture,
+        protodb_index::ListIndexesRequest,
+        protodb_index::ListIndexesResponse
+    );
+
+    method_handler!(
         "insert object",
         insert_object,
         handle_insert_object,

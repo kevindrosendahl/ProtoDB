@@ -62,6 +62,10 @@ impl IndexAccessMethod for KVIndexAccessMethod {
         Ok(())
     }
 
+    fn field(&self) -> i32 {
+        self.field
+    }
+
     fn insert(&self, obj: DecodedIdObject) -> Result<(), IndexInsertError> {
         let field_value = match obj.field(self.field) {
             Some(value) => value,

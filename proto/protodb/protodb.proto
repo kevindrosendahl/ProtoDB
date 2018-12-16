@@ -8,6 +8,8 @@ import "protodb/collection/list.proto";
 import "protodb/database/create.proto";
 import "protodb/database/list.proto";
 import "protodb/index/create.proto";
+import "protodb/index/get.proto";
+import "protodb/index/list.proto";
 import "protodb/object/find.proto";
 import "protodb/object/insert.proto";
 import "protodb/wasm/get_info.proto";
@@ -23,6 +25,8 @@ service ProtoDB {
     rpc ListDatabases (protodb.database.ListDatabasesRequest) returns (protodb.database.ListDatabasesResponse);
 
     rpc CreateIndex (protodb.index.CreateIndexRequest) returns (protodb.index.CreateIndexResponse);
+    rpc GetIndex (protodb.index.GetIndexRequest) returns (protodb.index.GetIndexResponse);
+    rpc ListIndexes (protodb.index.ListIndexesRequest) returns (protodb.index.ListIndexesResponse);
 
     rpc FindObject (protodb.object.FindObjectRequest) returns (protodb.object.FindObjectResponse);
     rpc InsertObject (protodb.object.InsertObjectRequest) returns (protodb.object.InsertObjectResponse);

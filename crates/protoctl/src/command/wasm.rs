@@ -62,7 +62,7 @@ pub enum Wasm {
         database: String,
 
         #[structopt(long = "name", short = "n")]
-        name: String
+        name: String,
     },
 }
 

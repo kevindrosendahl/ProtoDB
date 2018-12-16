@@ -9,7 +9,10 @@ pub mod client {
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
     };
     use super::index;
-    use super::index::{CreateIndexRequest, CreateIndexResponse};
+    use super::index::{
+        CreateIndexRequest, CreateIndexResponse, GetIndexRequest, GetIndexResponse,
+        ListIndexesRequest, ListIndexesResponse,
+    };
     use super::object;
     use super::object::{
         FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
@@ -126,6 +129,32 @@ pub mod client {
             grpc::unary::Once<index::CreateIndexRequest>: grpc::Encodable<R>,
         {
             let path = http::PathAndQuery::from_static("/protodb.ProtoDB/CreateIndex");
+            self.inner.unary(request, path)
+        }
+
+        pub fn get_index<R>(
+            &mut self,
+            request: grpc::Request<index::GetIndexRequest>,
+        ) -> grpc::unary::ResponseFuture<index::GetIndexResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<index::GetIndexRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/GetIndex");
+            self.inner.unary(request, path)
+        }
+
+        pub fn list_indexes<R>(
+            &mut self,
+            request: grpc::Request<index::ListIndexesRequest>,
+        ) -> grpc::unary::ResponseFuture<index::ListIndexesResponse, T::Future, T::ResponseBody>
+        where
+            T: tower::HttpService<R>,
+            T::ResponseBody: grpc::Body,
+            grpc::unary::Once<index::ListIndexesRequest>: grpc::Encodable<R>,
+        {
+            let path = http::PathAndQuery::from_static("/protodb.ProtoDB/ListIndexes");
             self.inner.unary(request, path)
         }
 
@@ -337,7 +366,7 @@ pub mod index {
         #[prost(enumeration = "create_index_response::ErrorCode", tag = "1")]
         pub error_code: i32,
         #[prost(uint64, tag = "2")]
-        pub index_id: u64,
+        pub id: u64,
     }
     pub mod create_index_response {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
@@ -348,6 +377,66 @@ pub mod index {
             InvalidCollection = 3,
             InvalidField = 4,
             UnsupportedFieldType = 5,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct Index {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(uint64, tag = "3")]
+        pub id: u64,
+        #[prost(int32, tag = "4")]
+        pub field: i32,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetIndexRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(uint64, tag = "3")]
+        pub id: u64,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetIndexResponse {
+        #[prost(enumeration = "get_index_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub index: ::std::option::Option<Index>,
+    }
+    pub mod get_index_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            InvalidId = 4,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListIndexesRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListIndexesResponse {
+        #[prost(enumeration = "list_indexes_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, repeated, tag = "2")]
+        pub indexes: ::std::vec::Vec<Index>,
+    }
+    pub mod list_indexes_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
         }
     }
 

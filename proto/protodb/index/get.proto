@@ -2,22 +2,23 @@ syntax = "proto3";
 
 package protodb.index;
 
-message CreateIndexRequest {
+import "protodb/index/index.proto";
+
+message GetIndexRequest {
     string database = 1;
     string collection = 2;
-    int32 field = 3;
+    uint64 id = 3;
 }
 
-message CreateIndexResponse {
+message GetIndexResponse {
     enum ErrorCode {
         NO_ERROR = 0;
         INTERNAL_ERROR = 1;
         INVALID_DATABASE = 2;
         INVALID_COLLECTION = 3;
-        INVALID_FIELD = 4;
-        UNSUPPORTED_FIELD_TYPE = 5;
+        INVALID_ID = 4;
     }
     ErrorCode error_code = 1;
 
-    uint64 id = 2;
+    Index index = 2;
 }

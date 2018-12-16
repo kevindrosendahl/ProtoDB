@@ -9,7 +9,10 @@ pub mod server {
         CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest, ListDatabasesResponse,
     };
     use super::index;
-    use super::index::{CreateIndexRequest, CreateIndexResponse};
+    use super::index::{
+        CreateIndexRequest, CreateIndexResponse, GetIndexRequest, GetIndexResponse,
+        ListIndexesRequest, ListIndexesResponse,
+    };
     use super::object;
     use super::object::{
         FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
@@ -56,6 +59,14 @@ pub mod server {
         >;
         type CreateIndexFuture: futures::Future<
             Item = grpc::Response<index::CreateIndexResponse>,
+            Error = grpc::Error,
+        >;
+        type GetIndexFuture: futures::Future<
+            Item = grpc::Response<index::GetIndexResponse>,
+            Error = grpc::Error,
+        >;
+        type ListIndexesFuture: futures::Future<
+            Item = grpc::Response<index::ListIndexesResponse>,
             Error = grpc::Error,
         >;
         type FindObjectFuture: futures::Future<
@@ -108,6 +119,16 @@ pub mod server {
             &mut self,
             request: grpc::Request<index::CreateIndexRequest>,
         ) -> Self::CreateIndexFuture;
+
+        fn get_index(
+            &mut self,
+            request: grpc::Request<index::GetIndexRequest>,
+        ) -> Self::GetIndexFuture;
+
+        fn list_indexes(
+            &mut self,
+            request: grpc::Request<index::ListIndexesRequest>,
+        ) -> Self::ListIndexesFuture;
 
         fn find_object(
             &mut self,
@@ -207,6 +228,20 @@ pub mod server {
                         kind: Ok(CreateIndex(response)),
                     }
                 }
+                "/protodb.ProtoDB/GetIndex" => {
+                    let service = proto_db::methods::GetIndex(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(GetIndex(response)),
+                    }
+                }
+                "/protodb.ProtoDB/ListIndexes" => {
+                    let service = proto_db::methods::ListIndexes(self.proto_db.clone());
+                    let response = grpc::Grpc::unary(service, request);
+                    proto_db::ResponseFuture {
+                        kind: Ok(ListIndexes(response)),
+                    }
+                }
                 "/protodb.ProtoDB/FindObject" => {
                     let service = proto_db::methods::FindObject(self.proto_db.clone());
                     let response = grpc::Grpc::unary(service, request);
@@ -292,7 +327,7 @@ pub mod server {
         use super::super::database;
         use super::super::database::{CreateDatabaseRequest, ListDatabasesRequest};
         use super::super::index;
-        use super::super::index::CreateIndexRequest;
+        use super::super::index::{CreateIndexRequest, GetIndexRequest, ListIndexesRequest};
         use super::super::object;
         use super::super::object::{FindObjectRequest, InsertObjectRequest};
         use super::super::wasm;
@@ -335,6 +370,16 @@ pub mod server {
                         methods::CreateIndex<T>,
                         grpc::BoxBody,
                         index::CreateIndexRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::GetIndex<T>,
+                        grpc::BoxBody,
+                        index::GetIndexRequest,
+                    >,
+                    grpc::unary::ResponseFuture<
+                        methods::ListIndexes<T>,
+                        grpc::BoxBody,
+                        index::ListIndexesRequest,
                     >,
                     grpc::unary::ResponseFuture<
                         methods::FindObject<T>,
@@ -431,6 +476,24 @@ pub mod server {
                         let response = http::Response::from_parts(head, body);
                         Ok(response.into())
                     }
+                    Ok(GetIndex(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(GetIndex(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
+                    Ok(ListIndexes(ref mut fut)) => {
+                        let response = try_ready!(fut.poll());
+                        let (head, body) = response.into_parts();
+                        let body = ResponseBody {
+                            kind: Ok(ListIndexes(body)),
+                        };
+                        let response = http::Response::from_parts(head, body);
+                        Ok(response.into())
+                    }
                     Ok(FindObject(ref mut fut)) => {
                         let response = try_ready!(fut.poll());
                         let (head, body) = response.into_parts();
@@ -490,88 +553,103 @@ pub mod server {
         where
             T: ProtoDb,
         {
-            pub(super) kind: Result<
-                Kind<
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::CreateCollection<T> as grpc::UnaryService<
-                                collection::CreateCollectionRequest,
-                            >>::Response,
+            pub(super) kind:
+                Result<
+                    Kind<
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::CreateCollection<T> as grpc::UnaryService<
+                                    collection::CreateCollectionRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::GetCollectionInfo<T> as grpc::UnaryService<
+                                    collection::GetCollectionInfoRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::ListCollections<T> as grpc::UnaryService<
+                                    collection::ListCollectionsRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::CreateDatabase<T> as grpc::UnaryService<
+                                    database::CreateDatabaseRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::ListDatabases<T> as grpc::UnaryService<
+                                    database::ListDatabasesRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::CreateIndex<T> as grpc::UnaryService<
+                                    index::CreateIndexRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::GetIndex<T> as grpc::UnaryService<
+                                    index::GetIndexRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::ListIndexes<T> as grpc::UnaryService<
+                                    index::ListIndexesRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::FindObject<T> as grpc::UnaryService<
+                                    object::FindObjectRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::InsertObject<T> as grpc::UnaryService<
+                                    object::InsertObjectRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::GetWasmModuleInfo<T> as grpc::UnaryService<
+                                    wasm::GetModuleInfoRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::RegisterWasmModule<T> as grpc::UnaryService<
+                                    wasm::RegisterModuleRequest,
+                                >>::Response,
+                            >,
+                        >,
+                        grpc::Encode<
+                            grpc::unary::Once<
+                                <methods::RunWasmModule<T> as grpc::UnaryService<
+                                    wasm::RunModuleRequest,
+                                >>::Response,
+                            >,
                         >,
                     >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::GetCollectionInfo<T> as grpc::UnaryService<
-                                collection::GetCollectionInfoRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::ListCollections<T> as grpc::UnaryService<
-                                collection::ListCollectionsRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::CreateDatabase<T> as grpc::UnaryService<
-                                database::CreateDatabaseRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::ListDatabases<T> as grpc::UnaryService<
-                                database::ListDatabasesRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::CreateIndex<T> as grpc::UnaryService<
-                                index::CreateIndexRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::FindObject<T> as grpc::UnaryService<
-                                object::FindObjectRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::InsertObject<T> as grpc::UnaryService<
-                                object::InsertObjectRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::GetWasmModuleInfo<T> as grpc::UnaryService<
-                                wasm::GetModuleInfoRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::RegisterWasmModule<T> as grpc::UnaryService<
-                                wasm::RegisterModuleRequest,
-                            >>::Response,
-                        >,
-                    >,
-                    grpc::Encode<
-                        grpc::unary::Once<
-                            <methods::RunWasmModule<T> as grpc::UnaryService<
-                                wasm::RunModuleRequest,
-                            >>::Response,
-                        >,
-                    >,
+                    grpc::Status,
                 >,
-                grpc::Status,
-            >,
         }
 
         impl<T> grpc::Body for ResponseBody<T>
@@ -590,6 +668,8 @@ pub mod server {
                     Ok(CreateDatabase(ref v)) => v.is_end_stream(),
                     Ok(ListDatabases(ref v)) => v.is_end_stream(),
                     Ok(CreateIndex(ref v)) => v.is_end_stream(),
+                    Ok(GetIndex(ref v)) => v.is_end_stream(),
+                    Ok(ListIndexes(ref v)) => v.is_end_stream(),
                     Ok(FindObject(ref v)) => v.is_end_stream(),
                     Ok(InsertObject(ref v)) => v.is_end_stream(),
                     Ok(GetWasmModuleInfo(ref v)) => v.is_end_stream(),
@@ -609,6 +689,8 @@ pub mod server {
                     Ok(CreateDatabase(ref mut v)) => v.poll_data(),
                     Ok(ListDatabases(ref mut v)) => v.poll_data(),
                     Ok(CreateIndex(ref mut v)) => v.poll_data(),
+                    Ok(GetIndex(ref mut v)) => v.poll_data(),
+                    Ok(ListIndexes(ref mut v)) => v.poll_data(),
                     Ok(FindObject(ref mut v)) => v.poll_data(),
                     Ok(InsertObject(ref mut v)) => v.poll_data(),
                     Ok(GetWasmModuleInfo(ref mut v)) => v.poll_data(),
@@ -628,6 +710,8 @@ pub mod server {
                     Ok(CreateDatabase(ref mut v)) => v.poll_metadata(),
                     Ok(ListDatabases(ref mut v)) => v.poll_metadata(),
                     Ok(CreateIndex(ref mut v)) => v.poll_metadata(),
+                    Ok(GetIndex(ref mut v)) => v.poll_metadata(),
+                    Ok(ListIndexes(ref mut v)) => v.poll_metadata(),
                     Ok(FindObject(ref mut v)) => v.poll_metadata(),
                     Ok(InsertObject(ref mut v)) => v.poll_metadata(),
                     Ok(GetWasmModuleInfo(ref mut v)) => v.poll_metadata(),
@@ -665,6 +749,8 @@ pub mod server {
             CreateDatabase,
             ListDatabases,
             CreateIndex,
+            GetIndex,
+            ListIndexes,
             FindObject,
             InsertObject,
             GetWasmModuleInfo,
@@ -677,6 +763,8 @@ pub mod server {
             CreateDatabase(CreateDatabase),
             ListDatabases(ListDatabases),
             CreateIndex(CreateIndex),
+            GetIndex(GetIndex),
+            ListIndexes(ListIndexes),
             FindObject(FindObject),
             InsertObject(InsertObject),
             GetWasmModuleInfo(GetWasmModuleInfo),
@@ -698,7 +786,10 @@ pub mod server {
                 CreateDatabaseRequest, CreateDatabaseResponse, ListDatabasesRequest,
                 ListDatabasesResponse,
             };
-            use super::super::index::{CreateIndexRequest, CreateIndexResponse};
+            use super::super::index::{
+                CreateIndexRequest, CreateIndexResponse, GetIndexRequest, GetIndexResponse,
+                ListIndexesRequest, ListIndexesResponse,
+            };
             use super::super::object::{
                 FindObjectRequest, FindObjectResponse, InsertObjectRequest, InsertObjectResponse,
             };
@@ -838,6 +929,47 @@ pub mod server {
                     request: grpc::Request<index::CreateIndexRequest>,
                 ) -> Self::Future {
                     self.0.create_index(request)
+                }
+            }
+
+            pub struct GetIndex<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<index::GetIndexRequest>> for GetIndex<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<index::GetIndexResponse>;
+                type Error = grpc::Error;
+                type Future = T::GetIndexFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(&mut self, request: grpc::Request<index::GetIndexRequest>) -> Self::Future {
+                    self.0.get_index(request)
+                }
+            }
+
+            pub struct ListIndexes<T>(pub T);
+
+            impl<T> tower::Service<grpc::Request<index::ListIndexesRequest>> for ListIndexes<T>
+            where
+                T: ProtoDb,
+            {
+                type Response = grpc::Response<index::ListIndexesResponse>;
+                type Error = grpc::Error;
+                type Future = T::ListIndexesFuture;
+
+                fn poll_ready(&mut self) -> futures::Poll<(), Self::Error> {
+                    Ok(futures::Async::Ready(()))
+                }
+
+                fn call(
+                    &mut self,
+                    request: grpc::Request<index::ListIndexesRequest>,
+                ) -> Self::Future {
+                    self.0.list_indexes(request)
                 }
             }
 
@@ -1092,7 +1224,7 @@ pub mod index {
         #[prost(enumeration = "create_index_response::ErrorCode", tag = "1")]
         pub error_code: i32,
         #[prost(uint64, tag = "2")]
-        pub index_id: u64,
+        pub id: u64,
     }
     pub mod create_index_response {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
@@ -1103,6 +1235,66 @@ pub mod index {
             InvalidCollection = 3,
             InvalidField = 4,
             UnsupportedFieldType = 5,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct Index {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(uint64, tag = "3")]
+        pub id: u64,
+        #[prost(int32, tag = "4")]
+        pub field: i32,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetIndexRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+        #[prost(uint64, tag = "3")]
+        pub id: u64,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct GetIndexResponse {
+        #[prost(enumeration = "get_index_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, optional, tag = "2")]
+        pub index: ::std::option::Option<Index>,
+    }
+    pub mod get_index_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
+            InvalidId = 4,
+        }
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListIndexesRequest {
+        #[prost(string, tag = "1")]
+        pub database: String,
+        #[prost(string, tag = "2")]
+        pub collection: String,
+    }
+    #[derive(Clone, PartialEq, Message)]
+    pub struct ListIndexesResponse {
+        #[prost(enumeration = "list_indexes_response::ErrorCode", tag = "1")]
+        pub error_code: i32,
+        #[prost(message, repeated, tag = "2")]
+        pub indexes: ::std::vec::Vec<Index>,
+    }
+    pub mod list_indexes_response {
+        #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Enumeration)]
+        pub enum ErrorCode {
+            NoError = 0,
+            InternalError = 1,
+            InvalidDatabase = 2,
+            InvalidCollection = 3,
         }
     }
 

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package protodb.index;
+
+message Index {
+    string database = 1;
+    string collection = 2;
+    uint64 id = 3;
+
+    int32 field = 4;
+}

@@ -2,6 +2,7 @@ mod collection;
 mod database;
 mod errors;
 pub mod generated;
+mod index;
 mod object;
 mod wasm;
 
