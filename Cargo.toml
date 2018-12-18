@@ -17,6 +17,7 @@ members = [
 [dependencies]
 bytes = "0.4"
 byteorder = "1.2"
+clap = "2"
 env_logger = { version = "0.5", default-features = false }
 futures = "0.1"
 http = "0.1"
